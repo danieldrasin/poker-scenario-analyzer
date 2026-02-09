@@ -23,7 +23,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuration
-const ITERATIONS = 100000; // High iteration count for accurate data
+const ITERATIONS = 1000000; // 1M iterations for high statistical accuracy
 const OUTPUT_DIR = path.join(__dirname, '../data/tier2');
 
 // Game variants and player counts to simulate

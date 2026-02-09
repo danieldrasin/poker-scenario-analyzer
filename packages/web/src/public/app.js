@@ -28,6 +28,67 @@ const state = {
   sideCards: 'any'
 };
 
+// ============ TIERED DATA SERVICE ============
+// Tier 1: Bundled JSON (instant, limited scenarios)
+// Tier 2: Cloudflare R2 (fast, pre-computed 1M iterations)
+// Tier 3: Live simulation (slower, any scenario)
+
+const TieredDataService = {
+  // Fetch simulation data using tiered approach
+  async fetchSimulationData(gameVariant, playerCount, options = {}) {
+    const { forceRefresh = false, statusCallback = null } = options;
+
+    // Try Tier 2 first (R2 pre-computed data)
+    if (!forceRefresh) {
+      statusCallback?.('Checking pre-computed data...');
+      try {
+        const tier2Data = await this.fetchFromTier2(gameVariant, playerCount);
+        if (tier2Data) {
+          statusCallback?.('Loaded from cache (1M simulations)');
+          return { source: 'tier2', data: tier2Data };
+        }
+      } catch (e) {
+        console.log('Tier 2 not available, falling back to Tier 3');
+      }
+    }
+
+    // Fall back to Tier 3 (live simulation)
+    statusCallback?.('Running live simulation...');
+    const tier3Data = await this.fetchFromTier3(gameVariant, playerCount);
+    return { source: 'tier3', data: tier3Data };
+  },
+
+  // Tier 2: Fetch from Cloudflare R2
+  async fetchFromTier2(gameVariant, playerCount) {
+    const response = await fetch(`/api/data?game=${gameVariant}&players=${playerCount}`);
+    if (!response.ok) {
+      if (response.status === 404 || response.status === 503) {
+        return null; // Not found or R2 not configured
+      }
+      throw new Error('Tier 2 fetch failed');
+    }
+    const result = await response.json();
+    if (result.fallback === 'tier1') {
+      return null; // R2 returned fallback indicator
+    }
+    return result.data;
+  },
+
+  // Tier 3: Live Monte Carlo simulation
+  async fetchFromTier3(gameVariant, playerCount, iterations = 50000) {
+    const response = await fetch('/api/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameVariant, playerCount, iterations })
+    });
+    if (!response.ok) {
+      throw new Error('Simulation failed');
+    }
+    const data = await response.json();
+    return data.result;
+  }
+};
+
 // Strategy configuration
 const STRATEGY_CONFIG = {
   // Base playability scores for hand types (0-100)
@@ -688,25 +749,24 @@ function parseRankChar(char) {
 async function runScenarioAnalysis() {
   const btn = document.getElementById('analyze-btn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Analyzing...</span>';
+
+  const updateStatus = (msg) => {
+    btn.innerHTML = `<span class="btn-icon">⏳</span><span class="btn-text">${msg}</span>`;
+  };
 
   try {
-    // For now, run a simulation and show mock strategic results
-    // In a full implementation, this would query specific hand categories
-    const response = await fetch('/api/simulate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        gameVariant: state.game,
-        playerCount: state.opponents + 1,
-        iterations: 50000
-      })
-    });
+    updateStatus('Loading data...');
 
-    if (!response.ok) throw new Error('Analysis failed');
+    // Use tiered data service - tries R2 first, then live simulation
+    const { source, data } = await TieredDataService.fetchSimulationData(
+      state.game,
+      state.opponents + 1,
+      { statusCallback: updateStatus }
+    );
 
-    const data = await response.json();
-    displayScenarioResults(data.result);
+    // Show data source in results
+    console.log(`Analysis data from: ${source} (${data.metadata?.iterations?.toLocaleString() || 'N/A'} iterations)`);
+    displayScenarioResults(data);
 
   } catch (error) {
     console.error('Analysis error:', error);
@@ -881,46 +941,47 @@ function initMatrix() {
 async function runMatrixSimulation() {
   const game = document.getElementById('matrix-game').value;
   const players = parseInt(document.getElementById('matrix-players').value, 10);
-  const iterations = parseInt(document.getElementById('matrix-iterations').value, 10);
+  const forceRefresh = document.getElementById('matrix-iterations').value > 100000; // Force live sim for custom high iterations
 
   const btn = document.getElementById('run-matrix');
   btn.disabled = true;
-  btn.textContent = 'Running...';
+  btn.textContent = 'Loading...';
 
   const progress = document.getElementById('matrix-progress');
   const progressFill = document.getElementById('matrix-progress-fill');
   const progressText = document.getElementById('matrix-progress-text');
   progress.style.display = 'flex';
 
-  // Simulate progress
+  // Progress animation
   let pct = 0;
   const interval = setInterval(() => {
-    pct += Math.random() * 15;
+    pct += Math.random() * 20;
     if (pct > 95) pct = 95;
     progressFill.style.width = `${pct}%`;
     progressText.textContent = `${Math.round(pct)}%`;
-  }, 300);
+  }, 200);
 
   try {
-    const response = await fetch('/api/simulate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        gameVariant: game,
-        playerCount: players,
-        iterations
-      })
-    });
+    // Use tiered data service - tries R2 first (1M pre-computed), then live simulation
+    const { source, data } = await TieredDataService.fetchSimulationData(
+      game,
+      players,
+      {
+        forceRefresh,
+        statusCallback: (msg) => { btn.textContent = msg; }
+      }
+    );
 
     clearInterval(interval);
-
-    if (!response.ok) throw new Error('Simulation failed');
-
-    const data = await response.json();
     progressFill.style.width = '100%';
     progressText.textContent = '100%';
 
-    displayMatrix(data.result);
+    // Log data source
+    const iterations = data.metadata?.iterations?.toLocaleString() || 'N/A';
+    console.log(`Matrix data from: ${source} (${iterations} iterations)`);
+    btn.textContent = source === 'tier2' ? `Loaded (${iterations} cached)` : `Simulated (${iterations})`;
+
+    displayMatrix(data);
     loadSavedSimulations();
 
     setTimeout(() => {
@@ -933,8 +994,10 @@ async function runMatrixSimulation() {
     alert('Simulation failed: ' + error.message);
     progress.style.display = 'none';
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Run Simulation';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = 'Run Simulation';
+    }, 2000);
   }
 }
 

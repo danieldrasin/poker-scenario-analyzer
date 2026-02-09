@@ -2,84 +2,84 @@
   "metadata": {
     "gameVariant": "omaha6",
     "playerCount": 6,
-    "iterations": 100000,
-    "generatedAt": "2026-02-09T17:48:39.100Z"
+    "iterations": 1000000,
+    "generatedAt": "2026-02-09T17:58:35.670Z"
   },
   "statistics": {
     "handTypeDistribution": [
       {
         "handType": 0,
         "name": "High Card",
-        "count": 5000,
-        "percentage": 5,
+        "count": 49728,
+        "percentage": 4.97,
         "wins": 0,
         "winRate": 0
       },
       {
         "handType": 1,
         "name": "One Pair",
-        "count": 24870,
-        "percentage": 24.87,
-        "wins": 2,
-        "winRate": 0.01
+        "count": 250585,
+        "percentage": 25.06,
+        "wins": 53,
+        "winRate": 0.02
       },
       {
         "handType": 2,
         "name": "Two Pair",
-        "count": 25025,
-        "percentage": 25.02,
-        "wins": 342,
-        "winRate": 1.37
+        "count": 249193,
+        "percentage": 24.92,
+        "wins": 3521,
+        "winRate": 1.41
       },
       {
         "handType": 3,
         "name": "Three of a Kind",
-        "count": 7975,
-        "percentage": 7.98,
-        "wins": 579,
-        "winRate": 7.26
+        "count": 79516,
+        "percentage": 7.95,
+        "wins": 5722,
+        "winRate": 7.2
       },
       {
         "handType": 4,
         "name": "Straight",
-        "count": 12147,
-        "percentage": 12.15,
-        "wins": 1895,
-        "winRate": 15.6
+        "count": 120623,
+        "percentage": 12.06,
+        "wins": 18955,
+        "winRate": 15.71
       },
       {
         "handType": 5,
         "name": "Flush",
-        "count": 10032,
+        "count": 100318,
         "percentage": 10.03,
-        "wins": 3222,
-        "winRate": 32.12
+        "wins": 32859,
+        "winRate": 32.75
       },
       {
         "handType": 6,
         "name": "Full House",
-        "count": 10014,
-        "percentage": 10.01,
-        "wins": 5957,
-        "winRate": 59.49
+        "count": 99842,
+        "percentage": 9.98,
+        "wins": 58980,
+        "winRate": 59.07
       },
       {
         "handType": 7,
         "name": "Four of a Kind",
-        "count": 2984,
-        "percentage": 2.98,
-        "wins": 2497,
-        "winRate": 83.68
+        "count": 30030,
+        "percentage": 3,
+        "wins": 25138,
+        "winRate": 83.71
       },
       {
         "handType": 8,
         "name": "Straight Flush",
-        "count": 1953,
-        "percentage": 1.95,
-        "wins": 1858,
-        "winRate": 95.14
+        "count": 20165,
+        "percentage": 2.02,
+        "wins": 19222,
+        "winRate": 95.32
       }
     ],
-    "overallWinRate": 16.35
+    "overallWinRate": 16.45
   }
 }
