@@ -1545,7 +1545,7 @@ function applyPresetSilent(queryStr) {
 // ============ AI COACH SYSTEM ============
 
 const AICoach = {
-  provider: localStorage.getItem('ai-provider') || 'anthropic',
+  provider: localStorage.getItem('ai-provider') || 'gemini',
   apiKey: localStorage.getItem('ai-api-key') || '',
   conversationHistory: [],
 
@@ -1646,6 +1646,10 @@ STYLE:
     try {
       if (this.provider === 'anthropic') {
         return await this.callAnthropic(systemPrompt);
+      } else if (this.provider === 'gemini') {
+        return await this.callGemini(systemPrompt);
+      } else if (this.provider === 'groq') {
+        return await this.callGroq(systemPrompt);
       } else {
         return await this.callOpenAI(systemPrompt);
       }
@@ -1721,16 +1725,90 @@ STYLE:
     return assistantMessage;
   },
 
+  // Call Google Gemini API (free tier available)
+  callGemini: async function(systemPrompt) {
+    // Convert conversation history to Gemini format
+    const contents = this.conversationHistory.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: contents,
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          generationConfig: { maxOutputTokens: 1024 }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Gemini API request failed');
+    }
+
+    const data = await response.json();
+    const assistantMessage = data.candidates[0].content.parts[0].text;
+
+    // Add assistant response to history
+    this.conversationHistory.push({ role: 'assistant', content: assistantMessage });
+
+    return assistantMessage;
+  },
+
+  // Call Groq API (free tier available, very fast)
+  callGroq: async function(systemPrompt) {
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      ...this.conversationHistory
+    ];
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: messages,
+        max_tokens: 1024
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Groq API request failed');
+    }
+
+    const data = await response.json();
+    const assistantMessage = data.choices[0].message.content;
+
+    // Add assistant response to history
+    this.conversationHistory.push({ role: 'assistant', content: assistantMessage });
+
+    return assistantMessage;
+  },
+
   // Test connection
   testConnection: async function() {
     const testPrompt = 'Reply with just "Connected successfully" to confirm the API is working.';
     this.conversationHistory = [{ role: 'user', content: testPrompt }];
 
     try {
+      const systemPrompt = 'You are a helpful assistant. Reply briefly.';
       if (this.provider === 'anthropic') {
-        await this.callAnthropic('You are a helpful assistant. Reply briefly.');
+        await this.callAnthropic(systemPrompt);
+      } else if (this.provider === 'gemini') {
+        await this.callGemini(systemPrompt);
+      } else if (this.provider === 'groq') {
+        await this.callGroq(systemPrompt);
       } else {
-        await this.callOpenAI('You are a helpful assistant. Reply briefly.');
+        await this.callOpenAI(systemPrompt);
       }
       this.conversationHistory = []; // Clear test messages
       return { success: true };
@@ -1793,7 +1871,9 @@ function initAICoach() {
   providerSelect?.addEventListener('change', () => {
     const hints = {
       anthropic: 'Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>',
-      openai: 'Get your key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>'
+      openai: 'Get your key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>',
+      gemini: '🆓 Free tier! Get key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>',
+      groq: '🆓 Free tier! Get key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a>'
     };
     providerHint.innerHTML = hints[providerSelect.value];
   });
