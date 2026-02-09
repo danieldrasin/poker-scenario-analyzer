@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "gameVariant": "omaha6",
+    "playerCount": 6,
+    "iterations": 100000,
+    "generatedAt": "2026-02-09T17:48:39.100Z"
+  },
+  "statistics": {
+    "handTypeDistribution": [
+      {
+        "handType": 0,
+        "name": "High Card",
+        "count": 5000,
+        "percentage": 5,
+        "wins": 0,
+        "winRate": 0
+      },
+      {
+        "handType": 1,
+        "name": "One Pair",
+        "count": 24870,
+        "percentage": 24.87,
+        "wins": 2,
+        "winRate": 0.01
+      },
+      {
+        "handType": 2,
+        "name": "Two Pair",
+        "count": 25025,
+        "percentage": 25.02,
+        "wins": 342,
+        "winRate": 1.37
+      },
+      {
+        "handType": 3,
+        "name": "Three of a Kind",
+        "count": 7975,
+        "percentage": 7.98,
+        "wins": 579,
+        "winRate": 7.26
+      },
+      {
+        "handType": 4,
+        "name": "Straight",
+        "count": 12147,
+        "percentage": 12.15,
+        "wins": 1895,
+        "winRate": 15.6
+      },
+      {
+        "handType": 5,
+        "name": "Flush",
+        "count": 10032,
+        "percentage": 10.03,
+        "wins": 3222,
+        "winRate": 32.12
+      },
+      {
+        "handType": 6,
+        "name": "Full House",
+        "count": 10014,
+        "percentage": 10.01,
+        "wins": 5957,
+        "winRate": 59.49
+      },
+      {
+        "handType": 7,
+        "name": "Four of a Kind",
+        "count": 2984,
+        "percentage": 2.98,
+        "wins": 2497,
+        "winRate": 83.68
+      },
+      {
+        "handType": 8,
+        "name": "Straight Flush",
+        "count": 1953,
+        "percentage": 1.95,
+        "wins": 1858,
+        "winRate": 95.14
+      }
+    ],
+    "overallWinRate": 16.35
+  }
+}
