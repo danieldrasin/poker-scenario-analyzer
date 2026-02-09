@@ -1,4 +1,6 @@
 // Poker Scenario Analyzer UI
+// BUILD_TIMESTAMP is replaced at build time, or shows current time for debugging
+const BUILD_TIMESTAMP = '2026-02-09T18:25:00Z';
 
 const HAND_TYPE_CODES = ['HC', '1P', '2P', '3C', 'ST', 'FL', 'FH', '4C', 'SF'];
 const HAND_TYPE_NAMES = {
@@ -60,14 +62,22 @@ const TieredDataService = {
 
   // Tier 2: Fetch from Cloudflare R2
   async fetchFromTier2(gameVariant, playerCount) {
-    const response = await fetch(`/api/data?game=${gameVariant}&players=${playerCount}`);
+    const url = `/api/data?game=${gameVariant}&players=${playerCount}`;
+    console.log('Tier2: Fetching from', url);
+    const response = await fetch(url);
     if (!response.ok) {
+      console.log('Tier2: Response not OK', response.status);
       if (response.status === 404 || response.status === 503) {
         return null; // Not found or R2 not configured
       }
       throw new Error('Tier 2 fetch failed');
     }
     const result = await response.json();
+    console.log('Tier2: API response keys:', Object.keys(result));
+    console.log('Tier2: result.data exists:', !!result.data);
+    if (result.data) {
+      console.log('Tier2: result.data keys:', Object.keys(result.data));
+    }
     if (result.fallback === 'tier1') {
       return null; // R2 returned fallback indicator
     }
@@ -177,6 +187,14 @@ function formatBytes(bytes) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+  // Show deployment timestamp
+  const deployInfo = document.getElementById('deploy-info');
+  if (deployInfo) {
+    const deployDate = new Date(BUILD_TIMESTAMP);
+    deployInfo.textContent = `v${deployDate.toLocaleDateString()} ${deployDate.toLocaleTimeString()}`;
+    deployInfo.style.cssText = 'position:absolute;bottom:4px;right:8px;font-size:10px;color:#666;opacity:0.7;';
+  }
+
   // Initialize DataManager first (for IndexedDB and Tier 1 data access)
   if (typeof DataManager !== 'undefined') {
     showDataLoading('Initializing data storage...');
@@ -778,6 +796,26 @@ async function runScenarioAnalysis() {
 }
 
 function displayScenarioResults(result) {
+  // Debug: Log the full result structure
+  console.log('displayScenarioResults received:', JSON.stringify(result, null, 2).slice(0, 500));
+
+  // Validate result structure
+  if (!result) {
+    console.error('displayScenarioResults: result is null/undefined');
+    alert('Analysis failed: No data received');
+    return;
+  }
+  if (!result.statistics) {
+    console.error('displayScenarioResults: result.statistics is missing', result);
+    alert('Analysis failed: Invalid data structure (no statistics)');
+    return;
+  }
+  if (!result.metadata) {
+    console.error('displayScenarioResults: result.metadata is missing', result);
+    alert('Analysis failed: Invalid data structure (no metadata)');
+    return;
+  }
+
   const resultsSection = document.getElementById('results-section');
   resultsSection.style.display = 'block';
 
@@ -786,7 +824,8 @@ function displayScenarioResults(result) {
 
   // Extract REAL statistics from simulation data
   const stats = result.statistics;
-  const handsAnalyzed = result.metadata.config.iterations;
+  // Handle both nested (config.iterations) and flat (iterations) formats
+  const handsAnalyzed = result.metadata.config?.iterations || result.metadata.iterations || 0;
 
   // Calculate actual win rate from hand type distribution
   let totalWins = 0;
