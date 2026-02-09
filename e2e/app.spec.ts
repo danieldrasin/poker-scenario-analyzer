@@ -18,9 +18,10 @@ test.describe('Poker Scenario Analyzer', () => {
   });
 
   test('displays main navigation tabs', async ({ page }) => {
-    await expect(page.locator('text=Scenario Builder')).toBeVisible();
-    await expect(page.locator('text=Probability Matrix')).toBeVisible();
-    await expect(page.locator('text=Saved Analysis')).toBeVisible();
+    // Use specific tab button selectors to avoid matching other text
+    await expect(page.locator('.tab-btn:has-text("Scenario Builder")')).toBeVisible();
+    await expect(page.locator('.tab-btn:has-text("Probability Matrix")')).toBeVisible();
+    await expect(page.locator('.tab-btn:has-text("Saved Analysis")')).toBeVisible();
   });
 
   test('game selector has Omaha variants', async ({ page }) => {
@@ -37,9 +38,10 @@ test.describe('Poker Scenario Analyzer', () => {
     const posSelect = page.locator('#position-select');
     await expect(posSelect).toBeVisible();
 
+    // Check options exist by counting them (options are hidden until dropdown opens)
     const options = ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'];
     for (const pos of options) {
-      await expect(posSelect.locator(`option[value="${pos}"]`)).toBeVisible();
+      await expect(posSelect.locator(`option[value="${pos}"]`)).toHaveCount(1);
     }
   });
 
@@ -93,8 +95,10 @@ test.describe('Matrix Tab', () => {
   });
 
   test('run simulation button exists', async ({ page }) => {
-    const runBtn = page.locator('button:has-text("Run"), button:has-text("Simulate")');
-    await expect(runBtn.first()).toBeVisible();
+    // The run button has specific id
+    const runBtn = page.locator('#run-matrix');
+    await expect(runBtn).toBeVisible();
+    await expect(runBtn).toHaveText('Run Simulation');
   });
 
 });
