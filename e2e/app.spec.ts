@@ -456,12 +456,13 @@ test.describe('Saved Analysis', () => {
     await page.goto('/');
     // Switch to Saved Analysis tab
     await page.click('.tab-btn:has-text("Saved Analysis")');
-    await expect(page.locator('#saved-tab')).toBeVisible();
+    // Wait for tab to become active (CSS transition may take time)
+    await expect(page.locator('#saved-tab')).toBeVisible({ timeout: 10000 });
   });
 
   test('saved analysis tab displays', async ({ page }) => {
-    // Tab should be visible
-    await expect(page.locator('#saved-tab')).toBeVisible();
+    // Tab should be visible (already switched in beforeEach)
+    await expect(page.locator('#saved-tab')).toBeVisible({ timeout: 5000 });
   });
 
   test('empty state shows message when no saved analyses', async ({ page }) => {
