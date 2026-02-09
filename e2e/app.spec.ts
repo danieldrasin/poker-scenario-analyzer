@@ -153,8 +153,9 @@ test.describe('Simulation Features', () => {
     // Click analyze
     await analyzeBtn.click();
 
-    // Button should show loading state
-    await expect(analyzeBtn).toContainText(/Analyzing|Running/i, { timeout: 5000 });
+    // Button should show loading state (tiered loading: checks R2 first, then API)
+    // Possible states: "Checking pre-computed data...", "Loading data...", "Analyzing..."
+    await expect(analyzeBtn).toContainText(/Checking|Loading|Analyzing|Running/i, { timeout: 5000 });
 
     // Wait for results (with timeout for API call)
     // Either results appear or button returns to normal
@@ -181,8 +182,9 @@ test.describe('Simulation Features', () => {
     // Click run
     await runBtn.click();
 
-    // Button should show running state
-    await expect(runBtn).toHaveText(/Running|Simulating/i, { timeout: 5000 });
+    // Button should show running state (tiered loading: checks R2 first, then API)
+    // Possible states: "Checking pre-computed data...", "Loading data...", "Running...", "Simulating..."
+    await expect(runBtn).toContainText(/Checking|Loading|Running|Simulating/i, { timeout: 5000 });
 
     // Wait for completion (simulation can take time)
     await expect(async () => {

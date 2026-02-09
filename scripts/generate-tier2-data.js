@@ -54,6 +54,11 @@ function runSimulation(gameVariant, playerCount, iterations) {
   const handTypeWins = new Array(9).fill(0);
   let heroWins = 0;
 
+  // Initialize probability matrix tracking: matrixCounts[heroType][oppType] = {count, wins}
+  const matrixCounts = Array.from({ length: 9 }, () =>
+    Array.from({ length: 9 }, () => ({ count: 0, wins: 0 }))
+  );
+
   // Probability weights for PLO hand types (simplified model)
   const weights = gameVariant === 'omaha6'
     ? [0.05, 0.25, 0.25, 0.08, 0.12, 0.10, 0.10, 0.03, 0.02]
@@ -66,11 +71,24 @@ function runSimulation(gameVariant, playerCount, iterations) {
     handTypeCounts[heroHandType]++;
 
     let heroWon = true;
+    let strongestOppType = -1;
+
     for (let opp = 0; opp < playerCount - 1; opp++) {
       const oppHandType = weightedRandom(weights);
+      // Track the strongest opponent hand we face
+      if (oppHandType > strongestOppType) {
+        strongestOppType = oppHandType;
+      }
       if (oppHandType > heroHandType || (oppHandType === heroHandType && Math.random() > 0.5)) {
         heroWon = false;
-        break;
+      }
+    }
+
+    // Track matrix: hero hand vs strongest opponent hand
+    if (strongestOppType >= 0) {
+      matrixCounts[heroHandType][strongestOppType].count++;
+      if (heroWon) {
+        matrixCounts[heroHandType][strongestOppType].wins++;
       }
     }
 
@@ -98,15 +116,18 @@ function runSimulation(gameVariant, playerCount, iterations) {
         winRate: handTypeCounts[i] > 0 ? parseFloat((handTypeWins[i] / handTypeCounts[i] * 100).toFixed(2)) : 0
       })),
       overallWinRate: parseFloat((heroWins / iterations * 100).toFixed(2)),
-      // Add probabilityMatrix for Matrix tab compatibility
-      probabilityMatrix: handTypeNames.map((heroHand, i) =>
-        handTypeNames.map((oppHand, j) => ({
-          heroHand,
-          oppHand,
-          count: Math.floor(iterations / 81), // Approximate distribution
-          wins: Math.floor((iterations / 81) * (i > j ? 0.6 : i < j ? 0.4 : 0.5)),
-          winRate: i > j ? 60 : i < j ? 40 : 50
-        }))
+      // Add probabilityMatrix for Matrix tab compatibility with actual simulation data
+      probabilityMatrix: handTypeNames.map((heroHand, heroIdx) =>
+        handTypeNames.map((oppHand, oppIdx) => {
+          const cell = matrixCounts[heroIdx][oppIdx];
+          return {
+            heroHand,
+            oppHand,
+            count: cell.count,
+            wins: cell.wins,
+            winRate: cell.count > 0 ? parseFloat((cell.wins / cell.count * 100).toFixed(1)) : 0
+          };
+        })
       )
     }
   };
