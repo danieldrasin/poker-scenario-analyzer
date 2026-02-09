@@ -1,0 +1,233 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "🎴 Poker Scenario Analyzer" [level=1] [ref=e6]
+        - paragraph [ref=e7]: Omaha & Hold'em strategic hand analysis
+      - button "⚙️" [ref=e8] [cursor=pointer]
+    - generic "Deployment timestamp" [ref=e9]: v2/9/2026 1:25:00 PM
+  - main [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]: "Storage:"
+      - generic [ref=e15]: 202 B / 1000.0 MB
+    - navigation [ref=e16]:
+      - button "Scenario Builder" [ref=e17] [cursor=pointer]
+      - button "Probability Matrix" [ref=e18] [cursor=pointer]
+      - button "Saved Analysis" [ref=e19] [cursor=pointer]
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]: 💡
+        - generic [ref=e23]:
+          - text: Build a hand scenario below, then click
+          - strong [ref=e24]: Analyze
+          - text: to see strategic recommendations. Or run a simulation in the
+          - strong [ref=e25]: Matrix
+          - text: tab first, then click cells to explore.
+        - button "×" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]: Game
+            - combobox [ref=e31] [cursor=pointer]:
+              - option "Omaha 4-Card" [selected]
+              - option "Omaha 5-Card"
+              - option "Omaha 6-Card"
+              - option "Texas Hold'em"
+          - generic [ref=e32]:
+            - generic [ref=e33]: Position
+            - combobox [ref=e34] [cursor=pointer]:
+              - option "UTG (Early)"
+              - option "MP (Middle)"
+              - option "CO (Cutoff)"
+              - option "BTN (Button)" [selected]
+              - option "SB (Small Blind)"
+              - option "BB (Big Blind)"
+          - generic [ref=e35]:
+            - generic [ref=e36]: Style
+            - combobox [ref=e37] [cursor=pointer]:
+              - option "Rock (Tight-Passive)"
+              - option "TAG (Tight-Aggressive)" [selected]
+              - option "LAG (Loose-Aggressive)"
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - generic [ref=e40]: Opponents
+            - generic [ref=e41]:
+              - button "1" [ref=e42] [cursor=pointer]
+              - button "2" [ref=e43] [cursor=pointer]
+              - button "3" [ref=e44] [cursor=pointer]
+              - button "4" [ref=e45] [cursor=pointer]
+              - button "5" [ref=e46] [cursor=pointer]
+              - button "6" [ref=e47] [cursor=pointer]
+              - button "7" [ref=e48] [cursor=pointer]
+              - button "8" [ref=e49] [cursor=pointer]
+          - generic [ref=e50]:
+            - generic [ref=e51]: ⚠️
+            - generic [ref=e52]: "Multiway pot: Tighten range, prioritize nut potential!"
+        - generic [ref=e53]:
+          - button "AA ds" [ref=e54] [cursor=pointer]
+          - button "KK ds" [ref=e55] [cursor=pointer]
+          - button "TT+ ds" [ref=e56] [cursor=pointer]
+          - button "Rundown ds ✓" [ref=e57] [cursor=pointer]
+          - button "DblPair ds ✓" [ref=e58] [cursor=pointer]
+          - button "Bway ds ✓" [ref=e59] [cursor=pointer]
+          - button "Any Pair" [ref=e60] [cursor=pointer]
+          - button "Any Hand" [ref=e61] [cursor=pointer]
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - combobox [ref=e65] [cursor=pointer]:
+              - option "Pair" [selected]
+              - option "Double Pair"
+              - option "Rundown"
+              - option "Broadway"
+              - option "Any"
+            - generic [ref=e66]:
+              - button "◀" [ref=e67] [cursor=pointer]
+              - generic [ref=e68]: A
+              - button "▶" [ref=e69] [cursor=pointer]
+              - generic [ref=e70]:
+                - button "−" [ref=e71] [cursor=pointer]
+                - button "=" [ref=e72] [cursor=pointer]
+                - button "+" [ref=e73] [cursor=pointer]
+            - combobox [ref=e75] [cursor=pointer]:
+              - option "DS" [selected]
+              - option "SS"
+              - option "Rainbow"
+              - option "Any"
+            - combobox [ref=e77] [cursor=pointer]:
+              - option "Any" [selected]
+              - option "Conn"
+              - option "Bway"
+              - option "Wheel"
+          - generic [ref=e78]:
+            - generic [ref=e79]: Pair
+            - generic [ref=e80]: Aces
+            - generic [ref=e81]: Double-Suited
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - code [ref=e84]: pair:AA:ds
+            - button "📋" [ref=e85] [cursor=pointer]
+          - generic [ref=e86]: Pair Aces double-suited
+          - generic [ref=e88]:
+            - generic [ref=e89]: A♠A♥K♠Q♥
+            - generic [ref=e90]: A♦A♣8♦7♣
+            - generic [ref=e91]: A♠A♦5♠3♦
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]: Strategy Insight
+            - generic [ref=e95]: TAG @ BTN vs 5
+          - generic [ref=e96]:
+            - generic [ref=e97]: SITUATIONAL
+            - generic [ref=e98]: Marginal, position and reads matter
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - generic [ref=e101]: "Nut Potential:"
+              - generic [ref=e104]: High
+            - generic [ref=e105]:
+              - generic [ref=e106]: "Multiway Viability:"
+              - generic [ref=e109]: Medium
+          - generic [ref=e111]:
+            - generic [ref=e112]: ⚠️
+            - generic [ref=e113]: Naked Aces rarely win multiway - need set or nut flush on flop
+          - button "💬 Explain This" [ref=e115] [cursor=pointer]:
+            - generic [ref=e116]: 💬
+            - text: Explain This
+        - button "🔍 Analyze Scenario" [ref=e117] [cursor=pointer]:
+          - generic [ref=e118]: 🔍
+          - generic [ref=e119]: Analyze Scenario
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - 'heading "Analysis: Pair Aces double-suited" [level=3] [ref=e122]'
+          - button "📊 View in Matrix" [ref=e124] [cursor=pointer]
+        - generic [ref=e126]:
+          - generic [ref=e127]:
+            - generic [ref=e128]: 16.4%
+            - generic [ref=e129]: Win Rate
+          - generic [ref=e130]:
+            - generic [ref=e131]: 1,000,000
+            - generic [ref=e132]: Hands Analyzed
+          - generic [ref=e133]:
+            - generic [ref=e134]: ~%
+            - generic [ref=e135]: Occurrence
+        - generic [ref=e136]:
+          - heading "Strategic Profile" [level=4] [ref=e137]
+          - generic [ref=e138]:
+            - generic [ref=e139]:
+              - generic [ref=e140]: Nut Potential
+              - generic [ref=e143]: 66%
+            - generic [ref=e144]:
+              - generic [ref=e145]: RNIO Risk
+              - generic [ref=e148]: 66%
+            - generic [ref=e149]:
+              - generic [ref=e150]: Multiway Strength
+              - generic [ref=e153]: 33%
+        - generic [ref=e154]:
+          - heading "What to Look For on the Flop" [level=4] [ref=e155]
+          - generic [ref=e156]:
+            - generic [ref=e157]:
+              - heading "✓ Good Flops" [level=5] [ref=e158]
+              - list [ref=e159]:
+                - listitem [ref=e160]: Set on dry board (e.g., K72 rainbow)
+                - listitem [ref=e161]: Set with nut flush draw
+                - listitem [ref=e162]: Underpair on very dry board
+            - generic [ref=e163]:
+              - heading "⚠ Dangerous Flops" [level=5] [ref=e164]
+              - list [ref=e165]:
+                - listitem [ref=e166]: Monotone without nut flush draw
+                - listitem [ref=e167]: Set on highly coordinated board
+                - listitem [ref=e168]: Underpair on wet, connected board
+        - generic [ref=e169]:
+          - heading "Win Rate by Opponents" [level=4] [ref=e170]
+          - table [ref=e171]:
+            - rowgroup [ref=e172]:
+              - row "Opponents Win Rate Nut Required? Strategy" [ref=e173]:
+                - columnheader "Opponents" [ref=e174]
+                - columnheader "Win Rate" [ref=e175]
+                - columnheader "Nut Required?" [ref=e176]
+                - columnheader "Strategy" [ref=e177]
+            - rowgroup [ref=e178]:
+              - row "1 22.1% Sometimes Play for value" [ref=e179]:
+                - cell "1" [ref=e180]
+                - cell "22.1%" [ref=e181]
+                - cell "Sometimes" [ref=e182]
+                - cell "Play for value" [ref=e183]
+              - row "2 13.7% Often Strong draws OK" [ref=e184]:
+                - cell "2" [ref=e185]
+                - cell "13.7%" [ref=e186]
+                - cell "Often" [ref=e187]
+                - cell "Strong draws OK" [ref=e188]
+              - row "3 10.8% Often Strong draws OK" [ref=e189]:
+                - cell "3" [ref=e190]
+                - cell "10.8%" [ref=e191]
+                - cell "Often" [ref=e192]
+                - cell "Strong draws OK" [ref=e193]
+              - row "4 9.6% Yes Nut draws only" [ref=e194]:
+                - cell "4" [ref=e195]
+                - cell "9.6%" [ref=e196]
+                - cell "Yes" [ref=e197]
+                - cell "Nut draws only" [ref=e198]
+              - row "5 7.7% Yes Nut draws only" [ref=e199]:
+                - cell "5" [ref=e200]
+                - cell "7.7%" [ref=e201]
+                - cell "Yes" [ref=e202]
+                - cell "Nut draws only" [ref=e203]
+              - row "6 6.2% Yes Nuts or fold" [ref=e204]:
+                - cell "6" [ref=e205]
+                - cell "6.2%" [ref=e206]
+                - cell "Yes" [ref=e207]
+                - cell "Nuts or fold" [ref=e208]
+              - row "7 5.6% Yes Nuts or fold" [ref=e209]:
+                - cell "7" [ref=e210]
+                - cell "5.6%" [ref=e211]
+                - cell "Yes" [ref=e212]
+                - cell "Nuts or fold" [ref=e213]
+              - row "8 5.1% Yes Nuts or fold" [ref=e214]:
+                - cell "8" [ref=e215]
+                - cell "5.1%" [ref=e216]
+                - cell "Yes" [ref=e217]
+                - cell "Nuts or fold" [ref=e218]
+  - contentinfo [ref=e219]:
+    - paragraph [ref=e220]: Poker Scenario Analyzer v2.0
+```

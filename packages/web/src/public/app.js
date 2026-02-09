@@ -1546,7 +1546,7 @@ function updateStrategyInsight() {
 
   // Update context
   const styleNames = { rock: 'Rock', tag: 'TAG', lag: 'LAG' };
-  contextEl.textContent = `${styleNames[state.style]} @ ${state.position} vs ${state.opponents}`;
+  contextEl.textContent = `${styleNames[state.style]} @ ${state.position} (${state.opponents + 1}-handed table)`;
 
   // Calculate recommendation
   const score = calculateHandScore();
@@ -1697,9 +1697,42 @@ Run a simulation to get empirical data for this specific scenario.
 CURRENT SCENARIO:
 - Hand: ${context.hand.structure} ${context.hand.rankName} ${context.hand.suitednessName}
 - Position: ${context.situation.positionName} (${context.situation.position})
-- Opponents: ${context.situation.opponents}
+- Table Size: ${context.situation.opponents + 1} players (${context.situation.opponents} opponents)
 - Playing Style: ${context.situation.styleName}
 ${simulationSection}
+CRITICAL DISTINCTION - TABLE SIZE VS POT PARTICIPANTS:
+The simulation data is based on ${context.situation.opponents + 1}-handed play (table size), NOT opponents actually in the pot.
+- "Table size" = total players dealt cards
+- "Opponents in pot" = players who haven't folded (varies hand-to-hand)
+- POSITION determines how many players will likely enter the pot:
+  * UTG/EP: Expect 3-5 callers on average at full table; raise big to thin the field
+  * MP: Expect 2-4 callers; can open slightly wider
+  * CO: Expect 1-3 callers; position advantage compensates
+  * BTN: Expect 1-2 callers (blinds); widest opening range, best position postflop
+  * SB: Awkward postflop; play tight or 3-bet to play heads-up
+  * BB: Already invested; defend vs steals, but position disadvantage postflop
+
+HAND NOTATION (the -/=/+ settings in the UI):
+- Minus (-): Kicker is LOWER than main rank (e.g., AA with 7-6 kickers)
+- Equal (=): Kicker is SIMILAR to main rank (e.g., AA with Q-J kickers)
+- Plus (+): Kicker is CONNECTED/suited with main rank (e.g., AA with A-K suited)
+Current hand uses: ${context.hand.structure} structure with ${context.hand.suitednessName} suitedness
+
+POSITIONAL BETTING STRATEGY:
+PREFLOP by position at ${context.situation.opponents + 1}-handed:
+- UTG/EP (${context.situation.position === 'UTG' ? 'YOUR POSITION' : ''}): Raise 3-4x to fold out speculative hands. Only premium holdings.
+- MP (${context.situation.position === 'MP' ? 'YOUR POSITION' : ''}): Can open slightly wider. Raise to isolate.
+- CO (${context.situation.position === 'CO' ? 'YOUR POSITION' : ''}): Attack blinds. 3-bet light against late position opens.
+- BTN (${context.situation.position === 'BTN' ? 'YOUR POSITION' : ''}): Widest range. Position postflop is huge edge.
+- SB (${context.situation.position === 'SB' ? 'YOUR POSITION' : ''}): 3-bet or fold. Completing is usually -EV.
+- BB (${context.situation.position === 'BB' ? 'YOUR POSITION' : ''}): Defend wider vs steals, tighter vs early raises.
+
+POSTFLOP POSITIONAL CONSIDERATIONS:
+- IN POSITION: Can control pot size, see opponent actions first, bluff more effectively
+- OUT OF POSITION: Must play more straightforwardly, check-raise or check-fold more often
+- MULTIWAY: Bluff less, value bet thinner, need stronger made hands
+- HEADS-UP: Can leverage position and aggression more
+
 POKER MATH FUNDAMENTALS (always true):
 ${Object.entries(context.statistics).filter(([k]) => k !== 'dataNote').map(([k, v]) => `- ${k}: ${JSON.stringify(v)}`).join('\n')}
 
@@ -1724,12 +1757,15 @@ YOUR ROLE:
 3. Explain the WHY behind recommendations using these statistics
 4. When discussing odds, cite the exact percentages and outs
 5. Answer follow-up questions about post-flop play, board textures, opponent ranges
+6. ALWAYS clarify table size vs expected opponents in pot based on position
+7. Give position-specific preflop and postflop advice
 
 CREDIBILITY RULES:
 - Lead with simulation statistics when available - these are from ${context.simulationData?.iterations?.toLocaleString() || 'N/A'} actual hands
 - Use poker math fundamentals to explain concepts
 - Be specific: "With 9 flush outs, you have a 35% chance to hit by the river"
 - Explain edge cases and adjustments (blockers, card removal effects)
+- When discussing multiway pots, note that the simulation assumes all ${context.situation.opponents + 1} players see the flop - actual pots may be smaller
 
 STYLE:
 - Conversational but authoritative
@@ -2106,7 +2142,7 @@ function sendExplanationRequest() {
   // Add data source info to context
   context.dataSource = simInfo.source;
 
-  const initialPrompt = `I'm looking at ${context.hand.structure} ${context.hand.rankName} ${context.hand.suitednessName} in ${context.situation.positionName} against ${context.situation.opponents} opponents, playing a ${context.situation.styleName} style.
+  const initialPrompt = `I'm looking at ${context.hand.structure} ${context.hand.rankName} ${context.hand.suitednessName} in ${context.situation.positionName} at a ${context.situation.opponents + 1}-handed table, playing a ${context.situation.styleName} style.
 
 Please explain:
 1. Whether this is a playable hand and why

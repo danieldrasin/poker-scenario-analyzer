@@ -74,7 +74,7 @@
           <!-- Opponents Row -->
           <div class="settings-row opponents-row">
             <div class="setting">
-              <label>Opponents</label>
+              <label title="Total players at the table (not just those in the pot). Position determines how many will likely enter.">Players at Table</label>
               <div class="opponent-selector">
                 <button class="opp-btn" data-count="1">1</button>
                 <button class="opp-btn" data-count="2">2</button>
@@ -88,7 +88,7 @@
             </div>
             <div class="multiway-alert" id="multiway-alert" style="display: none;">
               <span class="alert-icon">⚠️</span>
-              <span class="alert-text">Multiway pot: Tighten range, prioritize nut potential!</span>
+              <span class="alert-text">Large table: Expect multiway pots - tighten range, prioritize nut potential!</span>
             </div>
           </div>
 
@@ -122,9 +122,9 @@
                 <span class="rank-display" id="rank-display">A</span>
                 <button class="rank-adj" id="rank-up">▶</button>
                 <div class="rank-mod-toggle">
-                  <button class="rank-mod" data-mod="-" title="or worse">−</button>
-                  <button class="rank-mod active" data-mod="=" title="exactly">=</button>
-                  <button class="rank-mod" data-mod="+" title="or better">+</button>
+                  <button class="rank-mod" data-mod="-" title="Lower kickers (e.g., AA with 7-6)">−</button>
+                  <button class="rank-mod active" data-mod="=" title="Average kickers (e.g., AA with Q-J)">=</button>
+                  <button class="rank-mod" data-mod="+" title="Premium kickers (e.g., AA with A-K suited)">+</button>
                 </div>
               </div>
 
@@ -294,11 +294,11 @@
 
           <!-- Multiway Adjustment -->
           <div class="multiway-table">
-            <h4>Win Rate by Opponents</h4>
+            <h4>Win Rate by Table Size</h4>
             <table id="multiway-results">
               <thead>
                 <tr>
-                  <th>Opponents</th>
+                  <th>Players</th>
                   <th>Win Rate</th>
                   <th>Nut Required?</th>
                   <th>Strategy</th>
