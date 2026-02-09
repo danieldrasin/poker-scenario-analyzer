@@ -139,3 +139,84 @@ test.describe('Data Loading', () => {
   });
 
 });
+
+test.describe('Simulation Features', () => {
+
+  test('Analyze Scenario button triggers analysis', async ({ page }) => {
+    await page.goto('/');
+
+    // Find and click analyze button
+    const analyzeBtn = page.locator('#analyze-btn');
+    await expect(analyzeBtn).toBeVisible();
+    await expect(analyzeBtn).toContainText('Analyze');
+
+    // Click analyze
+    await analyzeBtn.click();
+
+    // Button should show loading state
+    await expect(analyzeBtn).toContainText(/Analyzing|Running/i, { timeout: 5000 });
+
+    // Wait for results (with timeout for API call)
+    // Either results appear or button returns to normal
+    await expect(async () => {
+      const btnText = await analyzeBtn.textContent();
+      const resultsVisible = await page.locator('#stat-hands').isVisible();
+      // Either button returned to Analyze or results are showing
+      expect(btnText?.includes('Analyze') || resultsVisible).toBeTruthy();
+    }).toPass({ timeout: 30000 });
+  });
+
+  test('Run Simulation in Matrix tab works', async ({ page }) => {
+    await page.goto('/');
+
+    // Switch to Matrix tab
+    await page.click('.tab-btn:has-text("Probability Matrix")');
+    await expect(page.locator('#matrix-tab')).toBeVisible();
+
+    // Find run button
+    const runBtn = page.locator('#run-matrix');
+    await expect(runBtn).toBeVisible();
+    await expect(runBtn).toHaveText('Run Simulation');
+
+    // Click run
+    await runBtn.click();
+
+    // Button should show running state
+    await expect(runBtn).toHaveText(/Running|Simulating/i, { timeout: 5000 });
+
+    // Wait for completion (simulation can take time)
+    await expect(async () => {
+      const btnText = await runBtn.textContent();
+      // Either button returned to Run Simulation or matrix results appeared
+      const matrixVisible = await page.locator('.matrix').isVisible();
+      expect(btnText?.includes('Run Simulation') || matrixVisible).toBeTruthy();
+    }).toPass({ timeout: 60000 });
+  });
+
+  test('API health endpoint works', async ({ page, request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/health`);
+    expect(response.ok()).toBeTruthy();
+
+    const data = await response.json();
+    expect(data.status).toBe('ok');
+  });
+
+  test('API simulate endpoint works', async ({ page, request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.post(`${baseUrl}/api/simulate`, {
+      data: {
+        gameVariant: 'omaha4',
+        playerCount: 4,
+        iterations: 100
+      }
+    });
+    expect(response.ok()).toBeTruthy();
+
+    const data = await response.json();
+    expect(data.metadata).toBeDefined();
+    expect(data.statistics).toBeDefined();
+    expect(data.metadata.config.iterations).toBe(100);
+  });
+
+});
