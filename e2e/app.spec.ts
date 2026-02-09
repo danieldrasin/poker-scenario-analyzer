@@ -153,46 +153,48 @@ test.describe('Simulation Features', () => {
     // Click analyze
     await analyzeBtn.click();
 
-    // Button should show loading state (tiered loading: checks R2 first, then API)
-    // Possible states: "Checking pre-computed data...", "Loading data...", "Analyzing..."
-    await expect(analyzeBtn).toContainText(/Checking|Loading|Analyzing|Running/i, { timeout: 5000 });
-
-    // Wait for results (with timeout for API call)
-    // Either results appear or button returns to normal
+    // Wait for results - Tier 2 data may load instantly so we check for results directly
+    // Either loading state appears briefly OR results show up (with fast Tier 2 data)
     await expect(async () => {
       const btnText = await analyzeBtn.textContent();
       const resultsVisible = await page.locator('#stat-hands').isVisible();
-      // Either button returned to Analyze or results are showing
-      expect(btnText?.includes('Analyze') || resultsVisible).toBeTruthy();
+      const isLoading = /Checking|Loading|Analyzing|Running/i.test(btnText || '');
+      // Either loading state, button returned to Analyze, or results are showing
+      expect(isLoading || btnText?.includes('Analyze') || resultsVisible).toBeTruthy();
     }).toPass({ timeout: 30000 });
+
+    // Ultimately results should appear
+    await expect(page.locator('#stat-hands')).toBeVisible({ timeout: 30000 });
   });
 
   test('Run Simulation in Matrix tab works', async ({ page }) => {
     await page.goto('/');
 
-    // Switch to Matrix tab
+    // Switch to Matrix tab - this now auto-loads the matrix with Tier 2 data
     await page.click('.tab-btn:has-text("Probability Matrix")');
     await expect(page.locator('#matrix-tab')).toBeVisible();
 
     // Find run button
     const runBtn = page.locator('#run-matrix');
     await expect(runBtn).toBeVisible();
-    await expect(runBtn).toHaveText('Run Simulation');
 
-    // Click run
-    await runBtn.click();
-
-    // Button should show running state (tiered loading: checks R2 first, then API)
-    // Possible states: "Checking pre-computed data...", "Loading data...", "Running...", "Simulating..."
-    await expect(runBtn).toContainText(/Checking|Loading|Running|Simulating/i, { timeout: 5000 });
-
-    // Wait for completion (simulation can take time)
+    // Matrix should auto-load with Tier 2 data, OR button shows "Run Simulation"
+    // Wait for either matrix to appear or button to be ready
     await expect(async () => {
-      const btnText = await runBtn.textContent();
-      // Either button returned to Run Simulation or matrix results appeared
       const matrixVisible = await page.locator('.matrix').isVisible();
-      expect(btnText?.includes('Run Simulation') || matrixVisible).toBeTruthy();
-    }).toPass({ timeout: 60000 });
+      const btnText = await runBtn.textContent();
+      // Either matrix is visible (auto-loaded) or button is ready to click
+      expect(matrixVisible || btnText?.includes('Run Simulation') || btnText?.includes('Loading')).toBeTruthy();
+    }).toPass({ timeout: 15000 });
+
+    // If matrix isn't visible yet, click the button
+    const matrixAlreadyVisible = await page.locator('.matrix').isVisible();
+    if (!matrixAlreadyVisible) {
+      await runBtn.click();
+    }
+
+    // Matrix should be visible (either from auto-load or after clicking)
+    await expect(page.locator('.matrix')).toBeVisible({ timeout: 60000 });
   });
 
   test('API health endpoint works', async ({ page, request }) => {
