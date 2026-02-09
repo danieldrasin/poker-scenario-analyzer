@@ -410,18 +410,18 @@ test.describe('Hand Presets', () => {
   });
 
   test('clicking preset updates active state', async ({ page }) => {
-    // First click a non-default preset to ensure it's not active
-    const presetQQ = page.locator('.preset-chip[data-query="pair:QQ:ds"]');
-    await expect(presetQQ).toBeVisible();
+    // Click KK preset (AA is default, so KK should not be active initially)
+    const presetKK = page.locator('.preset-chip[data-query="pair:KK:ds"]');
+    await expect(presetKK).toBeVisible();
 
-    // QQ should not be active initially (AA is the default)
-    await expect(presetQQ).not.toHaveClass(/active/);
+    // KK should not be active initially (AA is the default)
+    await expect(presetKK).not.toHaveClass(/active/);
 
-    // Click QQ preset
-    await presetQQ.click();
+    // Click KK preset
+    await presetKK.click();
 
-    // QQ should now be active
-    await expect(presetQQ).toHaveClass(/active/);
+    // KK should now be active
+    await expect(presetKK).toHaveClass(/active/);
   });
 
   test('different presets can be selected', async ({ page }) => {
