@@ -320,31 +320,27 @@
         <div class="matrix-controls">
           <div class="control-row">
             <div class="control-group">
-              <label>Game</label>
+              <label>Game Variant</label>
               <select id="matrix-game">
                 <option value="omaha4" selected>Omaha 4-Card</option>
                 <option value="omaha5">Omaha 5-Card</option>
-                <option value="holdem">Hold'em</option>
+                <option value="omaha6">Omaha 6-Card</option>
               </select>
             </div>
             <div class="control-group">
-              <label>Players</label>
+              <label>Players at Table</label>
               <select id="matrix-players">
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6" selected>6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
+                <option value="2">2 Players</option>
+                <option value="3">3 Players</option>
+                <option value="4">4 Players</option>
+                <option value="5">5 Players</option>
+                <option value="6" selected>6 Players</option>
+                <option value="7">7 Players</option>
+                <option value="8">8 Players</option>
+                <option value="9">9 Players</option>
               </select>
             </div>
-            <div class="control-group">
-              <label>Iterations</label>
-              <input type="number" id="matrix-iterations" value="50000" min="10000" max="500000" step="10000">
-            </div>
-            <button id="run-matrix" class="primary-btn">Run Simulation</button>
+            <button id="run-matrix" class="secondary-btn" style="display: none;">Refresh</button>
           </div>
         </div>
 

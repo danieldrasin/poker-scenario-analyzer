@@ -89,16 +89,19 @@ test.describe('Matrix Tab', () => {
     await page.click('text=Probability Matrix');
   });
 
-  test('matrix tab has run simulation controls', async ({ page }) => {
-    // Should have iteration input or similar controls
+  test('matrix tab has game and player selectors', async ({ page }) => {
+    // Matrix tab should have controls to explore 3D space (game variant x player count)
     await expect(page.locator('#matrix-tab')).toBeVisible();
+    await expect(page.locator('#matrix-game')).toBeVisible();
+    await expect(page.locator('#matrix-players')).toBeVisible();
   });
 
-  test('run simulation button exists', async ({ page }) => {
-    // The run button has specific id
-    const runBtn = page.locator('#run-matrix');
-    await expect(runBtn).toBeVisible();
-    await expect(runBtn).toHaveText('Run Simulation');
+  test('matrix auto-loads with Tier 2 data', async ({ page }) => {
+    // Matrix should auto-load pre-computed data when tab is opened
+    // Wait for matrix table to appear (auto-loaded)
+    await expect(page.locator('.matrix')).toBeVisible({ timeout: 15000 });
+    // Should show source info indicating pre-computed data
+    await expect(page.locator('.matrix-source-info')).toContainText(/pre-computed|Loaded/i, { timeout: 5000 });
   });
 
 });
@@ -167,34 +170,30 @@ test.describe('Simulation Features', () => {
     await expect(page.locator('#stat-hands')).toBeVisible({ timeout: 30000 });
   });
 
-  test('Run Simulation in Matrix tab works', async ({ page }) => {
+  test('Matrix tab auto-loads and responds to selector changes', async ({ page }) => {
     await page.goto('/');
 
     // Switch to Matrix tab - this now auto-loads the matrix with Tier 2 data
     await page.click('.tab-btn:has-text("Probability Matrix")');
     await expect(page.locator('#matrix-tab')).toBeVisible();
 
-    // Find run button
-    const runBtn = page.locator('#run-matrix');
-    await expect(runBtn).toBeVisible();
+    // Matrix should auto-load with Tier 2 data
+    await expect(page.locator('.matrix')).toBeVisible({ timeout: 15000 });
 
-    // Matrix should auto-load with Tier 2 data, OR button shows "Run Simulation"
-    // Wait for either matrix to appear or button to be ready
-    await expect(async () => {
-      const matrixVisible = await page.locator('.matrix').isVisible();
-      const btnText = await runBtn.textContent();
-      // Either matrix is visible (auto-loaded) or button is ready to click
-      expect(matrixVisible || btnText?.includes('Run Simulation') || btnText?.includes('Loading')).toBeTruthy();
-    }).toPass({ timeout: 15000 });
+    // Verify header shows game variant and player count
+    await expect(page.locator('.matrix-header')).toContainText(/OMAHA4.*6 Players/i);
 
-    // If matrix isn't visible yet, click the button
-    const matrixAlreadyVisible = await page.locator('.matrix').isVisible();
-    if (!matrixAlreadyVisible) {
-      await runBtn.click();
-    }
+    // Change player count - matrix should reload
+    await page.selectOption('#matrix-players', '4');
+    
+    // Wait for matrix to reload with new player count
+    await expect(page.locator('.matrix-header')).toContainText(/4 Players/i, { timeout: 10000 });
 
-    // Matrix should be visible (either from auto-load or after clicking)
-    await expect(page.locator('.matrix')).toBeVisible({ timeout: 60000 });
+    // Change game variant - matrix should reload
+    await page.selectOption('#matrix-game', 'omaha5');
+    
+    // Wait for matrix to reload with new game variant
+    await expect(page.locator('.matrix-header')).toContainText(/OMAHA5/i, { timeout: 10000 });
   });
 
   test('API health endpoint works', async ({ page, request }) => {

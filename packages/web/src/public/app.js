@@ -277,19 +277,36 @@ function initTabs() {
       }
     });
   });
+
+  // Add change listeners for Matrix tab selectors - auto-reload on change
+  const matrixGameSelect = document.getElementById('matrix-game');
+  const matrixPlayersSelect = document.getElementById('matrix-players');
+
+  if (matrixGameSelect) {
+    matrixGameSelect.addEventListener('change', () => {
+      if (matrixAutoLoaded) {
+        autoLoadMatrix();
+      }
+    });
+  }
+
+  if (matrixPlayersSelect) {
+    matrixPlayersSelect.addEventListener('change', () => {
+      if (matrixAutoLoaded) {
+        autoLoadMatrix();
+      }
+    });
+  }
 }
 
 // Auto-load matrix using Tier 2 data (no button click needed)
 async function autoLoadMatrix() {
   const game = document.getElementById('matrix-game').value;
   const players = parseInt(document.getElementById('matrix-players').value, 10);
-  const btn = document.getElementById('run-matrix');
   const container = document.getElementById('matrix-container');
 
   // Show loading state
-  btn.textContent = 'Loading pre-computed data...';
-  btn.disabled = true;
-  container.innerHTML = '<div class="loading-matrix">Loading probability matrix from pre-computed data...</div>';
+  container.innerHTML = '<div class="loading-matrix">Loading probability matrix...</div>';
 
   try {
     // Use TieredDataService to fetch Tier 2 data
@@ -297,10 +314,11 @@ async function autoLoadMatrix() {
 
     if (data && data.statistics) {
       displayMatrix(data);
+      // Show source info below matrix
       const iterations = data.metadata?.config?.iterations || 'N/A';
-      btn.textContent = `Run Simulation`;
-      // Show source info
-      const sourceInfo = source === 'tier2' ? `✓ Loaded ${iterations.toLocaleString()} pre-computed hands` : `✓ Loaded from ${source}`;
+      const sourceInfo = source === 'tier2' 
+        ? `✓ Loaded ${iterations.toLocaleString()} pre-computed hands` 
+        : `✓ Loaded from ${source}`;
       const infoEl = document.createElement('div');
       infoEl.className = 'matrix-source-info';
       infoEl.style.cssText = 'text-align: center; color: #16a34a; font-size: 12px; margin-top: 8px;';
@@ -311,10 +329,7 @@ async function autoLoadMatrix() {
     }
   } catch (error) {
     console.error('Auto-load matrix failed:', error);
-    container.innerHTML = '<div class="matrix-empty">Click "Run Simulation" to generate the probability matrix</div>';
-    btn.textContent = 'Run Simulation';
-  } finally {
-    btn.disabled = false;
+    container.innerHTML = '<div class="matrix-empty">Unable to load pre-computed data. Try refreshing the page.</div>';
   }
 }
 
@@ -1108,6 +1123,27 @@ function displayMatrix(result) {
   // Store matrix data for drill-down
   window.currentMatrixData = result;
 
+  // Helper to get win rate from matrix - handles both Tier 2 (2D array) and old format
+  function getWinRate(rowIndex, colIndex) {
+    // Tier 2 format: 2D array with winRate field
+    if (Array.isArray(matrix) && Array.isArray(matrix[rowIndex])) {
+      const entry = matrix[rowIndex][colIndex];
+      if (entry && typeof entry.winRate !== 'undefined') {
+        return entry.winRate;
+      }
+    }
+    // Old format: flat array with probability field
+    if (Array.isArray(matrix)) {
+      const entry = matrix.find(
+        e => e.playerHandType === rowIndex && e.opponentHandType === colIndex
+      );
+      if (entry && typeof entry.probability !== 'undefined') {
+        return entry.probability;
+      }
+    }
+    return 0;
+  }
+
   let html = `
     <div class="matrix-header" style="margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1130,10 +1166,7 @@ function displayMatrix(result) {
     html += `<tr><td title="${HAND_TYPE_NAMES[rowCode]}">${rowCode}</td>`;
 
     HAND_TYPE_CODES.forEach((colCode, colIndex) => {
-      const entry = matrix.find(
-        e => e.playerHandType === rowIndex && e.opponentHandType === colIndex
-      );
-      const prob = entry ? entry.probability : 0;
+      const prob = getWinRate(rowIndex, colIndex);
       const heatClass = getHeatClass(prob);
       html += `<td class="${heatClass} clickable"
                    data-player-type="${rowIndex}"
