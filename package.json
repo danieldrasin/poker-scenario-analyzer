@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Monte Carlo poker simulation engine with support for multiple game variants",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
@@ -13,11 +14,18 @@
     "test:e2e:live": "LIVE_TEST=true playwright test",
     "cli": "npm run start --workspace=@poker-sim/cli --",
     "start:web": "npm run start --workspace=@poker-sim/web",
-    "dev:web": "npm run dev --workspace=@poker-sim/web"
+    "dev:web": "npm run dev --workspace=@poker-sim/web",
+    "tier2:generate": "node scripts/generate-tier2-data.js --generate",
+    "tier2:upload": "node scripts/generate-tier2-data.js --upload",
+    "tier2:all": "node scripts/generate-tier2-data.js --all",
+    "tier2:list": "node scripts/generate-tier2-data.js --list"
   },
   "devDependencies": {
     "typescript": "^5.3.0",
     "@types/node": "^20.10.0",
     "@playwright/test": "^1.40.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.500.0"
   }
 }
