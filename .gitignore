@@ -36,3 +36,4 @@ coverage/
 
 # Mac app bundle (development only)
 Poker Simulator.app/
+.vercel
