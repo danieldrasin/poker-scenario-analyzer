@@ -223,3 +223,310 @@ test.describe('Simulation Features', () => {
   });
 
 });
+
+test.describe('Tier 2 Data (R2 Pre-computed)', () => {
+
+  test('API data endpoint returns R2 source with 1M iterations', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/data?game=omaha4&players=6`);
+    expect(response.ok()).toBeTruthy();
+
+    const data = await response.json();
+    // Should come from tier2-r2 (Cloudflare R2)
+    expect(data.source).toBe('tier2-r2');
+    // Should have 1 million iterations
+    expect(data.data.metadata.config.iterations).toBe(1000000);
+    // Should have game variant
+    expect(data.data.metadata.config.gameVariant).toBe('omaha4');
+    expect(data.data.metadata.config.playerCount).toBe(6);
+  });
+
+  test('R2 data has valid statistics structure', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/data?game=omaha4&players=6`);
+    const data = await response.json();
+
+    // Check statistics structure
+    expect(data.data.statistics).toBeDefined();
+    expect(data.data.statistics.handTypeDistribution).toBeDefined();
+    expect(data.data.statistics.overallWinRate).toBeDefined();
+    expect(data.data.statistics.probabilityMatrix).toBeDefined();
+
+    // Should have 9 hand types
+    expect(data.data.statistics.handTypeDistribution.length).toBe(9);
+  });
+
+  test('R2 data has valid probability matrix', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/data?game=omaha4&players=6`);
+    const data = await response.json();
+
+    const matrix = data.data.statistics.probabilityMatrix;
+    // Should be 9x9 matrix (9 hand types)
+    expect(matrix.length).toBe(9);
+    expect(matrix[0].length).toBe(9);
+
+    // Check a specific cell has expected structure
+    const flushVsTwoPair = matrix[5][2]; // Flush vs Two Pair
+    expect(flushVsTwoPair.heroHand).toBe('Flush');
+    expect(flushVsTwoPair.oppHand).toBe('Two Pair');
+    expect(flushVsTwoPair.winRate).toBeDefined();
+    expect(typeof flushVsTwoPair.winRate).toBe('number');
+  });
+
+  test('R2 data available for all game variants', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const variants = ['omaha4', 'omaha5', 'omaha6'];
+
+    for (const variant of variants) {
+      const response = await request.get(`${baseUrl}/api/data?game=${variant}&players=6`);
+      expect(response.ok()).toBeTruthy();
+      const data = await response.json();
+      expect(data.source).toBe('tier2-r2');
+      expect(data.data.metadata.config.gameVariant).toBe(variant);
+    }
+  });
+
+});
+
+test.describe('Results Accuracy', () => {
+
+  test('win rate is reasonable for 6 players', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/data?game=omaha4&players=6`);
+    const data = await response.json();
+
+    const winRate = data.data.statistics.overallWinRate;
+    // With 6 players, expected win rate ~16.7% (1/6), allow 10-25% range
+    expect(winRate).toBeGreaterThan(10);
+    expect(winRate).toBeLessThan(25);
+  });
+
+  test('win rate decreases with more players', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+
+    const response2p = await request.get(`${baseUrl}/api/data?game=omaha4&players=2`);
+    const response6p = await request.get(`${baseUrl}/api/data?game=omaha4&players=6`);
+    const response9p = await request.get(`${baseUrl}/api/data?game=omaha4&players=9`);
+
+    const winRate2p = (await response2p.json()).data.statistics.overallWinRate;
+    const winRate6p = (await response6p.json()).data.statistics.overallWinRate;
+    const winRate9p = (await response9p.json()).data.statistics.overallWinRate;
+
+    // More players = lower win rate
+    expect(winRate2p).toBeGreaterThan(winRate6p);
+    expect(winRate6p).toBeGreaterThan(winRate9p);
+  });
+
+  test('hand type distribution percentages sum to ~100%', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/data?game=omaha4&players=6`);
+    const data = await response.json();
+
+    const distribution = data.data.statistics.handTypeDistribution;
+    const totalPercentage = distribution.reduce((sum: number, h: any) => sum + h.percentage, 0);
+
+    // Should sum to approximately 100% (allow small floating point variance)
+    expect(totalPercentage).toBeGreaterThan(99);
+    expect(totalPercentage).toBeLessThan(101);
+  });
+
+  test('stronger hands beat weaker hands more often', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/data?game=omaha4&players=6`);
+    const data = await response.json();
+
+    const matrix = data.data.statistics.probabilityMatrix;
+
+    // Flush (index 5) vs Two Pair (index 2) - Flush should win most of the time
+    const flushVsTwoPair = matrix[5][2];
+    expect(flushVsTwoPair.winRate).toBeGreaterThan(90);
+
+    // Full House (index 6) vs Flush (index 5) - Full House should win most
+    const fullHouseVsFlush = matrix[6][5];
+    expect(fullHouseVsFlush.winRate).toBeGreaterThan(90);
+  });
+
+});
+
+test.describe('AI Settings Modal', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test('settings modal has provider dropdown', async ({ page }) => {
+    await page.click('#settings-btn');
+    await expect(page.locator('.modal, .settings-modal, [role="dialog"]')).toBeVisible({ timeout: 5000 });
+
+    // Look for provider select
+    const providerSelect = page.locator('select#ai-provider, select[name="provider"], .provider-select');
+    await expect(providerSelect).toBeVisible({ timeout: 3000 });
+  });
+
+  test('provider dropdown has multiple options', async ({ page }) => {
+    await page.click('#settings-btn');
+    await expect(page.locator('.modal, .settings-modal, [role="dialog"]')).toBeVisible({ timeout: 5000 });
+
+    const providerSelect = page.locator('select#ai-provider, select[name="provider"], .provider-select');
+    // Should have at least Anthropic, OpenAI options
+    const options = providerSelect.locator('option');
+    const count = await options.count();
+    expect(count).toBeGreaterThanOrEqual(2);
+  });
+
+  test('API key input accepts text', async ({ page }) => {
+    await page.click('#settings-btn');
+    await expect(page.locator('.modal, .settings-modal, [role="dialog"]')).toBeVisible({ timeout: 5000 });
+
+    // Find API key input
+    const keyInput = page.locator('input#api-key, input[name="apiKey"], input[type="password"]').first();
+    await expect(keyInput).toBeVisible({ timeout: 3000 });
+
+    // Type a test key
+    await keyInput.fill('sk-test-key-12345');
+    await expect(keyInput).toHaveValue('sk-test-key-12345');
+  });
+
+  test('modal can be closed', async ({ page }) => {
+    await page.click('#settings-btn');
+    const modal = page.locator('.modal, .settings-modal, [role="dialog"]');
+    await expect(modal).toBeVisible({ timeout: 5000 });
+
+    // Try to close via close button or clicking outside
+    const closeBtn = page.locator('.close-btn, .modal-close, button:has-text("Close"), button:has-text("×")');
+    if (await closeBtn.isVisible({ timeout: 1000 })) {
+      await closeBtn.click();
+    } else {
+      // Click outside modal to close
+      await page.click('body', { position: { x: 10, y: 10 } });
+    }
+
+    // Modal should be hidden
+    await expect(modal).toBeHidden({ timeout: 3000 });
+  });
+
+});
+
+test.describe('Hand Presets', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test('clicking preset updates active state', async ({ page }) => {
+    const preset = page.locator('.preset-chip[data-query="pair:AA:ds"]');
+    await expect(preset).toBeVisible();
+
+    // Initially not active
+    await expect(preset).not.toHaveClass(/active/);
+
+    // Click preset
+    await preset.click();
+
+    // Should now be active
+    await expect(preset).toHaveClass(/active/);
+  });
+
+  test('different presets can be selected', async ({ page }) => {
+    const presetAA = page.locator('.preset-chip[data-query="pair:AA:ds"]');
+    const presetKK = page.locator('.preset-chip[data-query="pair:KK:ds"]');
+
+    // Select AA
+    await presetAA.click();
+    await expect(presetAA).toHaveClass(/active/);
+
+    // Select KK - should deactivate AA
+    await presetKK.click();
+    await expect(presetKK).toHaveClass(/active/);
+    await expect(presetAA).not.toHaveClass(/active/);
+  });
+
+  test('multiple preset categories exist', async ({ page }) => {
+    const presets = page.locator('.preset-chip');
+    const count = await presets.count();
+
+    // Should have multiple presets available
+    expect(count).toBeGreaterThanOrEqual(5);
+  });
+
+});
+
+test.describe('Saved Analysis', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    // Switch to Saved Analysis tab
+    await page.click('.tab-btn:has-text("Saved Analysis")');
+    await expect(page.locator('#saved-tab')).toBeVisible();
+  });
+
+  test('saved analysis tab displays', async ({ page }) => {
+    // Tab should be visible
+    await expect(page.locator('#saved-tab')).toBeVisible();
+  });
+
+  test('empty state shows message when no saved analyses', async ({ page }) => {
+    // Check for empty state message or list
+    const emptyMessage = page.locator('text=/no saved|empty|nothing saved/i');
+    const savedList = page.locator('.saved-list, .saved-analyses, #saved-list');
+
+    // Either empty message or empty list should be visible
+    const hasEmpty = await emptyMessage.isVisible({ timeout: 2000 }).catch(() => false);
+    const hasList = await savedList.isVisible({ timeout: 2000 }).catch(() => false);
+
+    expect(hasEmpty || hasList).toBeTruthy();
+  });
+
+});
+
+test.describe('Error Handling', () => {
+
+  test('handles invalid game variant gracefully', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/data?game=invalid&players=6`);
+
+    // Should return an error status or error message
+    if (response.ok()) {
+      const data = await response.json();
+      // If it returns OK, it should have an error field or empty data
+      expect(data.error || data.source === 'error' || !data.data).toBeTruthy();
+    } else {
+      // Non-OK status is acceptable for invalid input
+      expect(response.status()).toBeGreaterThanOrEqual(400);
+    }
+  });
+
+  test('handles invalid player count gracefully', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.get(`${baseUrl}/api/data?game=omaha4&players=99`);
+
+    // Should handle gracefully - either 4xx error or error in response
+    if (response.ok()) {
+      const data = await response.json();
+      expect(data.error || !data.data).toBeTruthy();
+    } else {
+      expect(response.status()).toBeGreaterThanOrEqual(400);
+    }
+  });
+
+  test('simulate endpoint validates input', async ({ request }) => {
+    const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
+    const response = await request.post(`${baseUrl}/api/simulate`, {
+      data: {
+        gameVariant: 'invalid',
+        playerCount: -1,
+        iterations: 0
+      }
+    });
+
+    // Should reject invalid input
+    if (response.ok()) {
+      const data = await response.json();
+      expect(data.error).toBeDefined();
+    } else {
+      expect(response.status()).toBeGreaterThanOrEqual(400);
+    }
+  });
+
+});
