@@ -214,9 +214,10 @@ test.describe('Simulation Features', () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data.metadata).toBeDefined();
-    expect(data.statistics).toBeDefined();
-    expect(data.metadata.config.iterations).toBe(100);
+    expect(data.result).toBeDefined();
+    expect(data.result.metadata).toBeDefined();
+    expect(data.result.statistics).toBeDefined();
+    expect(data.result.metadata.config.iterations).toBe(100);
   });
 
 });

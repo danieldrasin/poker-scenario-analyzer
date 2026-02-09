@@ -138,33 +138,41 @@ function runSimulation(config) {
 
   const duration = Date.now() - startTime;
 
-  // Build result object
+  // Build result object - format must match what app.js expects
   const statistics = {
-    handTypes: handTypeNames.map((name, i) => ({
+    // Client expects 'handTypeDistribution' with 'handType' index
+    handTypeDistribution: handTypeNames.map((name, i) => ({
+      handType: i,
       name,
       count: handTypeCounts[i],
-      percentage: (handTypeCounts[i] / iterations * 100).toFixed(2),
+      percentage: parseFloat((handTypeCounts[i] / iterations * 100).toFixed(2)),
       wins: handTypeWins[i],
-      winRate: handTypeCounts[i] > 0 ? (handTypeWins[i] / handTypeCounts[i] * 100).toFixed(2) : '0.00'
+      winRate: handTypeCounts[i] > 0 ? parseFloat((handTypeWins[i] / handTypeCounts[i] * 100).toFixed(2)) : 0
     })),
-    overallWinRate: (heroWins / iterations * 100).toFixed(2),
-    vsMatrix: vsMatrix.map((row, i) =>
+    overallWinRate: parseFloat((heroWins / iterations * 100).toFixed(2)),
+    // Client expects 'probabilityMatrix'
+    probabilityMatrix: vsMatrix.map((row, i) =>
       row.map((count, j) => ({
+        heroHand: handTypeNames[i],
+        oppHand: handTypeNames[j],
         count,
         wins: vsMatrixWins[i][j],
-        winRate: count > 0 ? (vsMatrixWins[i][j] / count * 100).toFixed(2) : '0.00'
+        winRate: count > 0 ? parseFloat((vsMatrixWins[i][j] / count * 100).toFixed(2)) : 0
       }))
     )
   };
 
+  // Client expects response wrapped in 'result'
   return {
-    metadata: {
-      id: `sim_${Date.now()}`,
-      config: { gameVariant, playerCount, iterations },
-      createdAt: new Date().toISOString(),
-      durationMs: duration
-    },
-    statistics
+    result: {
+      metadata: {
+        id: `sim_${Date.now()}`,
+        config: { gameVariant, playerCount, iterations },
+        createdAt: new Date().toISOString(),
+        durationMs: duration
+      },
+      statistics
+    }
   };
 }
 
