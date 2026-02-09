@@ -254,6 +254,9 @@ function initWorkflowHints() {
 
 // ============ TAB NAVIGATION ============
 
+// Track if matrix has been auto-loaded
+let matrixAutoLoaded = false;
+
 function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -266,8 +269,53 @@ function initTabs() {
       // Update content
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       document.getElementById(`${tabId}-tab`).classList.add('active');
+
+      // Auto-load matrix with Tier 2 data on first view
+      if (tabId === 'matrix' && !matrixAutoLoaded) {
+        matrixAutoLoaded = true;
+        autoLoadMatrix();
+      }
     });
   });
+}
+
+// Auto-load matrix using Tier 2 data (no button click needed)
+async function autoLoadMatrix() {
+  const game = document.getElementById('matrix-game').value;
+  const players = parseInt(document.getElementById('matrix-players').value, 10);
+  const btn = document.getElementById('run-matrix');
+  const container = document.getElementById('matrix-container');
+
+  // Show loading state
+  btn.textContent = 'Loading pre-computed data...';
+  btn.disabled = true;
+  container.innerHTML = '<div class="loading-matrix">Loading probability matrix from pre-computed data...</div>';
+
+  try {
+    // Use TieredDataService to fetch Tier 2 data
+    const { source, data } = await TieredDataService.fetchSimulationData(game, players, { forceRefresh: false });
+
+    if (data && data.statistics) {
+      displayMatrix(data);
+      const iterations = data.metadata?.config?.iterations || 'N/A';
+      btn.textContent = `Run Simulation`;
+      // Show source info
+      const sourceInfo = source === 'tier2' ? `✓ Loaded ${iterations.toLocaleString()} pre-computed hands` : `✓ Loaded from ${source}`;
+      const infoEl = document.createElement('div');
+      infoEl.className = 'matrix-source-info';
+      infoEl.style.cssText = 'text-align: center; color: #16a34a; font-size: 12px; margin-top: 8px;';
+      infoEl.textContent = sourceInfo;
+      container.appendChild(infoEl);
+    } else {
+      throw new Error('No data available');
+    }
+  } catch (error) {
+    console.error('Auto-load matrix failed:', error);
+    container.innerHTML = '<div class="matrix-empty">Click "Run Simulation" to generate the probability matrix</div>';
+    btn.textContent = 'Run Simulation';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ============ SCENARIO BUILDER ============
@@ -975,6 +1023,19 @@ function updateMultiwayTable(result) {
 
 function initMatrix() {
   document.getElementById('run-matrix').addEventListener('click', runMatrixSimulation);
+
+  // Auto-reload matrix when game or player count changes (if matrix tab is active)
+  document.getElementById('matrix-game').addEventListener('change', () => {
+    if (document.getElementById('matrix-tab').classList.contains('active')) {
+      autoLoadMatrix();
+    }
+  });
+
+  document.getElementById('matrix-players').addEventListener('change', () => {
+    if (document.getElementById('matrix-tab').classList.contains('active')) {
+      autoLoadMatrix();
+    }
+  });
 }
 
 async function runMatrixSimulation() {

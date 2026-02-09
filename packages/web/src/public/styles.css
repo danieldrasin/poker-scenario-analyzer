@@ -864,6 +864,26 @@ header .subtitle {
   padding: 40px;
 }
 
+.loading-matrix {
+  text-align: center;
+  color: var(--primary);
+  padding: 60px 20px;
+  font-size: 1rem;
+}
+
+.matrix-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 60px 20px;
+}
+
+.matrix-source-info {
+  text-align: center;
+  color: #16a34a;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
 .matrix {
   border-collapse: collapse;
   width: 100%;
