@@ -1,0 +1,16 @@
+{
+  "name": "@poker-sim/storage",
+  "version": "1.0.0",
+  "description": "Storage and serialization for poker simulation results",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@poker-sim/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

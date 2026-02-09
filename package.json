@@ -1,0 +1,23 @@
+{
+  "name": "poker-simulator",
+  "version": "1.0.0",
+  "description": "Monte Carlo poker simulation engine with support for multiple game variants",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "test:e2e": "playwright test",
+    "test:e2e:live": "LIVE_TEST=true playwright test",
+    "cli": "npm run start --workspace=@poker-sim/cli --",
+    "start:web": "npm run start --workspace=@poker-sim/web",
+    "dev:web": "npm run dev --workspace=@poker-sim/web"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0",
+    "@playwright/test": "^1.40.0"
+  }
+}

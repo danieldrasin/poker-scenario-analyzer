@@ -1,0 +1,22 @@
+{
+  "name": "@poker-sim/cli",
+  "version": "1.0.0",
+  "description": "Command-line interface for poker simulation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "poker-sim": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@poker-sim/core": "*",
+    "@poker-sim/storage": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0"
+  }
+}

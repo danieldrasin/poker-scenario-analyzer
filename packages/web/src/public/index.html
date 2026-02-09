@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poker Scenario Analyzer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-content">
+        <div class="header-title">
+          <h1>🎴 Poker Scenario Analyzer</h1>
+          <p class="subtitle">Omaha & Hold'em strategic hand analysis</p>
+        </div>
+        <button class="settings-btn" id="settings-btn" title="AI Settings">⚙️</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- Data Status Indicators -->
+      <div id="data-status" style="display: none;"></div>
+      <div id="storage-status"></div>
+
+      <!-- Tab Navigation -->
+      <nav class="main-tabs">
+        <button class="tab-btn active" data-tab="scenario">Scenario Builder</button>
+        <button class="tab-btn" data-tab="matrix">Probability Matrix</button>
+        <button class="tab-btn" data-tab="saved">Saved Analysis</button>
+      </nav>
+
+      <!-- Scenario Builder Tab -->
+      <section id="scenario-tab" class="tab-content active">
+        <div class="workflow-hint" id="workflow-hint">
+          <span class="hint-icon">💡</span>
+          <span class="hint-text">Build a hand scenario below, then click <strong>Analyze</strong> to see strategic recommendations. Or run a simulation in the <strong>Matrix</strong> tab first, then click cells to explore.</span>
+          <button class="hint-dismiss" id="dismiss-hint">×</button>
+        </div>
+        <div class="scenario-builder">
+          <!-- Game Settings Row -->
+          <div class="settings-row">
+            <div class="setting">
+              <label>Game</label>
+              <select id="game-select">
+                <option value="omaha4" selected>Omaha 4-Card</option>
+                <option value="omaha5">Omaha 5-Card</option>
+                <option value="omaha6">Omaha 6-Card</option>
+                <option value="holdem">Texas Hold'em</option>
+              </select>
+            </div>
+            <div class="setting">
+              <label>Position</label>
+              <select id="position-select">
+                <option value="UTG">UTG (Early)</option>
+                <option value="MP">MP (Middle)</option>
+                <option value="CO">CO (Cutoff)</option>
+                <option value="BTN" selected>BTN (Button)</option>
+                <option value="SB">SB (Small Blind)</option>
+                <option value="BB">BB (Big Blind)</option>
+              </select>
+            </div>
+            <div class="setting">
+              <label>Style</label>
+              <select id="style-select">
+                <option value="rock">Rock (Tight-Passive)</option>
+                <option value="tag" selected>TAG (Tight-Aggressive)</option>
+                <option value="lag">LAG (Loose-Aggressive)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Opponents Row -->
+          <div class="settings-row opponents-row">
+            <div class="setting">
+              <label>Opponents</label>
+              <div class="opponent-selector">
+                <button class="opp-btn" data-count="1">1</button>
+                <button class="opp-btn" data-count="2">2</button>
+                <button class="opp-btn" data-count="3">3</button>
+                <button class="opp-btn" data-count="4">4</button>
+                <button class="opp-btn active" data-count="5">5</button>
+                <button class="opp-btn" data-count="6">6</button>
+                <button class="opp-btn" data-count="7">7</button>
+                <button class="opp-btn" data-count="8">8</button>
+              </div>
+            </div>
+            <div class="multiway-alert" id="multiway-alert" style="display: none;">
+              <span class="alert-icon">⚠️</span>
+              <span class="alert-text">Multiway pot: Tighten range, prioritize nut potential!</span>
+            </div>
+          </div>
+
+          <!-- Quick Presets (Primary UI) -->
+          <div class="preset-grid">
+            <button class="preset-chip active" data-query="pair:AA:ds">AA ds</button>
+            <button class="preset-chip" data-query="pair:KK:ds">KK ds</button>
+            <button class="preset-chip" data-query="pair:TT+:ds">TT+ ds</button>
+            <button class="preset-chip" data-query="run:A+:ds">Rundown ds</button>
+            <button class="preset-chip" data-query="dpair:any:ds">DblPair ds</button>
+            <button class="preset-chip" data-query="bway:any:ds">Bway ds</button>
+            <button class="preset-chip" data-query="pair:any:any">Any Pair</button>
+            <button class="preset-chip" data-query="any:any:any">Any Hand</button>
+          </div>
+
+          <!-- Compact Custom Builder -->
+          <div class="compact-builder">
+            <div class="builder-row">
+              <div class="builder-cell">
+                <select id="structure-select" class="compact-select">
+                  <option value="pair" selected>Pair</option>
+                  <option value="dpair">Double Pair</option>
+                  <option value="run">Rundown</option>
+                  <option value="bway">Broadway</option>
+                  <option value="any">Any</option>
+                </select>
+              </div>
+
+              <div class="builder-cell rank-cell" id="rank-cell">
+                <button class="rank-adj" id="rank-down">◀</button>
+                <span class="rank-display" id="rank-display">A</span>
+                <button class="rank-adj" id="rank-up">▶</button>
+                <div class="rank-mod-toggle">
+                  <button class="rank-mod" data-mod="-" title="or worse">−</button>
+                  <button class="rank-mod active" data-mod="=" title="exactly">=</button>
+                  <button class="rank-mod" data-mod="+" title="or better">+</button>
+                </div>
+              </div>
+
+              <div class="builder-cell">
+                <select id="suit-select" class="compact-select">
+                  <option value="ds" selected>DS</option>
+                  <option value="ss">SS</option>
+                  <option value="r">Rainbow</option>
+                  <option value="any">Any</option>
+                </select>
+              </div>
+
+              <div class="builder-cell" id="sidecards-cell">
+                <select id="sidecards-select" class="compact-select">
+                  <option value="any" selected>Any</option>
+                  <option value="conn">Conn</option>
+                  <option value="bway">Bway</option>
+                  <option value="wheel">Wheel</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Tags for active constraints -->
+            <div class="constraint-tags" id="constraint-tags">
+              <span class="tag">Pair <button class="tag-remove" data-tag="structure">×</button></span>
+              <span class="tag">Aces <button class="tag-remove" data-tag="rank">×</button></span>
+              <span class="tag">DS <button class="tag-remove" data-tag="suit">×</button></span>
+            </div>
+          </div>
+
+          <!-- Query Preview (Compact) -->
+          <div class="query-preview">
+            <div class="query-header">
+              <code id="query-code">pair:AA:ds</code>
+              <button id="copy-query" class="icon-btn" title="Copy">📋</button>
+            </div>
+            <div class="query-description" id="query-description">Pair Aces double-suited</div>
+            <div class="sample-hands">
+              <div class="hand-cards" id="hand-cards">
+                <span class="example-hand">A♠A♥K♠Q♥</span>
+                <span class="example-hand">A♦A♣8♦6♣</span>
+                <span class="example-hand">A♠A♥5♠3♥</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strategy Insight Panel -->
+          <div class="strategy-insight" id="strategy-insight">
+            <div class="insight-header">
+              <span class="insight-title">Strategy Insight</span>
+              <span class="insight-context" id="insight-context">TAG @ BTN vs 5</span>
+            </div>
+            <div class="insight-recommendation" id="insight-recommendation">
+              <span class="rec-badge rec-raise" id="rec-badge">RAISE</span>
+              <span class="rec-text" id="rec-text">Premium hand, strong in position</span>
+            </div>
+            <div class="insight-details">
+              <div class="insight-row">
+                <span class="insight-label">Nut Potential:</span>
+                <div class="mini-bar">
+                  <div class="mini-bar-fill" id="nut-potential-bar" style="width: 85%"></div>
+                </div>
+                <span class="insight-value" id="nut-potential-val">High</span>
+              </div>
+              <div class="insight-row">
+                <span class="insight-label">Multiway Viability:</span>
+                <div class="mini-bar">
+                  <div class="mini-bar-fill" id="multiway-bar" style="width: 60%"></div>
+                </div>
+                <span class="insight-value" id="multiway-val">Medium</span>
+              </div>
+            </div>
+            <div class="insight-warnings" id="insight-warnings">
+              <!-- Warnings populated by JS -->
+            </div>
+            <div class="insight-actions">
+              <button class="explain-btn" id="explain-btn">
+                <span>💬</span> Explain This
+              </button>
+            </div>
+          </div>
+
+          <!-- Analyze Button -->
+          <button id="analyze-btn" class="primary-btn">
+            <span class="btn-icon">🔍</span>
+            <span class="btn-text">Analyze Scenario</span>
+          </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="results-section" style="display: none;">
+          <!-- Results Header with Actions -->
+          <div class="results-header">
+            <h3 id="results-title">Analysis Results</h3>
+            <div class="results-actions">
+              <button class="action-link" onclick="switchToMatrixTab()">📊 View in Matrix</button>
+            </div>
+          </div>
+          <!-- Summary Stats -->
+          <div class="results-summary">
+            <div class="summary-grid">
+              <div class="stat-card">
+                <div class="stat-value" id="stat-winrate">--</div>
+                <div class="stat-label">Win Rate</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-hands">--</div>
+                <div class="stat-label">Hands Analyzed</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="stat-frequency">--</div>
+                <div class="stat-label">Occurrence</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Strategic Scores -->
+          <div class="strategic-scores">
+            <h4>Strategic Profile</h4>
+            <div class="score-bars">
+              <div class="score-row">
+                <span class="score-label">Nut Potential</span>
+                <div class="score-bar">
+                  <div class="score-fill" id="score-nut" style="width: 0%"></div>
+                </div>
+                <span class="score-value" id="score-nut-val">--</span>
+              </div>
+              <div class="score-row">
+                <span class="score-label">RNIO Risk</span>
+                <div class="score-bar risk">
+                  <div class="score-fill" id="score-rnio" style="width: 0%"></div>
+                </div>
+                <span class="score-value" id="score-rnio-val">--</span>
+              </div>
+              <div class="score-row">
+                <span class="score-label">Multiway Strength</span>
+                <div class="score-bar">
+                  <div class="score-fill" id="score-multiway" style="width: 0%"></div>
+                </div>
+                <span class="score-value" id="score-multiway-val">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flop Guidance -->
+          <div class="flop-guidance">
+            <h4>What to Look For on the Flop</h4>
+            <div class="flop-columns">
+              <div class="flop-column good">
+                <h5>✓ Good Flops</h5>
+                <ul id="good-flops">
+                  <li>Dry, rainbow boards</li>
+                  <li>Top set opportunities</li>
+                  <li>Nut flush draws</li>
+                </ul>
+              </div>
+              <div class="flop-column danger">
+                <h5>⚠ Dangerous Flops</h5>
+                <ul id="danger-flops">
+                  <li>Monotone without nut FD</li>
+                  <li>Very connected boards</li>
+                  <li>Paired + coordinated</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Multiway Adjustment -->
+          <div class="multiway-table">
+            <h4>Win Rate by Opponents</h4>
+            <table id="multiway-results">
+              <thead>
+                <tr>
+                  <th>Opponents</th>
+                  <th>Win Rate</th>
+                  <th>Nut Required?</th>
+                  <th>Strategy</th>
+                </tr>
+              </thead>
+              <tbody id="multiway-body">
+                <!-- Filled by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Matrix Tab -->
+      <section id="matrix-tab" class="tab-content">
+        <div class="matrix-intro">
+          <p>📊 <strong>Click any cell</strong> to explore that matchup in the Scenario Builder</p>
+        </div>
+        <div class="matrix-controls">
+          <div class="control-row">
+            <div class="control-group">
+              <label>Game</label>
+              <select id="matrix-game">
+                <option value="omaha4" selected>Omaha 4-Card</option>
+                <option value="omaha5">Omaha 5-Card</option>
+                <option value="holdem">Hold'em</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>Players</label>
+              <select id="matrix-players">
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6" selected>6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>Iterations</label>
+              <input type="number" id="matrix-iterations" value="50000" min="10000" max="500000" step="10000">
+            </div>
+            <button id="run-matrix" class="primary-btn">Run Simulation</button>
+          </div>
+        </div>
+
+        <div id="matrix-progress" class="progress-container" style="display: none;">
+          <div class="progress-bar">
+            <div id="matrix-progress-fill" class="progress-fill"></div>
+          </div>
+          <span id="matrix-progress-text">0%</span>
+        </div>
+
+        <div id="matrix-container" class="matrix-display">
+          <p class="placeholder">Run a simulation to see the probability matrix</p>
+        </div>
+      </section>
+
+      <!-- Saved Tab -->
+      <section id="saved-tab" class="tab-content">
+        <div class="saved-header">
+          <h3>Saved Simulations</h3>
+          <button id="refresh-saved" class="icon-btn" title="Refresh">🔄</button>
+        </div>
+        <div id="saved-list" class="saved-list">
+          <p class="loading">Loading...</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Poker Scenario Analyzer v2.0</p>
+    </footer>
+  </div>
+
+  <!-- AI Settings Modal -->
+  <div class="modal-overlay" id="settings-modal" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🤖 AI Coach Settings</h3>
+        <button class="modal-close" id="close-settings">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="settings-intro">Connect your own AI account to enable explanations and coaching. Your API key is stored locally and never sent to our servers.</p>
+
+        <div class="setting-group">
+          <label>AI Provider</label>
+          <select id="ai-provider">
+            <option value="anthropic" selected>Anthropic (Claude)</option>
+            <option value="openai">OpenAI (GPT-4)</option>
+          </select>
+        </div>
+
+        <div class="setting-group">
+          <label>API Key</label>
+          <div class="key-input-group">
+            <input type="password" id="ai-api-key" placeholder="Enter your API key...">
+            <button class="toggle-visibility" id="toggle-key-visibility">👁️</button>
+          </div>
+          <p class="setting-hint">
+            <span id="provider-hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></span>
+          </p>
+        </div>
+
+        <div class="setting-group">
+          <button class="test-connection-btn" id="test-connection">Test Connection</button>
+          <span class="connection-status" id="connection-status"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary-btn" id="cancel-settings">Cancel</button>
+        <button class="primary-btn" id="save-settings">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Coach Panel -->
+  <div class="ai-panel" id="ai-panel" style="display: none;">
+    <div class="ai-panel-header">
+      <span class="ai-panel-title">🎓 AI Coach</span>
+      <div class="ai-panel-actions">
+        <button class="ai-panel-btn" id="new-chat" title="New conversation">🔄</button>
+        <button class="ai-panel-btn" id="close-ai-panel" title="Close">×</button>
+      </div>
+    </div>
+    <div class="ai-panel-messages" id="ai-messages">
+      <!-- Messages populated by JS -->
+    </div>
+    <div class="ai-panel-input">
+      <input type="text" id="ai-input" placeholder="Ask a follow-up question...">
+      <button class="send-btn" id="send-ai-message">Send</button>
+    </div>
+  </div>
+
+  <!-- No API Key Prompt -->
+  <div class="no-key-prompt" id="no-key-prompt" style="display: none;">
+    <p>To use AI explanations, you'll need to configure your API key.</p>
+    <button class="primary-btn small" id="open-settings-from-prompt">Configure AI</button>
+  </div>
+
+  <script src="poker-stats.js"></script>
+  <script src="data-manager.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

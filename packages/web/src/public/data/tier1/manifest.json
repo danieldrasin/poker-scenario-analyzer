@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-02-09T05:53:21.995Z",
+  "variants": [
+    "omaha4",
+    "omaha5",
+    "omaha6"
+  ],
+  "playerCounts": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "iterationsPerConfig": 50000,
+  "files": [
+    {
+      "variant": "omaha4",
+      "filename": "plo4-base.json",
+      "sizeBytes": 270254,
+      "sizeFormatted": "263.9 KB",
+      "compressedFilename": "plo4-base.json.gz",
+      "compressedSizeBytes": 43118,
+      "compressedSizeFormatted": "42.1 KB",
+      "compressionRatio": "84.0%"
+    },
+    {
+      "variant": "omaha5",
+      "filename": "plo5-base.json",
+      "sizeBytes": 241705,
+      "sizeFormatted": "236.0 KB",
+      "compressedFilename": "plo5-base.json.gz",
+      "compressedSizeBytes": 39407,
+      "compressedSizeFormatted": "38.5 KB",
+      "compressionRatio": "83.7%"
+    },
+    {
+      "variant": "omaha6",
+      "filename": "plo6-base.json",
+      "sizeBytes": 181426,
+      "sizeFormatted": "177.2 KB",
+      "compressedFilename": "plo6-base.json.gz",
+      "compressedSizeBytes": 29247,
+      "compressedSizeFormatted": "28.6 KB",
+      "compressionRatio": "83.9%"
+    }
+  ]
+}
