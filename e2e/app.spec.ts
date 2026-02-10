@@ -453,9 +453,13 @@ test.describe('Saved Analysis', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Wait for tab buttons to be ready
+    await expect(page.locator('.tab-btn:has-text("Saved Analysis")')).toBeVisible({ timeout: 5000 });
     // Switch to Saved Analysis tab
     await page.click('.tab-btn:has-text("Saved Analysis")');
-    // Wait for tab to become active (CSS transition may take time)
+    // Wait for the button to become active (indicates JS handler ran)
+    await expect(page.locator('.tab-btn:has-text("Saved Analysis")')).toHaveClass(/active/, { timeout: 5000 });
+    // Then wait for tab content to become visible
     await expect(page.locator('#saved-tab')).toBeVisible({ timeout: 10000 });
   });
 
