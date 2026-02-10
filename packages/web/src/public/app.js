@@ -30,6 +30,64 @@ const state = {
   sideCards: 'any'
 };
 
+// Matrix focus tracking - which cell is currently highlighted
+let matrixFocusedCell = null; // { playerType: 0-8, oppType: 0-8 }
+
+// Update visual focus on matrix cells
+function updateMatrixCellFocus() {
+  // Remove focus from all cells
+  document.querySelectorAll('.matrix td.matrix-cell-focused').forEach(cell => {
+    cell.classList.remove('matrix-cell-focused');
+  });
+
+  // Add focus to the current cell if set
+  if (matrixFocusedCell) {
+    const cell = document.querySelector(
+      `.matrix td[data-player-type="${matrixFocusedCell.playerType}"][data-opp-type="${matrixFocusedCell.oppType}"]`
+    );
+    if (cell) {
+      cell.classList.add('matrix-cell-focused');
+    }
+  }
+}
+
+// Map scenario structure to matrix hand type index
+function structureToHandTypeIndex(structure) {
+  const mapping = {
+    'pair': 1,      // Pair
+    'dpair': 2,     // Two Pair
+    'run': 4,       // Straight
+    'bway': 5,      // Flush (broadway often suited)
+    'any': 0        // High Card
+  };
+  return mapping[structure] ?? 0;
+}
+
+// View in Matrix with highlighting based on current scenario
+function viewInMatrixWithHighlight() {
+  // Determine which cell to highlight based on current scenario state
+  const playerTypeIndex = structureToHandTypeIndex(state.structure);
+
+  // Set focus (use same type for opponent as a reasonable default)
+  matrixFocusedCell = { playerType: playerTypeIndex, oppType: playerTypeIndex };
+
+  // Switch to matrix tab
+  switchToMatrixTab();
+
+  // Apply focus after tab switch (matrix might need to re-render)
+  setTimeout(() => {
+    updateMatrixCellFocus();
+    // Scroll the focused cell into view
+    const focusedCell = document.querySelector('.matrix-cell-focused');
+    if (focusedCell) {
+      focusedCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  }, 100);
+}
+
+// Make functions globally available
+window.viewInMatrixWithHighlight = viewInMatrixWithHighlight;
+
 // ============ INTRO CARD MANAGEMENT ============
 // Collapsible onboarding cards with localStorage persistence
 
@@ -1212,7 +1270,11 @@ function displayMatrix(result) {
     HAND_TYPE_CODES.forEach((colCode, colIndex) => {
       const pct = getThreatPct(rowIndex, colIndex);
       const heatClass = getThreatHeatClass(pct);
-      html += `<td class="${heatClass} clickable"
+      const isFocused = matrixFocusedCell &&
+                        matrixFocusedCell.playerType === rowIndex &&
+                        matrixFocusedCell.oppType === colIndex;
+      const focusedClass = isFocused ? ' matrix-cell-focused' : '';
+      html += `<td class="${heatClass} clickable${focusedClass}"
                    data-player-type="${rowIndex}"
                    data-opp-type="${colIndex}"
                    data-prob="${pct.toFixed(2)}"
@@ -1302,6 +1364,10 @@ function drillDownFromMatrix(playerHandType, oppHandType, probability, options =
   const { triggerAICoach = false } = options;
   const playerTypeName = HAND_TYPE_NAMES[HAND_TYPE_CODES[playerHandType]];
   const oppTypeName = HAND_TYPE_NAMES[HAND_TYPE_CODES[oppHandType]];
+
+  // Track focused cell for highlighting
+  matrixFocusedCell = { playerType: playerHandType, oppType: oppHandType };
+  updateMatrixCellFocus();
 
   // Get game variant and player count from the current matrix data
   const matrixData = window.currentMatrixData;
@@ -1394,12 +1460,87 @@ function drillDownFromMatrix(playerHandType, oppHandType, probability, options =
     });
   }, 3000);
 
-  // If AI Coach was requested, trigger it after a short delay
+  // If AI Coach was requested, check config first then trigger
   if (triggerAICoach) {
     setTimeout(() => {
-      const explainBtn = document.getElementById('explain-btn');
-      if (explainBtn) explainBtn.click();
+      triggerAICoachWithConfigCheck();
     }, 500);
+  }
+}
+
+// Trigger AI Coach with configuration check
+function triggerAICoachWithConfigCheck() {
+  // Check if API key is configured
+  if (AICoach.apiKey && AICoach.apiKey.trim()) {
+    // Configured - proceed directly
+    const explainBtn = document.getElementById('explain-btn');
+    if (explainBtn) explainBtn.click();
+  } else {
+    // Not configured - show settings modal with callback
+    showAIConfigPrompt();
+  }
+}
+
+// Show AI configuration prompt before using AI Coach
+function showAIConfigPrompt() {
+  const settingsModal = document.getElementById('settings-modal');
+  if (!settingsModal) return;
+
+  // Show settings modal
+  settingsModal.style.display = 'flex';
+
+  // Add a one-time listener for when modal closes
+  const checkConfigOnClose = () => {
+    // Remove listener
+    settingsModal.removeEventListener('click', backdropClickHandler);
+
+    // Check if now configured
+    setTimeout(() => {
+      if (AICoach.apiKey && AICoach.apiKey.trim()) {
+        // Now configured - trigger AI Coach
+        const explainBtn = document.getElementById('explain-btn');
+        if (explainBtn) explainBtn.click();
+      } else {
+        // Still not configured - ask if user wants to proceed anyway
+        showProceedWithoutConfigPrompt();
+      }
+    }, 100);
+  };
+
+  // Listen for backdrop click to close
+  const backdropClickHandler = (e) => {
+    if (e.target === settingsModal) {
+      checkConfigOnClose();
+    }
+  };
+  settingsModal.addEventListener('click', backdropClickHandler);
+
+  // Also listen for save/cancel buttons
+  const saveBtn = document.getElementById('save-settings');
+  const cancelBtn = document.getElementById('cancel-settings');
+
+  const buttonHandler = () => {
+    saveBtn?.removeEventListener('click', buttonHandler);
+    cancelBtn?.removeEventListener('click', buttonHandler);
+    settingsModal.removeEventListener('click', backdropClickHandler);
+    setTimeout(checkConfigOnClose, 100);
+  };
+
+  saveBtn?.addEventListener('click', buttonHandler, { once: true });
+  cancelBtn?.addEventListener('click', buttonHandler, { once: true });
+}
+
+// Ask user if they want to proceed without AI configuration
+function showProceedWithoutConfigPrompt() {
+  const proceed = confirm(
+    "You haven't configured an AI provider yet.\n\n" +
+    "The AI Coach provides deep insights and personalized recommendations for your poker scenarios.\n\n" +
+    "Would you like to proceed to the AI Coach anyway? (You can configure it there)"
+  );
+
+  if (proceed) {
+    const explainBtn = document.getElementById('explain-btn');
+    if (explainBtn) explainBtn.click();
   }
 }
 
@@ -1460,6 +1601,9 @@ function switchToMatrixTab() {
   // Remove context card
   const card = document.querySelector('.matrix-context-card');
   if (card) card.remove();
+
+  // Re-apply matrix cell focus if set
+  updateMatrixCellFocus();
 }
 
 // Make function globally available

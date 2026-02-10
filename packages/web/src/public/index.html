@@ -227,7 +227,7 @@
           <div class="results-header">
             <h3 id="results-title">Analysis Results</h3>
             <div class="results-actions">
-              <button class="action-link" onclick="switchToMatrixTab()">📊 View in Matrix</button>
+              <button class="action-link" onclick="viewInMatrixWithHighlight()">📊 View in Matrix</button>
             </div>
           </div>
           <!-- Summary Stats -->
@@ -398,7 +398,17 @@
         <button class="modal-close" id="close-settings">×</button>
       </div>
       <div class="modal-body">
-        <p class="settings-intro">Connect your own AI account to enable explanations and coaching. Your API key is stored locally and never sent to our servers.</p>
+        <div class="settings-intro">
+          <p><strong>🎯 Get personalized poker insights</strong></p>
+          <p>The AI Coach analyzes your specific scenario and provides:</p>
+          <ul>
+            <li>Whether your hand is playable and why</li>
+            <li>Key statistics (set probability, flush draw odds, etc.)</li>
+            <li>What to look for on the flop</li>
+            <li>Warnings for your specific situation</li>
+          </ul>
+          <p class="privacy-note">🔒 Your API key is stored locally and never sent to our servers.</p>
+        </div>
 
         <div class="setting-group">
           <label>AI Provider</label>
