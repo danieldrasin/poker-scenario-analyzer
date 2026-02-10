@@ -10,13 +10,6 @@
       "runtime": "nodejs20.x"
     }
   },
-  "rewrites": [
-    { "source": "/api/data", "destination": "/api/data.js" },
-    { "source": "/api/health", "destination": "/api/health.js" },
-    { "source": "/api/variants", "destination": "/api/variants.js" },
-    { "source": "/api/simulate", "destination": "/api/simulate.js" },
-    { "source": "/api/:path*", "destination": "/api/index.js" }
-  ],
   "headers": [
     {
       "source": "/data/(.*)",
