@@ -2211,15 +2211,113 @@ footer {
   color: #16a34a;
 }
 
+/* Matrix Zoom Toggle Button */
+.zoom-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text);
+  transition: all 0.15s;
+}
+
+.zoom-toggle-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.zoom-icon {
+  font-size: 1rem;
+}
+
+/* Matrix wrapper for scroll and zoom control */
+#matrix-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  transition: transform 0.3s ease;
+}
+
+/* Zoomed out mode - fit matrix to screen */
+#matrix-container.zoomed-out {
+  overflow: visible;
+}
+
+#matrix-container.zoomed-out .matrix {
+  font-size: 0.6rem;
+  transform-origin: top left;
+}
+
+#matrix-container.zoomed-out .matrix td,
+#matrix-container.zoomed-out .matrix th {
+  padding: 2px 4px;
+  min-width: auto;
+}
+
+#matrix-container.zoomed-out .cell-ai-btn {
+  display: none;
+}
+
+#matrix-container.zoomed-out .cell-value {
+  font-size: 0.55rem;
+}
+
+/* Sticky first column for horizontal scroll */
+.matrix th:first-child,
+.matrix td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--card-bg);
+}
+
+.matrix th:first-child {
+  z-index: 3;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .app {
+    padding: 12px;
+  }
+
+  header {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  header h1 {
+    font-size: 1.2rem;
+  }
+
   .settings-row {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+  }
+
+  .setting {
+    width: 100%;
+  }
+
+  .setting select {
+    width: 100%;
   }
 
   .summary-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
   }
 
   .flop-columns {
@@ -2227,12 +2325,18 @@ footer {
   }
 
   .score-row {
-    grid-template-columns: 100px 1fr 40px;
+    grid-template-columns: 80px 1fr 40px;
+    font-size: 0.85rem;
   }
 
   .control-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  .control-group {
+    width: 100%;
   }
 
   .control-group select,
@@ -2240,12 +2344,167 @@ footer {
     width: 100%;
   }
 
-  .primary-btn {
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .main-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: calc(50% - 3px);
+    padding: 10px 8px;
+    font-size: 0.85rem;
+  }
+
+  /* Intro cards mobile */
+  .intro-card-body {
+    padding: 0 12px 12px 12px;
+    font-size: 0.85rem;
+  }
+
+  .intro-card-title {
+    font-size: 0.85rem;
+  }
+
+  /* Matrix mobile */
+  .matrix-controls .control-row {
+    flex-direction: column;
+  }
+
+  .zoom-toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .matrix {
+    font-size: 0.75rem;
+  }
+
+  .matrix td,
+  .matrix th {
+    padding: 6px 4px;
+    min-width: 36px;
+  }
+
+  .matrix th:first-child,
+  .matrix td:first-child {
+    min-width: 32px;
+    font-size: 0.7rem;
+  }
+
+  .cell-ai-btn {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+
+  /* Matrix context card mobile */
+  .matrix-context-card {
+    margin-bottom: 12px;
+  }
+
+  .matrix-context-body {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .matchup-vs {
+    font-size: 0.95rem;
+  }
+
+  .matrix-settings-summary {
     width: 100%;
   }
 
+  .setting-pill {
+    font-size: 0.8rem;
+    padding: 4px 10px;
+  }
+
+  /* Opponent buttons mobile */
+  .opponent-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .opp-btn {
+    min-width: 36px;
+    padding: 10px 12px;
+  }
+
+  /* Presets mobile */
+  .preset-chips {
+    gap: 6px;
+  }
+
+  .preset-chip {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  /* AI Coach mobile */
+  .ai-coach {
+    padding: 12px;
+  }
+
+  #ai-messages {
+    max-height: 250px;
+  }
+
+  /* Settings modal mobile */
+  .modal {
+    width: 95%;
+    max-width: none;
+    margin: 10px;
+  }
+
+  .modal-body {
+    padding: 12px;
+  }
+
+  .settings-intro {
+    padding: 12px;
+    font-size: 0.85rem;
+  }
+
+  .settings-intro ul {
+    margin-left: 16px;
+  }
+
+  /* Results section mobile */
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .results-actions {
+    width: 100%;
+  }
+
+  .action-link {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
   header h1 {
-    font-size: 1.4rem;
+    font-size: 1rem;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
   }
 
   .main-tabs {
@@ -2254,5 +2513,21 @@ footer {
 
   .tab-btn {
     width: 100%;
+    min-width: auto;
+  }
+
+  .matrix {
+    font-size: 0.65rem;
+  }
+
+  .matrix td,
+  .matrix th {
+    padding: 4px 3px;
+    min-width: 30px;
+  }
+
+  /* Auto-enable zoomed out on very small screens */
+  #matrix-container {
+    overflow-x: auto;
   }
 }

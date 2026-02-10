@@ -88,6 +88,33 @@ function viewInMatrixWithHighlight() {
 // Make functions globally available
 window.viewInMatrixWithHighlight = viewInMatrixWithHighlight;
 
+// ============ MATRIX ZOOM CONTROL ============
+let matrixZoomedOut = false;
+
+function toggleMatrixZoom() {
+  matrixZoomedOut = !matrixZoomedOut;
+  const matrixContainer = document.getElementById('matrix-container');
+  const toggleBtn = document.getElementById('matrix-zoom-toggle');
+
+  if (matrixContainer) {
+    if (matrixZoomedOut) {
+      matrixContainer.classList.add('zoomed-out');
+      if (toggleBtn) {
+        toggleBtn.querySelector('.zoom-label').textContent = 'Normal View';
+        toggleBtn.querySelector('.zoom-icon').textContent = '🔎';
+      }
+    } else {
+      matrixContainer.classList.remove('zoomed-out');
+      if (toggleBtn) {
+        toggleBtn.querySelector('.zoom-label').textContent = 'Fit to Screen';
+        toggleBtn.querySelector('.zoom-icon').textContent = '🔍';
+      }
+    }
+  }
+}
+
+window.toggleMatrixZoom = toggleMatrixZoom;
+
 // ============ INTRO CARD MANAGEMENT ============
 // Collapsible onboarding cards with localStorage persistence
 
