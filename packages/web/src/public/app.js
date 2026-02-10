@@ -1271,19 +1271,20 @@ function drillDownFromMatrix(playerHandType, oppHandType, probability, options =
   const gameSelect = document.getElementById('game-select');
   if (gameSelect) {
     gameSelect.value = gameVariant;
+    gameSelect.classList.add('linked-from-matrix');
     // Trigger change event to update any dependent UI
     gameSelect.dispatchEvent(new Event('change'));
   }
 
-  // Sync opponent count with matrix (playerCount - 1 = opponents)
-  const opponentBtns = document.querySelectorAll('.opp-btn');
-  opponentBtns.forEach(btn => {
+  // Sync player count with matrix (data-count attribute, not data-value)
+  const playerBtns = document.querySelectorAll('.opp-btn');
+  playerBtns.forEach(btn => {
     btn.classList.remove('active', 'linked-from-matrix');
-    if (parseInt(btn.dataset.value, 10) === playerCount - 1) {
+    if (parseInt(btn.dataset.count, 10) === playerCount) {
       btn.classList.add('active', 'linked-from-matrix');
     }
   });
-  state.opponents = playerCount - 1;
+  state.opponents = playerCount;
 
   // Map hand types to scenario builder structures
   const typeToStructure = {
