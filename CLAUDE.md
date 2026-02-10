@@ -43,6 +43,8 @@ If any step fails, fix the issue and repeat until everything passes.
 | `../E2E_TESTING_AND_DEPLOYMENT_GUIDE.md` | Comprehensive E2E testing guide |
 | `../TASK-BREAKDOWN.md` | Task tracking and prioritization |
 | `../Poker-Data-Architecture-Design.docx` | Architecture documentation |
+| `PLAY_ADVISOR_PLAN.md` | **Play Advisor feature plan (phases, model assignments)** |
+| `PLAY_ADVISOR_DESIGN.md` | Play Advisor technical architecture |
 
 ---
 
