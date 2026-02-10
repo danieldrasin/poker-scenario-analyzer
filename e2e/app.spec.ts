@@ -76,8 +76,8 @@ test.describe('Poker Scenario Analyzer', () => {
 
   test('settings button opens AI settings modal', async ({ page }) => {
     await page.click('#settings-btn');
-    // Modal should appear
-    await expect(page.locator('.modal, .settings-modal, [role="dialog"]')).toBeVisible({ timeout: 5000 });
+    // Modal should appear - use specific settings modal ID to avoid matching help modal
+    await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 5000 });
   });
 
 });
@@ -358,7 +358,7 @@ test.describe('AI Settings Modal', () => {
 
   test('settings modal has provider dropdown', async ({ page }) => {
     await page.click('#settings-btn');
-    await expect(page.locator('.modal, .settings-modal, [role="dialog"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 5000 });
 
     // Look for provider select
     const providerSelect = page.locator('select#ai-provider, select[name="provider"], .provider-select');
@@ -367,7 +367,7 @@ test.describe('AI Settings Modal', () => {
 
   test('provider dropdown has multiple options', async ({ page }) => {
     await page.click('#settings-btn');
-    await expect(page.locator('.modal, .settings-modal, [role="dialog"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 5000 });
 
     const providerSelect = page.locator('select#ai-provider, select[name="provider"], .provider-select');
     // Should have at least Anthropic, OpenAI options
@@ -378,7 +378,7 @@ test.describe('AI Settings Modal', () => {
 
   test('API key input accepts text', async ({ page }) => {
     await page.click('#settings-btn');
-    await expect(page.locator('.modal, .settings-modal, [role="dialog"]')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#settings-modal')).toBeVisible({ timeout: 5000 });
 
     // Find API key input
     const keyInput = page.locator('input#api-key, input[name="apiKey"], input[type="password"]').first();
@@ -391,7 +391,7 @@ test.describe('AI Settings Modal', () => {
 
   test('modal can be closed', async ({ page }) => {
     await page.click('#settings-btn');
-    const modal = page.locator('.modal, .settings-modal, [role="dialog"]');
+    const modal = page.locator('#settings-modal');
     await expect(modal).toBeVisible({ timeout: 5000 });
 
     // Use specific close button for settings modal
