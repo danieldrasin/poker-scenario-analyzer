@@ -1,11 +1,16 @@
 /**
- * Vercel Serverless API Handler (Fallback)
+ * Vercel Serverless API Handler
  *
- * This handles API routes not explicitly defined in vercel.json rewrites.
- * Most routes are directly mapped to their respective handler files.
+ * Routes API requests to appropriate handlers.
+ * Handles query-param routes that Vercel may not route correctly.
  */
 
-export default function handler(req, res) {
+import dataHandler from './data.js';
+import healthHandler from './health.js';
+import variantsHandler from './variants.js';
+import simulateHandler from './simulate.js';
+
+export default async function handler(req, res) {
   const { method, url } = req;
   const path = url.replace('/api', '').split('?')[0];
 
@@ -18,7 +23,24 @@ export default function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Server simulations are not supported in static deployment
+  // Route to appropriate handlers
+  if (path === '/health' || path === '/health/') {
+    return healthHandler(req, res);
+  }
+
+  if (path === '/variants' || path === '/variants/') {
+    return variantsHandler(req, res);
+  }
+
+  if (path === '/data' || path === '/data/') {
+    return dataHandler(req, res);
+  }
+
+  if (path === '/simulate' || path === '/simulate/') {
+    return simulateHandler(req, res);
+  }
+
+  // Server simulations storage not supported
   if (path.startsWith('/simulations')) {
     return res.status(200).json({
       message: 'Server-side simulation storage is not available in this deployment.',
