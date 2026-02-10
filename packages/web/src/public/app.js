@@ -1175,7 +1175,10 @@ function displayMatrix(result) {
                    data-player-type="${rowIndex}"
                    data-opp-type="${colIndex}"
                    data-prob="${pct.toFixed(2)}"
-                   title="When you have ${HAND_TYPE_NAMES[rowCode]}, ${pct.toFixed(1)}% of hands have an opponent with ${HAND_TYPE_NAMES[colCode]}">${pct.toFixed(1)}</td>`;
+                   title="When you have ${HAND_TYPE_NAMES[rowCode]}, ${pct.toFixed(1)}% of hands have an opponent with ${HAND_TYPE_NAMES[colCode]}">
+                   <span class="cell-value">${pct.toFixed(1)}</span>
+                   <button class="cell-ai-btn" data-player-type="${rowIndex}" data-opp-type="${colIndex}" data-prob="${pct.toFixed(2)}" title="Ask AI Coach about this matchup">🤖</button>
+                 </td>`;
     });
 
     html += '</tr>';
@@ -1184,13 +1187,27 @@ function displayMatrix(result) {
   html += '</table>';
   container.innerHTML = html;
 
-  // Add click handlers to cells
+  // Add click handlers to cells (clicking the cell value)
   container.querySelectorAll('.matrix td.clickable').forEach(cell => {
-    cell.addEventListener('click', () => {
+    cell.addEventListener('click', (e) => {
+      // Don't trigger if clicking the AI button
+      if (e.target.classList.contains('cell-ai-btn')) return;
+
       const playerType = parseInt(cell.dataset.playerType, 10);
       const oppType = parseInt(cell.dataset.oppType, 10);
       const prob = cell.dataset.prob;
       drillDownFromMatrix(playerType, oppType, prob);
+    });
+  });
+
+  // Add click handlers for AI coach buttons
+  container.querySelectorAll('.cell-ai-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent cell click
+      const playerType = parseInt(btn.dataset.playerType, 10);
+      const oppType = parseInt(btn.dataset.oppType, 10);
+      const prob = btn.dataset.prob;
+      drillDownFromMatrix(playerType, oppType, prob, { triggerAICoach: true });
     });
   });
 
@@ -1240,9 +1257,33 @@ function displayMatrix(result) {
 }
 
 // Drill down from matrix cell to scenario builder
-function drillDownFromMatrix(playerHandType, oppHandType, probability) {
+function drillDownFromMatrix(playerHandType, oppHandType, probability, options = {}) {
+  const { triggerAICoach = false } = options;
   const playerTypeName = HAND_TYPE_NAMES[HAND_TYPE_CODES[playerHandType]];
   const oppTypeName = HAND_TYPE_NAMES[HAND_TYPE_CODES[oppHandType]];
+
+  // Get game variant and player count from the current matrix data
+  const matrixData = window.currentMatrixData;
+  const gameVariant = matrixData?.metadata?.config?.gameVariant || 'omaha4';
+  const playerCount = matrixData?.metadata?.config?.playerCount || 6;
+
+  // Sync game selector with matrix
+  const gameSelect = document.getElementById('game-select');
+  if (gameSelect) {
+    gameSelect.value = gameVariant;
+    // Trigger change event to update any dependent UI
+    gameSelect.dispatchEvent(new Event('change'));
+  }
+
+  // Sync opponent count with matrix (playerCount - 1 = opponents)
+  const opponentBtns = document.querySelectorAll('.opp-btn');
+  opponentBtns.forEach(btn => {
+    btn.classList.remove('active', 'linked-from-matrix');
+    if (parseInt(btn.dataset.value, 10) === playerCount - 1) {
+      btn.classList.add('active', 'linked-from-matrix');
+    }
+  });
+  state.opponents = playerCount - 1;
 
   // Map hand types to scenario builder structures
   const typeToStructure = {
@@ -1271,12 +1312,18 @@ function drillDownFromMatrix(playerHandType, oppHandType, probability) {
     state.rank = 13;  // Kings
   }
 
-  // Update UI elements
+  // Update UI elements with linked-from-matrix styling
   const structSelect = document.getElementById('structure-select');
-  if (structSelect) structSelect.value = state.structure;
+  if (structSelect) {
+    structSelect.value = state.structure;
+    structSelect.classList.add('linked-from-matrix');
+  }
 
   const suitSelect = document.getElementById('suit-select');
-  if (suitSelect) suitSelect.value = state.suitedness;
+  if (suitSelect) {
+    suitSelect.value = state.suitedness;
+    suitSelect.classList.add('linked-from-matrix');
+  }
 
   // Update all displays
   updateRankDisplay();
@@ -1293,25 +1340,49 @@ function drillDownFromMatrix(playerHandType, oppHandType, probability) {
   document.getElementById('scenario-tab').classList.add('active');
 
   // Show context of where user came from
-  showMatrixContext(playerTypeName, oppTypeName, probability);
+  showMatrixContext(playerTypeName, oppTypeName, probability, gameVariant, playerCount);
 
   // Scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Clear linked styling after animation
+  setTimeout(() => {
+    document.querySelectorAll('.linked-from-matrix').forEach(el => {
+      el.classList.remove('linked-from-matrix');
+    });
+  }, 3000);
+
+  // If AI Coach was requested, trigger it after a short delay
+  if (triggerAICoach) {
+    setTimeout(() => {
+      const explainBtn = document.getElementById('explain-btn');
+      if (explainBtn) explainBtn.click();
+    }, 500);
+  }
 }
 
-function showMatrixContext(playerType, oppType, probability) {
+function showMatrixContext(playerType, oppType, probability, gameVariant, playerCount) {
   // Remove any existing context
   const existing = document.querySelector('.matrix-context-banner');
   if (existing) existing.remove();
+
+  const gameLabel = {
+    'omaha4': '4-Card Omaha',
+    'omaha5': '5-Card Omaha',
+    'omaha6': '6-Card Omaha',
+    'holdem': 'Texas Hold\'em'
+  }[gameVariant] || gameVariant.toUpperCase();
 
   // Create context banner
   const banner = document.createElement('div');
   banner.className = 'matrix-context-banner';
   banner.innerHTML = `
     <span class="back-to-matrix" onclick="switchToMatrixTab()">← Back to Matrix</span>
-    <span class="context-badge">Exploring: <strong>${playerType}</strong> vs ${oppType} (${probability}%)</span>
+    <span class="context-badge">
+      <span class="linked-badge">From Matrix</span>
+      ${gameLabel} • ${playerCount}P • <strong>${playerType}</strong> vs ${oppType} (${probability}%)
+    </span>
   `;
-  banner.style.cssText = 'display: flex; align-items: center; margin-bottom: 12px; padding: 10px 0;';
 
   // Insert at top of scenario builder
   const scenarioBuilder = document.querySelector('.scenario-builder');
