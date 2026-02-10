@@ -227,7 +227,7 @@ test.describe('Simulation Features', () => {
 
 test.describe('Tier 2 Data (R2 Pre-computed)', () => {
 
-  test('API data endpoint returns R2 source with 1M iterations', async ({ request }) => {
+  test('API data endpoint returns R2 source with 100K iterations', async ({ request }) => {
     const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
     const response = await request.get(`${baseUrl}/api/data?game=omaha4&players=6`);
     expect(response.ok()).toBeTruthy();
@@ -235,8 +235,8 @@ test.describe('Tier 2 Data (R2 Pre-computed)', () => {
     const data = await response.json();
     // Should come from tier2-r2 (Cloudflare R2)
     expect(data.source).toBe('tier2-r2');
-    // Should have 1 million iterations
-    expect(data.data.metadata.config.iterations).toBe(1000000);
+    // Should have 100K iterations (matches original Smalltalk model)
+    expect(data.data.metadata.config.iterations).toBe(100000);
     // Should have game variant
     expect(data.data.metadata.config.gameVariant).toBe('omaha4');
     expect(data.data.metadata.config.playerCount).toBe(6);
