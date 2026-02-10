@@ -30,6 +30,44 @@ const state = {
   sideCards: 'any'
 };
 
+// ============ INTRO CARD MANAGEMENT ============
+// Collapsible onboarding cards with localStorage persistence
+
+function initIntroCards() {
+  document.querySelectorAll('.intro-card').forEach(card => {
+    const storageKey = card.dataset.storageKey;
+    if (storageKey && localStorage.getItem(storageKey) === 'true') {
+      card.classList.add('collapsed');
+    }
+  });
+}
+
+function toggleIntroCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+
+  if (card.classList.contains('collapsed')) {
+    card.classList.remove('collapsed');
+    const storageKey = card.dataset.storageKey;
+    if (storageKey) localStorage.removeItem(storageKey);
+  } else {
+    collapseIntroCard(cardId);
+  }
+}
+
+function collapseIntroCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+
+  card.classList.add('collapsed');
+  const storageKey = card.dataset.storageKey;
+  if (storageKey) localStorage.setItem(storageKey, 'true');
+}
+
+// Make functions globally available for onclick handlers
+window.toggleIntroCard = toggleIntroCard;
+window.collapseIntroCard = collapseIntroCard;
+
 // ============ TIERED DATA SERVICE ============
 // Tier 1: Bundled JSON (instant, limited scenarios)
 // Tier 2: Cloudflare R2 (fast, pre-computed 1M iterations)
@@ -187,6 +225,9 @@ function formatBytes(bytes) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize onboarding intro cards
+  initIntroCards();
+
   // Show deployment timestamp
   const deployInfo = document.getElementById('deploy-info');
   if (deployInfo) {

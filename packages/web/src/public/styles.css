@@ -1095,54 +1095,109 @@ footer {
   50% { opacity: 0.5; }
 }
 
-/* Workflow Hints */
-.workflow-hint {
+/* Onboarding Intro Cards */
+.intro-card {
+  background: linear-gradient(135deg, #dbeafe, #ede9fe);
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.intro-card.collapsed {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+.intro-card-header {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #dbeafe, #e0e7ff);
-  border: 1px solid #93c5fd;
-  border-radius: var(--radius);
-  margin-bottom: 16px;
-  font-size: 0.9rem;
-  color: #1e40af;
+  cursor: pointer;
+  user-select: none;
 }
 
-.hint-icon {
+.intro-card.collapsed .intro-card-header {
+  padding: 10px 16px;
+}
+
+.intro-card-icon {
   font-size: 1.2rem;
   flex-shrink: 0;
 }
 
-.hint-text {
+.intro-card-title {
   flex: 1;
+  font-weight: 600;
+  color: #1e40af;
+  font-size: 0.95rem;
 }
 
-.hint-dismiss {
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  opacity: 0.5;
-  padding: 0 4px;
-}
-
-.hint-dismiss:hover {
-  opacity: 1;
-}
-
-.matrix-intro {
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  text-align: center;
+.intro-card.collapsed .intro-card-title {
+  font-weight: 500;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
-.matrix-intro strong {
+.intro-card-toggle {
+  font-size: 0.8rem;
+  color: #1e40af;
+  transition: transform 0.3s ease;
+}
+
+.intro-card.collapsed .intro-card-toggle {
+  transform: rotate(-90deg);
+  color: var(--text-muted);
+}
+
+.intro-card-body {
+  padding: 0 16px 16px 16px;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.intro-card.collapsed .intro-card-body {
+  display: none;
+}
+
+.intro-card-body p {
+  margin-bottom: 12px;
+}
+
+.intro-card-body p:last-of-type {
+  margin-bottom: 16px;
+}
+
+.intro-card-hint {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+
+.intro-card-hint strong {
   color: var(--primary);
+}
+
+.intro-card-dismiss {
+  display: inline-block;
+  padding: 8px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.intro-card-dismiss:hover {
+  background: var(--primary-dark);
+  transform: scale(1.02);
 }
 
 /* Clickable matrix cells */

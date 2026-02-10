@@ -33,10 +33,17 @@
 
       <!-- Scenario Builder Tab -->
       <section id="scenario-tab" class="tab-content active">
-        <div class="workflow-hint" id="workflow-hint">
-          <span class="hint-icon">💡</span>
-          <span class="hint-text">Build a hand scenario below, then click <strong>Analyze</strong> to see strategic recommendations. Or run a simulation in the <strong>Matrix</strong> tab first, then click cells to explore.</span>
-          <button class="hint-dismiss" id="dismiss-hint">×</button>
+        <!-- Onboarding intro card -->
+        <div class="intro-card" id="scenario-intro" data-storage-key="scenario-intro-collapsed">
+          <div class="intro-card-header" onclick="toggleIntroCard('scenario-intro')">
+            <span class="intro-card-icon">🎯</span>
+            <span class="intro-card-title">Build a hand and see what to expect</span>
+            <span class="intro-card-toggle">▼</span>
+          </div>
+          <div class="intro-card-body">
+            <p>Configure a starting hand scenario — structure, suitedness, table size — and see the odds of making sets, flushes, straights and more. Great for studying spots before you play.</p>
+            <button class="intro-card-dismiss" onclick="collapseIntroCard('scenario-intro')">Got it</button>
+          </div>
         </div>
         <div class="scenario-builder">
           <!-- Game Settings Row -->
@@ -314,8 +321,18 @@
 
       <!-- Matrix Tab -->
       <section id="matrix-tab" class="tab-content">
-        <div class="matrix-intro">
-          <p>📊 <strong>Click any cell</strong> to explore that matchup in the Scenario Builder</p>
+        <!-- Onboarding intro card -->
+        <div class="intro-card" id="matrix-intro" data-storage-key="matrix-intro-collapsed">
+          <div class="intro-card-header" onclick="toggleIntroCard('matrix-intro')">
+            <span class="intro-card-icon">💡</span>
+            <span class="intro-card-title">You made your hand — but how worried should you be?</span>
+            <span class="intro-card-toggle">▼</span>
+          </div>
+          <div class="intro-card-body">
+            <p>This matrix shows the probability that opponents hold each hand type when <strong>you</strong> have a specific hand. A flush feels strong, but if 40% of opponents also have flushes, you need to be cautious. Use this to calibrate your aggression.</p>
+            <p class="intro-card-hint">📊 <strong>Click any cell</strong> to explore that matchup in the Scenario Builder</p>
+            <button class="intro-card-dismiss" onclick="collapseIntroCard('matrix-intro')">Got it</button>
+          </div>
         </div>
         <div class="matrix-controls">
           <div class="control-row">
