@@ -416,6 +416,51 @@
     </div>
   </div>
 
+  <!-- Help Modal for Matrix -->
+  <div class="modal" id="help-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3>📊 Understanding the Threat Landscape Matrix</h3>
+        <button class="modal-close" id="close-help">×</button>
+      </div>
+      <div class="modal-body" style="text-align: left; line-height: 1.6;">
+        <h4>What does this matrix show?</h4>
+        <p>Each cell answers: <strong>"When I have [ROW hand], what % of hands have at least one opponent with [COLUMN hand]?"</strong></p>
+        
+        <h4 style="margin-top: 16px;">Example Reading</h4>
+        <p>If the cell for "One Pair → Two Pair" shows <strong>85%</strong>, that means:</p>
+        <ul style="margin-left: 20px;">
+          <li>When you have One Pair, 85% of all hands dealt will have at least one opponent with Two Pair</li>
+          <li>This is NOT your win rate — it's how often you FACE this hand type</li>
+        </ul>
+        
+        <h4 style="margin-top: 16px;">Why values can exceed 100% across a row</h4>
+        <p>Multiple opponents can have different best hands simultaneously. In a 6-player pot, you might face:</p>
+        <ul style="margin-left: 20px;">
+          <li>One opponent with Two Pair (counted in that column)</li>
+          <li>Another opponent with a Flush (counted in that column)</li>
+          <li>So both columns get incremented for the same hand</li>
+        </ul>
+        
+        <h4 style="margin-top: 16px;">Color Guide</h4>
+        <p><span style="background: #dcfce7; padding: 2px 8px; border-radius: 4px;">Green</span> = Rare threat (you don't face this often)</p>
+        <p><span style="background: #fde047; padding: 2px 8px; border-radius: 4px;">Yellow</span> = Moderate threat (fairly common)</p>
+        <p><span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px;">Red</span> = Very common threat (expect to face this frequently)</p>
+        
+        <h4 style="margin-top: 16px;">Strategic Use</h4>
+        <p>Use this matrix to understand your <strong>vulnerability</strong>:</p>
+        <ul style="margin-left: 20px;">
+          <li>High % in stronger hand columns = your hand is very vulnerable</li>
+          <li>More players at table = higher threat percentages across the board</li>
+          <li>Helps decide whether to fold, call, or raise based on likely opposition</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="primary-btn" id="close-help-btn">Got it!</button>
+      </div>
+    </div>
+  </div>
+
   <!-- AI Coach Panel -->
   <div class="ai-panel" id="ai-panel" style="display: none;">
     <div class="ai-panel-header">

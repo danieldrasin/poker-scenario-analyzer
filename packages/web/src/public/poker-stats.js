@@ -359,8 +359,9 @@ const PokerStats = {
         // Starting hand category performance (if available)
         startingHandPerformance: simStats?.startingCategories,
 
-        // Conditional probabilities: "Given I have X, opponent has Y"
-        matchupProbabilities: this.extractRelevantMatchups(simulationData, state),
+        // THREAT LANDSCAPE: "When I have X, what % of hands have opponent with Y?"
+        // This shows how often you face each type of hand, NOT your win rate against them
+        threatLandscape: this.extractThreatLandscape(simulationData, state),
 
         // Data source indicator for credibility
         dataSource: 'Monte Carlo simulation (' + (simStats?.iterations || 0).toLocaleString() + ' iterations)'
@@ -433,10 +434,13 @@ const PokerStats = {
     return totalHands > 0 ? (totalWins / totalHands * 100) : 0;
   },
 
-  // Extract relevant matchups from probability matrix
-  extractRelevantMatchups: function(simData, state) {
+  // Extract threat landscape from probability matrix
+  // THREAT LANDSCAPE: "When I have X, what % of hands have at least one opponent with Y?"
+  extractThreatLandscape: function(simData, state) {
     if (!simData?.statistics?.probabilityMatrix) return null;
 
+    const matrix = simData.statistics.probabilityMatrix;
+    
     // Map UI structure to hand type indices
     const structureToTypes = {
       'pair': [1],           // Pair
@@ -446,32 +450,33 @@ const PokerStats = {
       'any': [0, 1, 2]       // High Card, Pair, Two Pair
     };
 
-    const relevantTypes = structureToTypes[state.structure] || [0];
+    const relevantTypes = structureToTypes[state.structure] || [0, 1, 2];
 
-    // Get all matchups involving relevant hand types
-    const matchups = simData.statistics.probabilityMatrix
-      .filter(entry => relevantTypes.includes(entry.playerHandType))
-      .map(entry => ({
-        playerHandType: entry.playerHandType,
-        playerHandName: this.HAND_TYPE_NAMES[entry.playerHandType],
-        vsHandType: entry.opponentHandType,
-        vsHandName: this.HAND_TYPE_NAMES[entry.opponentHandType],
-        probability: entry.probability
-      }));
-
-    // Group by player hand type for cleaner presentation
-    const grouped = {};
-    matchups.forEach(m => {
-      if (!grouped[m.playerHandName]) {
-        grouped[m.playerHandName] = [];
-      }
-      grouped[m.playerHandName].push({
-        vsHand: m.vsHandName,
-        probability: m.probability.toFixed(2) + '%'
-      });
+    // Build threat landscape for relevant hand types
+    const landscape = {};
+    
+    relevantTypes.forEach(heroTypeIdx => {
+      const heroName = this.HAND_TYPE_NAMES[heroTypeIdx];
+      if (!heroName || !Array.isArray(matrix[heroTypeIdx])) return;
+      
+      landscape[heroName] = matrix[heroTypeIdx]
+        .filter(entry => entry && typeof entry.threatPct !== 'undefined')
+        .map((entry, oppIdx) => ({
+          oppHand: entry.oppHand || this.HAND_TYPE_NAMES[oppIdx],
+          threatPct: entry.threatPct,
+          // Include win rate as secondary info
+          winRate: entry.winRate
+        }))
+        .filter(t => t.threatPct > 0) // Only show non-zero threats
+        .sort((a, b) => b.threatPct - a.threatPct); // Sort by most common threat
     });
 
-    return grouped;
+    return Object.keys(landscape).length > 0 ? landscape : null;
+  },
+
+  // Legacy function for backwards compatibility
+  extractRelevantMatchups: function(simData, state) {
+    return this.extractThreatLandscape(simData, state);
   },
 
   // Get win rate for a specific hand type from simulation

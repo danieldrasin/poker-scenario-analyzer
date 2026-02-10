@@ -916,7 +916,7 @@ header .subtitle {
   text-align: left;
 }
 
-/* Heatmap colors */
+/* Heatmap colors (for win rates - green = good for you) */
 .matrix td.heat-0 { background: #f0fdf4; }
 .matrix td.heat-1 { background: #dcfce7; }
 .matrix td.heat-2 { background: #bbf7d0; }
@@ -928,6 +928,67 @@ header .subtitle {
 .matrix td.heat-8 { background: #f87171; }
 .matrix td.heat-9 { background: #ef4444; color: white; }
 .matrix td.heat-10 { background: #dc2626; color: white; }
+
+/* Threat heatmap colors (for threat landscape - green = rare threat, red = common threat) */
+.matrix td.threat-0 { background: #f1f5f9; color: #64748b; }
+.matrix td.threat-1 { background: #dcfce7; }
+.matrix td.threat-2 { background: #bbf7d0; }
+.matrix td.threat-3 { background: #86efac; }
+.matrix td.threat-4 { background: #fef08a; }
+.matrix td.threat-5 { background: #fde047; }
+.matrix td.threat-6 { background: #fbbf24; }
+.matrix td.threat-7 { background: #fb923c; }
+.matrix td.threat-8 { background: #f87171; }
+.matrix td.threat-9 { background: #ef4444; color: white; }
+.matrix td.threat-10 { background: #dc2626; color: white; }
+
+/* Help button */
+.help-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.help-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Matrix explanation box */
+.matrix-explanation {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+}
+
+/* Tooltips - enhanced */
+[title] {
+  position: relative;
+}
+
+/* Info icon for tooltips */
+.info-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background: var(--text-muted);
+  color: white;
+  border-radius: 50%;
+  font-size: 11px;
+  text-align: center;
+  line-height: 16px;
+  cursor: help;
+  margin-left: 4px;
+}
+
+.info-icon:hover {
+  background: var(--primary);
+}
 
 /* Saved Tab */
 .saved-header {

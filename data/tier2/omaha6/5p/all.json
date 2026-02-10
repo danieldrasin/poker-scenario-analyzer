@@ -6,7 +6,7 @@
       "playerCount": 5,
       "iterations": 1000000
     },
-    "createdAt": "2026-02-09T18:23:33.030Z",
+    "createdAt": "2026-02-10T03:23:30.815Z",
     "durationMs": 0
   },
   "statistics": {
@@ -14,82 +14,83 @@
       {
         "handType": 0,
         "name": "High Card",
-        "count": 50323,
-        "percentage": 5.03,
+        "count": 49791,
+        "percentage": 4.98,
         "wins": 0,
         "winRate": 0
       },
       {
         "handType": 1,
         "name": "One Pair",
-        "count": 250352,
-        "percentage": 25.04,
-        "wins": 230,
-        "winRate": 0.09
+        "count": 249843,
+        "percentage": 24.98,
+        "wins": 265,
+        "winRate": 0.11
       },
       {
         "handType": 2,
         "name": "Two Pair",
-        "count": 249648,
-        "percentage": 24.96,
-        "wins": 8069,
-        "winRate": 3.23
+        "count": 250406,
+        "percentage": 25.04,
+        "wins": 8366,
+        "winRate": 3.34
       },
       {
         "handType": 3,
         "name": "Three of a Kind",
-        "count": 79848,
-        "percentage": 7.98,
-        "wins": 9624,
-        "winRate": 12.05
+        "count": 80234,
+        "percentage": 8.02,
+        "wins": 9625,
+        "winRate": 12
       },
       {
         "handType": 4,
         "name": "Straight",
-        "count": 120092,
-        "percentage": 12.01,
-        "wins": 27198,
-        "winRate": 22.65
+        "count": 119843,
+        "percentage": 11.98,
+        "wins": 27074,
+        "winRate": 22.59
       },
       {
         "handType": 5,
         "name": "Flush",
-        "count": 99852,
-        "percentage": 9.99,
-        "wins": 40813,
-        "winRate": 40.87
+        "count": 100194,
+        "percentage": 10.02,
+        "wins": 41435,
+        "winRate": 41.35
       },
       {
         "handType": 6,
         "name": "Full House",
-        "count": 99914,
-        "percentage": 9.99,
-        "wins": 65834,
-        "winRate": 65.89
+        "count": 99966,
+        "percentage": 10,
+        "wins": 65520,
+        "winRate": 65.54
       },
       {
         "handType": 7,
         "name": "Four of a Kind",
-        "count": 30018,
+        "count": 30034,
         "percentage": 3,
-        "wins": 26020,
-        "winRate": 86.68
+        "wins": 26082,
+        "winRate": 86.84
       },
       {
         "handType": 8,
         "name": "Straight Flush",
-        "count": 19953,
-        "percentage": 2,
-        "wins": 19184,
-        "winRate": 96.15
+        "count": 19689,
+        "percentage": 1.97,
+        "wins": 18880,
+        "winRate": 95.89
       }
     ],
-    "overallWinRate": 19.7,
+    "overallWinRate": 19.72,
     "probabilityMatrix": [
       [
         {
           "heroHand": "High Card",
           "oppHand": "High Card",
+          "threatPct": 18.84,
           "count": 0,
           "wins": 0,
           "winRate": 0
@@ -97,56 +98,64 @@
         {
           "heroHand": "High Card",
           "oppHand": "One Pair",
-          "count": 416,
+          "threatPct": 68.33,
+          "count": 402,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "High Card",
           "oppHand": "Two Pair",
-          "count": 4226,
+          "threatPct": 68.52,
+          "count": 4298,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "High Card",
           "oppHand": "Three of a Kind",
-          "count": 3359,
+          "threatPct": 28.66,
+          "count": 3221,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "High Card",
           "oppHand": "Straight",
-          "count": 8045,
+          "threatPct": 39.98,
+          "count": 7941,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "High Card",
           "oppHand": "Flush",
-          "count": 10336,
+          "threatPct": 34.15,
+          "count": 10301,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "High Card",
           "oppHand": "Full House",
-          "count": 14642,
+          "threatPct": 34.26,
+          "count": 14459,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "High Card",
           "oppHand": "Four of a Kind",
-          "count": 5499,
+          "threatPct": 11.38,
+          "count": 5330,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "High Card",
           "oppHand": "Straight Flush",
-          "count": 3800,
+          "threatPct": 7.71,
+          "count": 3839,
           "wins": 0,
           "winRate": 0
         }
@@ -155,63 +164,72 @@
         {
           "heroHand": "One Pair",
           "oppHand": "High Card",
-          "count": 0,
-          "wins": 0,
-          "winRate": 0
+          "threatPct": 18.43,
+          "count": 4,
+          "wins": 4,
+          "winRate": 100
         },
         {
           "heroHand": "One Pair",
           "oppHand": "One Pair",
-          "count": 2057,
-          "wins": 230,
-          "winRate": 11.2
+          "threatPct": 68.26,
+          "count": 1992,
+          "wins": 261,
+          "winRate": 13.1
         },
         {
           "heroHand": "One Pair",
           "oppHand": "Two Pair",
-          "count": 20907,
+          "threatPct": 68.37,
+          "count": 20723,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "One Pair",
           "oppHand": "Three of a Kind",
-          "count": 16602,
+          "threatPct": 28.57,
+          "count": 16416,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "One Pair",
           "oppHand": "Straight",
-          "count": 39768,
+          "threatPct": 40.1,
+          "count": 39803,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "One Pair",
           "oppHand": "Flush",
-          "count": 51867,
+          "threatPct": 34.37,
+          "count": 51383,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "One Pair",
           "oppHand": "Full House",
-          "count": 72872,
+          "threatPct": 34.46,
+          "count": 73111,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "One Pair",
           "oppHand": "Four of a Kind",
-          "count": 26907,
+          "threatPct": 11.46,
+          "count": 26940,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "One Pair",
           "oppHand": "Straight Flush",
-          "count": 19372,
+          "threatPct": 7.79,
+          "count": 19471,
           "wins": 0,
           "winRate": 0
         }
@@ -220,193 +238,220 @@
         {
           "heroHand": "Two Pair",
           "oppHand": "High Card",
+          "threatPct": 18.62,
+          "count": 2,
+          "wins": 2,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Two Pair",
+          "oppHand": "One Pair",
+          "threatPct": 68.39,
+          "count": 2064,
+          "wins": 2064,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Two Pair",
+          "oppHand": "Two Pair",
+          "threatPct": 68.46,
+          "count": 20967,
+          "wins": 6300,
+          "winRate": 30
+        },
+        {
+          "heroHand": "Two Pair",
+          "oppHand": "Three of a Kind",
+          "threatPct": 28.27,
+          "count": 16599,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Two Pair",
+          "oppHand": "Straight",
+          "threatPct": 39.86,
+          "count": 39938,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Two Pair",
+          "oppHand": "Flush",
+          "threatPct": 34.3,
+          "count": 51291,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Two Pair",
+          "oppHand": "Full House",
+          "threatPct": 34.41,
+          "count": 73192,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Two Pair",
+          "oppHand": "Four of a Kind",
+          "threatPct": 11.44,
+          "count": 26986,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Two Pair",
+          "oppHand": "Straight Flush",
+          "threatPct": 7.73,
+          "count": 19367,
+          "wins": 0,
+          "winRate": 0
+        }
+      ],
+      [
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "High Card",
+          "threatPct": 18.39,
+          "count": 0,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "One Pair",
+          "threatPct": 68.32,
+          "count": 625,
+          "wins": 625,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "Two Pair",
+          "threatPct": 68.7,
+          "count": 6626,
+          "wins": 6626,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "Three of a Kind",
+          "threatPct": 28.25,
+          "count": 5406,
+          "wins": 2374,
+          "winRate": 43.9
+        },
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "Straight",
+          "threatPct": 40.07,
+          "count": 12816,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "Flush",
+          "threatPct": 34.19,
+          "count": 16383,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "Full House",
+          "threatPct": 34.48,
+          "count": 23552,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "Four of a Kind",
+          "threatPct": 11.46,
+          "count": 8650,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Three of a Kind",
+          "oppHand": "Straight Flush",
+          "threatPct": 7.7,
+          "count": 6176,
+          "wins": 0,
+          "winRate": 0
+        }
+      ],
+      [
+        {
+          "heroHand": "Straight",
+          "oppHand": "High Card",
+          "threatPct": 18.36,
           "count": 1,
           "wins": 1,
           "winRate": 100
         },
         {
-          "heroHand": "Two Pair",
-          "oppHand": "One Pair",
-          "count": 2002,
-          "wins": 2002,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Two Pair",
-          "oppHand": "Two Pair",
-          "count": 20946,
-          "wins": 6066,
-          "winRate": 29
-        },
-        {
-          "heroHand": "Two Pair",
-          "oppHand": "Three of a Kind",
-          "count": 16571,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Two Pair",
-          "oppHand": "Straight",
-          "count": 39568,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Two Pair",
-          "oppHand": "Flush",
-          "count": 51327,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Two Pair",
-          "oppHand": "Full House",
-          "count": 73066,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Two Pair",
-          "oppHand": "Four of a Kind",
-          "count": 26836,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Two Pair",
-          "oppHand": "Straight Flush",
-          "count": 19331,
-          "wins": 0,
-          "winRate": 0
-        }
-      ],
-      [
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "High Card",
-          "count": 0,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "One Pair",
-          "count": 644,
-          "wins": 644,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "Two Pair",
-          "count": 6606,
-          "wins": 6606,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "Three of a Kind",
-          "count": 5192,
-          "wins": 2374,
-          "winRate": 45.7
-        },
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "Straight",
-          "count": 12753,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "Flush",
-          "count": 16344,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "Full House",
-          "count": 23624,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "Four of a Kind",
-          "count": 8506,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Three of a Kind",
-          "oppHand": "Straight Flush",
-          "count": 6179,
-          "wins": 0,
-          "winRate": 0
-        }
-      ],
-      [
-        {
-          "heroHand": "Straight",
-          "oppHand": "High Card",
-          "count": 0,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
           "heroHand": "Straight",
           "oppHand": "One Pair",
-          "count": 903,
-          "wins": 903,
+          "threatPct": 68.52,
+          "count": 1036,
+          "wins": 1036,
           "winRate": 100
         },
         {
           "heroHand": "Straight",
           "oppHand": "Two Pair",
-          "count": 9999,
-          "wins": 9999,
+          "threatPct": 68.35,
+          "count": 9739,
+          "wins": 9739,
           "winRate": 100
         },
         {
           "heroHand": "Straight",
           "oppHand": "Three of a Kind",
-          "count": 7946,
-          "wins": 7946,
+          "threatPct": 28.26,
+          "count": 7929,
+          "wins": 7929,
           "winRate": 100
         },
         {
           "heroHand": "Straight",
           "oppHand": "Straight",
-          "count": 19220,
-          "wins": 8350,
-          "winRate": 43.4
+          "threatPct": 40.23,
+          "count": 19186,
+          "wins": 8369,
+          "winRate": 43.6
         },
         {
           "heroHand": "Straight",
           "oppHand": "Flush",
-          "count": 24765,
+          "threatPct": 34.61,
+          "count": 24805,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "Straight",
           "oppHand": "Full House",
-          "count": 35130,
+          "threatPct": 34.2,
+          "count": 34963,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "Straight",
           "oppHand": "Four of a Kind",
-          "count": 12861,
+          "threatPct": 11.52,
+          "count": 12944,
           "wins": 0,
           "winRate": 0
         },
         {
           "heroHand": "Straight",
           "oppHand": "Straight Flush",
-          "count": 9268,
+          "threatPct": 7.71,
+          "count": 9240,
           "wins": 0,
           "winRate": 0
         }
@@ -415,6 +460,7 @@
         {
           "heroHand": "Flush",
           "oppHand": "High Card",
+          "threatPct": 18.67,
           "count": 0,
           "wins": 0,
           "winRate": 0
@@ -422,253 +468,288 @@
         {
           "heroHand": "Flush",
           "oppHand": "One Pair",
-          "count": 748,
+          "threatPct": 68.61,
+          "count": 830,
+          "wins": 830,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Flush",
+          "oppHand": "Two Pair",
+          "threatPct": 68.33,
+          "count": 8569,
+          "wins": 8569,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Flush",
+          "oppHand": "Three of a Kind",
+          "threatPct": 28.37,
+          "count": 6679,
+          "wins": 6679,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Flush",
+          "oppHand": "Straight",
+          "threatPct": 40.01,
+          "count": 15973,
+          "wins": 15973,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Flush",
+          "oppHand": "Flush",
+          "threatPct": 34.27,
+          "count": 20604,
+          "wins": 9384,
+          "winRate": 45.5
+        },
+        {
+          "heroHand": "Flush",
+          "oppHand": "Full House",
+          "threatPct": 34.16,
+          "count": 29108,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Flush",
+          "oppHand": "Four of a Kind",
+          "threatPct": 11.35,
+          "count": 10684,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Flush",
+          "oppHand": "Straight Flush",
+          "threatPct": 7.73,
+          "count": 7747,
+          "wins": 0,
+          "winRate": 0
+        }
+      ],
+      [
+        {
+          "heroHand": "Full House",
+          "oppHand": "High Card",
+          "threatPct": 18.61,
+          "count": 0,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Full House",
+          "oppHand": "One Pair",
+          "threatPct": 68.43,
+          "count": 800,
+          "wins": 800,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Full House",
+          "oppHand": "Two Pair",
+          "threatPct": 68.41,
+          "count": 8381,
+          "wins": 8381,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Full House",
+          "oppHand": "Three of a Kind",
+          "threatPct": 28.42,
+          "count": 6556,
+          "wins": 6556,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Full House",
+          "oppHand": "Straight",
+          "threatPct": 40.04,
+          "count": 15885,
+          "wins": 15885,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Full House",
+          "oppHand": "Flush",
+          "threatPct": 34.36,
+          "count": 20610,
+          "wins": 20610,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Full House",
+          "oppHand": "Full House",
+          "threatPct": 34.23,
+          "count": 29194,
+          "wins": 13288,
+          "winRate": 45.5
+        },
+        {
+          "heroHand": "Full House",
+          "oppHand": "Four of a Kind",
+          "threatPct": 11.42,
+          "count": 10755,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Full House",
+          "oppHand": "Straight Flush",
+          "threatPct": 7.79,
+          "count": 7785,
+          "wins": 0,
+          "winRate": 0
+        }
+      ],
+      [
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "High Card",
+          "threatPct": 18.29,
+          "count": 0,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "One Pair",
+          "threatPct": 68.33,
+          "count": 271,
+          "wins": 271,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "Two Pair",
+          "threatPct": 68.4,
+          "count": 2495,
+          "wins": 2495,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "Three of a Kind",
+          "threatPct": 28.27,
+          "count": 1973,
+          "wins": 1973,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "Straight",
+          "threatPct": 40.42,
+          "count": 4879,
+          "wins": 4879,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "Flush",
+          "threatPct": 34.04,
+          "count": 6048,
+          "wins": 6048,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "Full House",
+          "threatPct": 34.69,
+          "count": 8861,
+          "wins": 8861,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "Four of a Kind",
+          "threatPct": 11.52,
+          "count": 3262,
+          "wins": 1555,
+          "winRate": 47.7
+        },
+        {
+          "heroHand": "Four of a Kind",
+          "oppHand": "Straight Flush",
+          "threatPct": 7.47,
+          "count": 2245,
+          "wins": 0,
+          "winRate": 0
+        }
+      ],
+      [
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "High Card",
+          "threatPct": 18.65,
+          "count": 0,
+          "wins": 0,
+          "winRate": 0
+        },
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "One Pair",
+          "threatPct": 68.3,
+          "count": 160,
+          "wins": 160,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "Two Pair",
+          "threatPct": 68.12,
+          "count": 1609,
+          "wins": 1609,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "Three of a Kind",
+          "threatPct": 28.45,
+          "count": 1298,
+          "wins": 1298,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "Straight",
+          "threatPct": 39.93,
+          "count": 3068,
+          "wins": 3068,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "Flush",
+          "threatPct": 34.75,
+          "count": 4054,
+          "wins": 4054,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "Full House",
+          "threatPct": 34.69,
+          "count": 5826,
+          "wins": 5826,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "Four of a Kind",
+          "threatPct": 11.49,
+          "count": 2117,
+          "wins": 2117,
+          "winRate": 100
+        },
+        {
+          "heroHand": "Straight Flush",
+          "oppHand": "Straight Flush",
+          "threatPct": 7.91,
+          "count": 1557,
           "wins": 748,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Flush",
-          "oppHand": "Two Pair",
-          "count": 8264,
-          "wins": 8264,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Flush",
-          "oppHand": "Three of a Kind",
-          "count": 6662,
-          "wins": 6662,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Flush",
-          "oppHand": "Straight",
-          "count": 15772,
-          "wins": 15772,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Flush",
-          "oppHand": "Flush",
-          "count": 20626,
-          "wins": 9367,
-          "winRate": 45.4
-        },
-        {
-          "heroHand": "Flush",
-          "oppHand": "Full House",
-          "count": 29149,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Flush",
-          "oppHand": "Four of a Kind",
-          "count": 10800,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Flush",
-          "oppHand": "Straight Flush",
-          "count": 7831,
-          "wins": 0,
-          "winRate": 0
-        }
-      ],
-      [
-        {
-          "heroHand": "Full House",
-          "oppHand": "High Card",
-          "count": 0,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Full House",
-          "oppHand": "One Pair",
-          "count": 758,
-          "wins": 758,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Full House",
-          "oppHand": "Two Pair",
-          "count": 8264,
-          "wins": 8264,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Full House",
-          "oppHand": "Three of a Kind",
-          "count": 6618,
-          "wins": 6618,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Full House",
-          "oppHand": "Straight",
-          "count": 15952,
-          "wins": 15952,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Full House",
-          "oppHand": "Flush",
-          "count": 20672,
-          "wins": 20672,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Full House",
-          "oppHand": "Full House",
-          "count": 29182,
-          "wins": 13570,
-          "winRate": 46.5
-        },
-        {
-          "heroHand": "Full House",
-          "oppHand": "Four of a Kind",
-          "count": 10716,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Full House",
-          "oppHand": "Straight Flush",
-          "count": 7752,
-          "wins": 0,
-          "winRate": 0
-        }
-      ],
-      [
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "High Card",
-          "count": 0,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "One Pair",
-          "count": 243,
-          "wins": 243,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "Two Pair",
-          "count": 2511,
-          "wins": 2511,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "Three of a Kind",
-          "count": 1983,
-          "wins": 1983,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "Straight",
-          "count": 4833,
-          "wins": 4833,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "Flush",
-          "count": 6224,
-          "wins": 6224,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "Full House",
-          "count": 8709,
-          "wins": 8709,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "Four of a Kind",
-          "count": 3196,
-          "wins": 1517,
-          "winRate": 47.5
-        },
-        {
-          "heroHand": "Four of a Kind",
-          "oppHand": "Straight Flush",
-          "count": 2319,
-          "wins": 0,
-          "winRate": 0
-        }
-      ],
-      [
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "High Card",
-          "count": 0,
-          "wins": 0,
-          "winRate": 0
-        },
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "One Pair",
-          "count": 164,
-          "wins": 164,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "Two Pair",
-          "count": 1628,
-          "wins": 1628,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "Three of a Kind",
-          "count": 1323,
-          "wins": 1323,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "Straight",
-          "count": 3093,
-          "wins": 3093,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "Flush",
-          "count": 4165,
-          "wins": 4165,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "Full House",
-          "count": 5917,
-          "wins": 5917,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "Four of a Kind",
-          "count": 2138,
-          "wins": 2138,
-          "winRate": 100
-        },
-        {
-          "heroHand": "Straight Flush",
-          "oppHand": "Straight Flush",
-          "count": 1525,
-          "wins": 756,
-          "winRate": 49.6
+          "winRate": 48
         }
       ]
     ]

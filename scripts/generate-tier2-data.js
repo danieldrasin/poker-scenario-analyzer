@@ -44,6 +44,8 @@ const HAND_CATEGORIES = [
 ];
 
 // Simplified Monte Carlo simulation (same logic as API)
+// NOW MATCHES ORIGINAL SMALLTALK: Matrix shows "threat landscape" - 
+// What % of hands have at least one opponent with each hand type?
 function runSimulation(gameVariant, playerCount, iterations) {
   const handTypeNames = [
     'High Card', 'One Pair', 'Two Pair', 'Three of a Kind',
@@ -54,8 +56,14 @@ function runSimulation(gameVariant, playerCount, iterations) {
   const handTypeWins = new Array(9).fill(0);
   let heroWins = 0;
 
-  // Initialize probability matrix tracking: matrixCounts[heroType][oppType] = {count, wins}
-  const matrixCounts = Array.from({ length: 9 }, () =>
+  // THREAT LANDSCAPE MATRIX:
+  // threatMatrix[heroType][oppType] = count of hands where hero had heroType 
+  // AND at least one opponent had oppType as their BEST hand
+  // NOTE: A single hand can increment multiple columns if different opponents have different best hands
+  const threatMatrix = Array.from({ length: 9 }, () => new Array(9).fill(0));
+
+  // Also track win rates for each matchup (secondary data)
+  const winMatrix = Array.from({ length: 9 }, () =>
     Array.from({ length: 9 }, () => ({ count: 0, wins: 0 }))
   );
 
@@ -72,9 +80,14 @@ function runSimulation(gameVariant, playerCount, iterations) {
 
     let heroWon = true;
     let strongestOppType = -1;
+    
+    // Track which opponent hand types appear in THIS hand (for threat matrix)
+    const oppTypesPresent = new Set();
 
     for (let opp = 0; opp < playerCount - 1; opp++) {
       const oppHandType = weightedRandom(weights);
+      oppTypesPresent.add(oppHandType);
+      
       // Track the strongest opponent hand we face
       if (oppHandType > strongestOppType) {
         strongestOppType = oppHandType;
@@ -84,11 +97,17 @@ function runSimulation(gameVariant, playerCount, iterations) {
       }
     }
 
-    // Track matrix: hero hand vs strongest opponent hand
+    // THREAT LANDSCAPE: For each opponent hand type that appeared, increment the count
+    // This answers: "When I have X, what % of hands have at least one opponent with Y?"
+    for (const oppType of oppTypesPresent) {
+      threatMatrix[heroHandType][oppType]++;
+    }
+
+    // WIN RATE MATRIX: Track wins vs the strongest opponent (secondary data)
     if (strongestOppType >= 0) {
-      matrixCounts[heroHandType][strongestOppType].count++;
+      winMatrix[heroHandType][strongestOppType].count++;
       if (heroWon) {
-        matrixCounts[heroHandType][strongestOppType].wins++;
+        winMatrix[heroHandType][strongestOppType].wins++;
       }
     }
 
@@ -116,16 +135,23 @@ function runSimulation(gameVariant, playerCount, iterations) {
         winRate: handTypeCounts[i] > 0 ? parseFloat((handTypeWins[i] / handTypeCounts[i] * 100).toFixed(2)) : 0
       })),
       overallWinRate: parseFloat((heroWins / iterations * 100).toFixed(2)),
-      // Add probabilityMatrix for Matrix tab compatibility with actual simulation data
+      // THREAT LANDSCAPE MATRIX - matches original Smalltalk behavior
+      // threatPct: "When I have heroHand, what % of hands have at least one opponent with oppHand?"
+      // NOTE: Row totals can exceed 100% because multiple opponents can have different hand types
       probabilityMatrix: handTypeNames.map((heroHand, heroIdx) =>
         handTypeNames.map((oppHand, oppIdx) => {
-          const cell = matrixCounts[heroIdx][oppIdx];
+          const heroCount = handTypeCounts[heroIdx];
+          const threatCount = threatMatrix[heroIdx][oppIdx];
+          const winCell = winMatrix[heroIdx][oppIdx];
           return {
             heroHand,
             oppHand,
-            count: cell.count,
-            wins: cell.wins,
-            winRate: cell.count > 0 ? parseFloat((cell.wins / cell.count * 100).toFixed(1)) : 0
+            // Primary metric: % of hands where this opponent hand type appears
+            threatPct: heroCount > 0 ? parseFloat((threatCount / heroCount * 100).toFixed(2)) : 0,
+            // Secondary data: win rate when facing strongest opponent of this type
+            count: winCell.count,
+            wins: winCell.wins,
+            winRate: winCell.count > 0 ? parseFloat((winCell.wins / winCell.count * 100).toFixed(1)) : 0
           };
         })
       )

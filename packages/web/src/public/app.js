@@ -1123,22 +1123,18 @@ function displayMatrix(result) {
   // Store matrix data for drill-down
   window.currentMatrixData = result;
 
-  // Helper to get win rate from matrix - handles both Tier 2 (2D array) and old format
-  function getWinRate(rowIndex, colIndex) {
-    // Tier 2 format: 2D array with winRate field
+  // Helper to get threat percentage from matrix
+  // THREAT LANDSCAPE: "When I have X, what % of hands have at least one opponent with Y?"
+  function getThreatPct(rowIndex, colIndex) {
     if (Array.isArray(matrix) && Array.isArray(matrix[rowIndex])) {
       const entry = matrix[rowIndex][colIndex];
+      // New format with threatPct
+      if (entry && typeof entry.threatPct !== 'undefined') {
+        return entry.threatPct;
+      }
+      // Fallback to winRate for old data (will be replaced after regeneration)
       if (entry && typeof entry.winRate !== 'undefined') {
         return entry.winRate;
-      }
-    }
-    // Old format: flat array with probability field
-    if (Array.isArray(matrix)) {
-      const entry = matrix.find(
-        e => e.playerHandType === rowIndex && e.opponentHandType === colIndex
-      );
-      if (entry && typeof entry.probability !== 'undefined') {
-        return entry.probability;
       }
     }
     return 0;
@@ -1151,11 +1147,18 @@ function displayMatrix(result) {
           <h3>${result.metadata.config.gameVariant.toUpperCase()} - ${result.metadata.config.playerCount} Players</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem;">${result.metadata.config.iterations.toLocaleString()} iterations • Click a cell to explore</p>
         </div>
-        <button class="save-sim-btn" id="save-simulation-btn" title="Save this simulation locally">💾 Save</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="help-btn" id="matrix-help-btn" title="What does this matrix show?">❓ Help</button>
+          <button class="save-sim-btn" id="save-simulation-btn" title="Save this simulation locally">💾</button>
+        </div>
       </div>
     </div>
+    <div class="matrix-explanation" style="background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">
+      <strong>📊 Threat Landscape:</strong> Each cell shows the <em>% of hands</em> where at least one opponent has that hand type.
+      <br><span style="color: var(--text-muted);">Row = Your hand | Column = Opponent's best hand | Higher % = More common threat</span>
+    </div>
     <table class="matrix">
-      <tr><th>You \\ Opponent</th>`;
+      <tr><th>Your Hand \\ Opponent's Best</th>`;
 
   HAND_TYPE_CODES.forEach(code => {
     html += `<th title="${HAND_TYPE_NAMES[code]}">${code}</th>`;
@@ -1166,13 +1169,13 @@ function displayMatrix(result) {
     html += `<tr><td title="${HAND_TYPE_NAMES[rowCode]}">${rowCode}</td>`;
 
     HAND_TYPE_CODES.forEach((colCode, colIndex) => {
-      const prob = getWinRate(rowIndex, colIndex);
-      const heatClass = getHeatClass(prob);
+      const pct = getThreatPct(rowIndex, colIndex);
+      const heatClass = getThreatHeatClass(pct);
       html += `<td class="${heatClass} clickable"
                    data-player-type="${rowIndex}"
                    data-opp-type="${colIndex}"
-                   data-prob="${prob.toFixed(2)}"
-                   title="Click to explore: ${HAND_TYPE_NAMES[rowCode]} vs ${HAND_TYPE_NAMES[colCode]} (${prob.toFixed(2)}%)">${prob.toFixed(1)}</td>`;
+                   data-prob="${pct.toFixed(2)}"
+                   title="When you have ${HAND_TYPE_NAMES[rowCode]}, ${pct.toFixed(1)}% of hands have an opponent with ${HAND_TYPE_NAMES[colCode]}">${pct.toFixed(1)}</td>`;
     });
 
     html += '</tr>';
@@ -1224,6 +1227,14 @@ function displayMatrix(result) {
           saveBtn.disabled = false;
         }, 2000);
       }
+    });
+  }
+
+  // Add help button handler
+  const helpBtn = document.getElementById('matrix-help-btn');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', () => {
+      openHelpModal();
     });
   }
 }
@@ -1335,6 +1346,23 @@ function getHeatClass(value) {
   if (value <= 80) return 'heat-8';
   if (value <= 90) return 'heat-9';
   return 'heat-10';
+}
+
+// Threat landscape heat class - inverted coloring (higher = more danger = redder)
+// Values can exceed 100% since multiple opponents can have different hand types
+function getThreatHeatClass(value) {
+  // Low threat (green) to high threat (red)
+  if (value <= 5) return 'threat-0';   // Very rare - green
+  if (value <= 15) return 'threat-1';
+  if (value <= 25) return 'threat-2';
+  if (value <= 35) return 'threat-3';
+  if (value <= 45) return 'threat-4';  // Yellow zone
+  if (value <= 55) return 'threat-5';
+  if (value <= 65) return 'threat-6';
+  if (value <= 75) return 'threat-7';  // Orange zone
+  if (value <= 85) return 'threat-8';
+  if (value <= 95) return 'threat-9';
+  return 'threat-10';  // Very common threat - red
 }
 
 // ============ SAVED SIMULATIONS ============
@@ -1773,11 +1801,16 @@ ${context.simulationData.handTypeStatistics?.map(ht =>
   `  ${ht.hand}: ${ht.winRate} win rate (occurred ${ht.frequency} of hands)`
 ).join('\n') || 'No data'}
 
-${context.simulationData.matchupProbabilities ? `
-Matchup Probabilities (given your hand type):
-${Object.entries(context.simulationData.matchupProbabilities).map(([hand, matchups]) =>
-  `  When you have ${hand}:\n${matchups.map(m => `    - Opponent has ${m.vsHand}: ${m.probability}`).join('\n')}`
-).join('\n')}` : ''}
+${context.simulationData.threatLandscape ? `
+THREAT LANDSCAPE (what hands are your opponents likely to have?):
+These percentages show how often at least one opponent has each hand type when YOU have a specific hand.
+Higher % = more common threat. Values can exceed 100% because multiple opponents can have different hands.
+
+${Object.entries(context.simulationData.threatLandscape).map(([yourHand, threats]) =>
+  `  When you have ${yourHand}:\n${threats.map(t => `    - ${t.oppHand}: ${t.threatPct}% of hands (${t.threatPct > 70 ? 'VERY COMMON' : t.threatPct > 40 ? 'COMMON' : t.threatPct > 15 ? 'moderate' : 'rare'})`).join('\n')}`
+).join('\n')}
+
+KEY INSIGHT: Use this to assess your vulnerability. If 80%+ of hands have opponents with Two Pair or better when you have One Pair, your hand is very vulnerable!` : ''}
 `;
     } else {
       simulationSection = `
@@ -2296,9 +2329,38 @@ async function getAIResponse(message) {
   }
 }
 
+// Initialize help modal for matrix
+function initHelpModal() {
+  const helpModal = document.getElementById('help-modal');
+  const closeHelp = document.getElementById('close-help');
+  const closeHelpBtn = document.getElementById('close-help-btn');
+
+  // Close help modal handlers
+  [closeHelp, closeHelpBtn].forEach(btn => {
+    btn?.addEventListener('click', () => {
+      helpModal.style.display = 'none';
+    });
+  });
+
+  // Close on backdrop click
+  helpModal?.addEventListener('click', (e) => {
+    if (e.target === helpModal) helpModal.style.display = 'none';
+  });
+
+  // Note: The help button in the matrix is wired up dynamically in displayMatrix
+}
+
+// Open help modal (called from matrix help button)
+function openHelpModal() {
+  const helpModal = document.getElementById('help-modal');
+  if (helpModal) helpModal.style.display = 'flex';
+}
+window.openHelpModal = openHelpModal;
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
   initAICoach();
+  initHelpModal();
 });
 
 // Make functions globally available
