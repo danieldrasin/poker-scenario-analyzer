@@ -6,9 +6,11 @@
  * handles any server-side needs.
  */
 
-export default function handler(req, res) {
+import dataHandler from './data.js';
+
+export default async function handler(req, res) {
   const { method, url } = req;
-  const path = url.replace('/api', '');
+  const path = url.replace('/api', '').split('?')[0]; // Remove query string for matching
 
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -39,6 +41,11 @@ export default function handler(req, res) {
     ]);
   }
 
+  // Tier 2 data from R2
+  if (path === '/data' || path === '/data/') {
+    return dataHandler(req, res);
+  }
+
   // Server simulations are not supported in static deployment
   // All simulation storage is handled by IndexedDB on the client
   if (path.startsWith('/simulations')) {
@@ -53,6 +60,6 @@ export default function handler(req, res) {
   return res.status(404).json({
     error: 'Not found',
     path: path,
-    availableEndpoints: ['/api/health', '/api/variants', '/api/simulations']
+    availableEndpoints: ['/api/health', '/api/variants', '/api/data', '/api/simulations']
   });
 }
