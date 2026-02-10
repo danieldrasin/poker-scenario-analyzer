@@ -104,6 +104,14 @@ Stay with Sonnet for:
 
 ---
 
+## Stored Credentials
+
+| Service | Key |
+|---------|-----|
+| Groq API | `REDACTED` |
+
+---
+
 ## Project Context
 
 This is a Poker Scenario Analyzer with:

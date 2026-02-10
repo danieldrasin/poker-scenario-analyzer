@@ -1200,13 +1200,134 @@ footer {
   margin-right: 6px;
 }
 
-/* Matrix context banner */
-.matrix-context-banner {
+/* Matrix context card - unified display for drilldown context */
+.matrix-context-card {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03));
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.matrix-context-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(59, 130, 246, 0.1);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.matrix-context-body {
+  padding: 16px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.matrix-matchup {
+  flex: 1;
+  min-width: 200px;
+}
+
+.matchup-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.matchup-vs {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border-color);
+  gap: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.matchup-hand {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.matchup-hand.you {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.matchup-hand.opp {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.matchup-separator {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.matchup-prob {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.matrix-settings-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.setting-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+}
+
+.pill-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.matrix-context-hint {
+  padding: 8px 16px;
+  background: rgba(59, 130, 246, 0.05);
+  border-top: 1px solid rgba(59, 130, 246, 0.1);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.back-to-matrix {
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: opacity 0.15s;
+}
+
+.back-to-matrix:hover {
+  opacity: 0.8;
+}
+
+.linked-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(59, 130, 246, 0.9);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Visual indicator for elements linked from matrix */

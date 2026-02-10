@@ -1,0 +1,142 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "🎴 Poker Scenario Analyzer" [level=1] [ref=e6]
+        - paragraph [ref=e7]: Omaha & Hold'em strategic hand analysis
+      - button "⚙️" [ref=e8] [cursor=pointer]
+    - generic "Deployment timestamp" [ref=e9]: v2/9/2026 1:25:00 PM
+  - main [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]: "Storage:"
+      - generic [ref=e15]: 4.2 KB / 938.5 MB
+    - navigation [ref=e16]:
+      - button "Scenario Builder" [ref=e17] [cursor=pointer]
+      - button "Probability Matrix" [ref=e18] [cursor=pointer]
+      - button "Saved Analysis" [active] [ref=e19] [cursor=pointer]
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]: 💡
+        - generic [ref=e23]:
+          - text: Build a hand scenario below, then click
+          - strong [ref=e24]: Analyze
+          - text: to see strategic recommendations. Or run a simulation in the
+          - strong [ref=e25]: Matrix
+          - text: tab first, then click cells to explore.
+        - button "×" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]: Game
+            - combobox [ref=e31] [cursor=pointer]:
+              - option "Omaha 4-Card" [selected]
+              - option "Omaha 5-Card"
+              - option "Omaha 6-Card"
+              - option "Texas Hold'em"
+          - generic [ref=e32]:
+            - generic [ref=e33]: Position
+            - combobox [ref=e34] [cursor=pointer]:
+              - option "UTG (Early)"
+              - option "MP (Middle)"
+              - option "CO (Cutoff)"
+              - option "BTN (Button)" [selected]
+              - option "SB (Small Blind)"
+              - option "BB (Big Blind)"
+          - generic [ref=e35]:
+            - generic [ref=e36]: Style
+            - combobox [ref=e37] [cursor=pointer]:
+              - option "Rock (Tight-Passive)"
+              - option "TAG (Tight-Aggressive)" [selected]
+              - option "LAG (Loose-Aggressive)"
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - generic "Total players at the table (not just those in the pot). Position determines how many will likely enter." [ref=e40]: Players at Table
+            - generic [ref=e41]:
+              - button "1" [ref=e42] [cursor=pointer]
+              - button "2" [ref=e43] [cursor=pointer]
+              - button "3" [ref=e44] [cursor=pointer]
+              - button "4" [ref=e45] [cursor=pointer]
+              - button "5" [ref=e46] [cursor=pointer]
+              - button "6" [ref=e47] [cursor=pointer]
+              - button "7" [ref=e48] [cursor=pointer]
+              - button "8" [ref=e49] [cursor=pointer]
+          - generic [ref=e50]:
+            - generic [ref=e51]: ⚠️
+            - generic [ref=e52]: "Large table: Expect multiway pots - tighten range, prioritize nut potential!"
+        - generic [ref=e53]:
+          - button "AA ds" [ref=e54] [cursor=pointer]
+          - button "KK ds" [ref=e55] [cursor=pointer]
+          - button "TT+ ds" [ref=e56] [cursor=pointer]
+          - button "Rundown ds ✓" [ref=e57] [cursor=pointer]
+          - button "DblPair ds ✓" [ref=e58] [cursor=pointer]
+          - button "Bway ds ✓" [ref=e59] [cursor=pointer]
+          - button "Any Pair" [ref=e60] [cursor=pointer]
+          - button "Any Hand" [ref=e61] [cursor=pointer]
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - combobox [ref=e65] [cursor=pointer]:
+              - option "Pair" [selected]
+              - option "Double Pair"
+              - option "Rundown"
+              - option "Broadway"
+              - option "Any"
+            - generic [ref=e66]:
+              - button "◀" [ref=e67] [cursor=pointer]
+              - generic [ref=e68]: A
+              - button "▶" [ref=e69] [cursor=pointer]
+              - generic [ref=e70]:
+                - button "−" [ref=e71] [cursor=pointer]
+                - button "=" [ref=e72] [cursor=pointer]
+                - button "+" [ref=e73] [cursor=pointer]
+            - combobox [ref=e75] [cursor=pointer]:
+              - option "DS" [selected]
+              - option "SS"
+              - option "Rainbow"
+              - option "Any"
+            - combobox [ref=e77] [cursor=pointer]:
+              - option "Any" [selected]
+              - option "Conn"
+              - option "Bway"
+              - option "Wheel"
+          - generic [ref=e78]:
+            - generic [ref=e79]: Pair
+            - generic [ref=e80]: Aces
+            - generic [ref=e81]: Double-Suited
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - code [ref=e84]: pair:AA:ds
+            - button "📋" [ref=e85] [cursor=pointer]
+          - generic [ref=e86]: Pair Aces double-suited
+          - generic [ref=e88]:
+            - generic [ref=e89]: A♠A♥K♠Q♥
+            - generic [ref=e90]: A♦A♣8♦7♣
+            - generic [ref=e91]: A♠A♦5♠3♦
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]: Strategy Insight
+            - generic [ref=e95]: TAG @ BTN (6-handed table)
+          - generic [ref=e96]:
+            - generic [ref=e97]: SITUATIONAL
+            - generic [ref=e98]: Marginal, position and reads matter
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - generic [ref=e101]: "Nut Potential:"
+              - generic [ref=e104]: High
+            - generic [ref=e105]:
+              - generic [ref=e106]: "Multiway Viability:"
+              - generic [ref=e109]: Medium
+          - generic [ref=e111]:
+            - generic [ref=e112]: ⚠️
+            - generic [ref=e113]: Naked Aces rarely win multiway - need set or nut flush on flop
+          - button "💬 Explain This" [ref=e115] [cursor=pointer]:
+            - generic [ref=e116]: 💬
+            - text: Explain This
+        - button "🔍 Analyze Scenario" [ref=e117] [cursor=pointer]:
+          - generic [ref=e118]: 🔍
+          - generic [ref=e119]: Analyze Scenario
+  - contentinfo [ref=e120]:
+    - paragraph [ref=e121]: Poker Scenario Analyzer v2.0
+```

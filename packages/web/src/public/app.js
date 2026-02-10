@@ -1363,7 +1363,7 @@ function drillDownFromMatrix(playerHandType, oppHandType, probability, options =
 
 function showMatrixContext(playerType, oppType, probability, gameVariant, playerCount) {
   // Remove any existing context
-  const existing = document.querySelector('.matrix-context-banner');
+  const existing = document.querySelector('.matrix-context-card');
   if (existing) existing.remove();
 
   const gameLabel = {
@@ -1373,21 +1373,39 @@ function showMatrixContext(playerType, oppType, probability, gameVariant, player
     'holdem': 'Texas Hold\'em'
   }[gameVariant] || gameVariant.toUpperCase();
 
-  // Create context banner
-  const banner = document.createElement('div');
-  banner.className = 'matrix-context-banner';
-  banner.innerHTML = `
-    <span class="back-to-matrix" onclick="switchToMatrixTab()">← Back to Matrix</span>
-    <span class="context-badge">
+  // Create unified context card that groups matrix info with derived settings
+  const card = document.createElement('div');
+  card.className = 'matrix-context-card';
+  card.innerHTML = `
+    <div class="matrix-context-header">
       <span class="linked-badge">From Matrix</span>
-      ${gameLabel} • ${playerCount}P • <strong>${playerType}</strong> vs ${oppType} (${probability}%)
-    </span>
+      <span class="back-to-matrix" onclick="switchToMatrixTab()">← Back to Matrix</span>
+    </div>
+    <div class="matrix-context-body">
+      <div class="matrix-matchup">
+        <div class="matchup-label">Matchup Analysis</div>
+        <div class="matchup-vs">
+          <span class="matchup-hand you">${playerType}</span>
+          <span class="matchup-separator">vs</span>
+          <span class="matchup-hand opp">${oppType}</span>
+        </div>
+        <div class="matchup-prob">${probability}% of hands face this</div>
+      </div>
+      <div class="matrix-settings-summary">
+        <div class="setting-pill"><span class="pill-label">Game</span> ${gameLabel}</div>
+        <div class="setting-pill"><span class="pill-label">Players</span> ${playerCount}</div>
+        <div class="setting-pill"><span class="pill-label">Your Hand</span> ${playerType}</div>
+      </div>
+    </div>
+    <div class="matrix-context-hint">
+      Settings below are synced to this matrix cell. Modify to explore variations.
+    </div>
   `;
 
   // Insert at top of scenario builder
   const scenarioBuilder = document.querySelector('.scenario-builder');
   if (scenarioBuilder) {
-    scenarioBuilder.insertBefore(banner, scenarioBuilder.firstChild);
+    scenarioBuilder.insertBefore(card, scenarioBuilder.firstChild);
   }
 }
 
@@ -1397,9 +1415,9 @@ function switchToMatrixTab() {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('matrix-tab').classList.add('active');
 
-  // Remove context banner
-  const banner = document.querySelector('.matrix-context-banner');
-  if (banner) banner.remove();
+  // Remove context card
+  const card = document.querySelector('.matrix-context-card');
+  if (card) card.remove();
 }
 
 // Make function globally available

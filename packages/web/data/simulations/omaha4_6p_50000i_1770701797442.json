@@ -1,0 +1,2430 @@
+{
+  "metadata": {
+    "id": "sim_mlg64r41_ono89y",
+    "createdAt": "2026-02-10T05:36:37.441Z",
+    "config": {
+      "gameVariant": "omaha4",
+      "playerCount": 6,
+      "iterations": 50000
+    },
+    "durationMs": 19705,
+    "version": "1.0.0"
+  },
+  "statistics": {
+    "totalHands": 50000,
+    "handTypeDistribution": [
+      {
+        "handType": 0,
+        "count": 9013,
+        "percentage": 3.0043333333333333,
+        "wins": 0,
+        "winRate": 0
+      },
+      {
+        "handType": 1,
+        "count": 78503,
+        "percentage": 26.167666666666666,
+        "wins": 115,
+        "winRate": 0.1464912168961696
+      },
+      {
+        "handType": 2,
+        "count": 110934,
+        "percentage": 36.978,
+        "wins": 5435,
+        "winRate": 4.899309499341951
+      },
+      {
+        "handType": 3,
+        "count": 26621,
+        "percentage": 8.873666666666667,
+        "wins": 5796,
+        "winRate": 21.772285038127794
+      },
+      {
+        "handType": 4,
+        "count": 33838,
+        "percentage": 11.279333333333334,
+        "wins": 15771,
+        "winRate": 46.60736450144808
+      },
+      {
+        "handType": 5,
+        "count": 20235,
+        "percentage": 6.744999999999999,
+        "wins": 10439,
+        "winRate": 51.58883123301211
+      },
+      {
+        "handType": 6,
+        "count": 19206,
+        "percentage": 6.401999999999999,
+        "wins": 14091,
+        "winRate": 73.3676975945017
+      },
+      {
+        "handType": 7,
+        "count": 1400,
+        "percentage": 0.46666666666666673,
+        "wins": 1394,
+        "winRate": 99.57142857142857
+      },
+      {
+        "handType": 8,
+        "count": 218,
+        "percentage": 0.07266666666666667,
+        "wins": 216,
+        "winRate": 99.08256880733946
+      },
+      {
+        "handType": 9,
+        "count": 32,
+        "percentage": 0.010666666666666666,
+        "wins": 32,
+        "winRate": 100
+      }
+    ],
+    "probabilityMatrix": [
+      {
+        "playerHandType": 0,
+        "opponentHandType": 0,
+        "playerCount": 9013,
+        "opponentCount": 2069,
+        "probability": 22.955730611339177
+      },
+      {
+        "playerHandType": 0,
+        "opponentHandType": 1,
+        "playerCount": 9013,
+        "opponentCount": 8051,
+        "probability": 89.32652834794186
+      },
+      {
+        "playerHandType": 0,
+        "opponentHandType": 2,
+        "playerCount": 9013,
+        "opponentCount": 7460,
+        "probability": 82.76933318539886
+      },
+      {
+        "playerHandType": 0,
+        "opponentHandType": 3,
+        "playerCount": 9013,
+        "opponentCount": 3377,
+        "probability": 37.46810163097748
+      },
+      {
+        "playerHandType": 0,
+        "opponentHandType": 4,
+        "playerCount": 9013,
+        "opponentCount": 4637,
+        "probability": 51.44790857650061
+      },
+      {
+        "playerHandType": 0,
+        "opponentHandType": 5,
+        "playerCount": 9013,
+        "opponentCount": 2199,
+        "probability": 24.398091645401088
+      },
+      {
+        "playerHandType": 0,
+        "opponentHandType": 6,
+        "playerCount": 9013,
+        "opponentCount": 0,
+        "probability": 0
+      },
+      {
+        "playerHandType": 0,
+        "opponentHandType": 7,
+        "playerCount": 9013,
+        "opponentCount": 0,
+        "probability": 0
+      },
+      {
+        "playerHandType": 0,
+        "opponentHandType": 8,
+        "playerCount": 9013,
+        "opponentCount": 44,
+        "probability": 0.4881837346055697
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 0,
+        "playerCount": 78503,
+        "opponentCount": 14623,
+        "probability": 18.62731360584946
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 1,
+        "playerCount": 78503,
+        "opponentCount": 63506,
+        "probability": 80.89627148007082
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 2,
+        "playerCount": 78503,
+        "opponentCount": 67035,
+        "probability": 85.39164108378023
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 3,
+        "playerCount": 78503,
+        "opponentCount": 27819,
+        "probability": 35.43686228551775
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 4,
+        "playerCount": 78503,
+        "opponentCount": 34364,
+        "probability": 43.77412328191279
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 5,
+        "playerCount": 78503,
+        "opponentCount": 18440,
+        "probability": 23.489548170133627
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 6,
+        "playerCount": 78503,
+        "opponentCount": 11907,
+        "probability": 15.16757321376253
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 7,
+        "playerCount": 78503,
+        "opponentCount": 785,
+        "probability": 0.99996178489994
+      },
+      {
+        "playerHandType": 1,
+        "opponentHandType": 8,
+        "playerCount": 78503,
+        "opponentCount": 249,
+        "probability": 0.3171853304969237
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 0,
+        "playerCount": 110934,
+        "opponentCount": 11615,
+        "probability": 10.470189482034362
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 1,
+        "playerCount": 110934,
+        "opponentCount": 76144,
+        "probability": 68.6390105828691
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 2,
+        "playerCount": 110934,
+        "opponentCount": 99859,
+        "probability": 90.01658643878342
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 3,
+        "playerCount": 110934,
+        "opponentCount": 38269,
+        "probability": 34.497088358843996
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 4,
+        "playerCount": 110934,
+        "opponentCount": 39485,
+        "probability": 35.593235617574415
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 5,
+        "playerCount": 110934,
+        "opponentCount": 25160,
+        "probability": 22.680152162547103
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 6,
+        "playerCount": 110934,
+        "opponentCount": 37194,
+        "probability": 33.52804370166045
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 7,
+        "playerCount": 110934,
+        "opponentCount": 2470,
+        "probability": 2.2265491192961577
+      },
+      {
+        "playerHandType": 2,
+        "opponentHandType": 8,
+        "playerCount": 110934,
+        "opponentCount": 343,
+        "probability": 0.30919285340833286
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 0,
+        "playerCount": 26621,
+        "opponentCount": 3484,
+        "probability": 13.087412193381166
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 1,
+        "playerCount": 26621,
+        "opponentCount": 17180,
+        "probability": 64.53551707298749
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 2,
+        "playerCount": 26621,
+        "opponentCount": 19480,
+        "probability": 73.1753127230382
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 3,
+        "playerCount": 26621,
+        "opponentCount": 10745,
+        "probability": 40.36287141730213
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 4,
+        "playerCount": 26621,
+        "opponentCount": 8801,
+        "probability": 33.060365876563615
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 5,
+        "playerCount": 26621,
+        "opponentCount": 5624,
+        "probability": 21.126178580819655
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 6,
+        "playerCount": 26621,
+        "opponentCount": 8448,
+        "probability": 31.734345065925396
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 7,
+        "playerCount": 26621,
+        "opponentCount": 1860,
+        "probability": 6.986965177867098
+      },
+      {
+        "playerHandType": 3,
+        "opponentHandType": 8,
+        "playerCount": 26621,
+        "opponentCount": 68,
+        "probability": 0.25543743661019497
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 0,
+        "playerCount": 33838,
+        "opponentCount": 6168,
+        "probability": 18.228027661209293
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 1,
+        "playerCount": 33838,
+        "opponentCount": 26163,
+        "probability": 77.31839943259058
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 2,
+        "playerCount": 33838,
+        "opponentCount": 27773,
+        "probability": 82.07636385129145
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 3,
+        "playerCount": 33838,
+        "opponentCount": 10662,
+        "probability": 31.508954429930846
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 4,
+        "playerCount": 33838,
+        "opponentCount": 19998,
+        "probability": 59.09923754359004
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 5,
+        "playerCount": 33838,
+        "opponentCount": 8105,
+        "probability": 23.952361250664932
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 6,
+        "playerCount": 33838,
+        "opponentCount": 5207,
+        "probability": 15.388025297003368
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 7,
+        "playerCount": 33838,
+        "opponentCount": 329,
+        "probability": 0.9722796855606123
+      },
+      {
+        "playerHandType": 4,
+        "opponentHandType": 8,
+        "playerCount": 33838,
+        "opponentCount": 163,
+        "probability": 0.48170695667592645
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 0,
+        "playerCount": 20235,
+        "opponentCount": 2747,
+        "probability": 13.575488015814182
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 1,
+        "playerCount": 20235,
+        "opponentCount": 14504,
+        "probability": 71.6777860143316
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 2,
+        "playerCount": 20235,
+        "opponentCount": 17195,
+        "probability": 84.97652582159625
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 3,
+        "playerCount": 20235,
+        "opponentCount": 6529,
+        "probability": 32.26587595749938
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 4,
+        "playerCount": 20235,
+        "opponentCount": 8056,
+        "probability": 39.81220657276995
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 5,
+        "playerCount": 20235,
+        "opponentCount": 11527,
+        "probability": 56.96565357054608
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 6,
+        "playerCount": 20235,
+        "opponentCount": 4628,
+        "probability": 22.871262663701508
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 7,
+        "playerCount": 20235,
+        "opponentCount": 335,
+        "probability": 1.6555473190017298
+      },
+      {
+        "playerHandType": 5,
+        "opponentHandType": 8,
+        "playerCount": 20235,
+        "opponentCount": 146,
+        "probability": 0.7215221151470225
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 0,
+        "playerCount": 19206,
+        "opponentCount": 0,
+        "probability": 0
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 1,
+        "playerCount": 19206,
+        "opponentCount": 10528,
+        "probability": 54.81620326981152
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 2,
+        "playerCount": 19206,
+        "opponentCount": 16573,
+        "probability": 86.29074247630949
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 3,
+        "playerCount": 19206,
+        "opponentCount": 7344,
+        "probability": 38.23805060918463
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 4,
+        "playerCount": 19206,
+        "opponentCount": 4895,
+        "probability": 25.486827033218784
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 5,
+        "playerCount": 19206,
+        "opponentCount": 4251,
+        "probability": 22.133708216182445
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 6,
+        "playerCount": 19206,
+        "opponentCount": 8573,
+        "probability": 44.637092575236906
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 7,
+        "playerCount": 19206,
+        "opponentCount": 1190,
+        "probability": 6.1959804227845465
+      },
+      {
+        "playerHandType": 6,
+        "opponentHandType": 8,
+        "playerCount": 19206,
+        "opponentCount": 64,
+        "probability": 0.33322919920858063
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 0,
+        "playerCount": 1400,
+        "opponentCount": 0,
+        "probability": 0
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 1,
+        "playerCount": 1400,
+        "opponentCount": 537,
+        "probability": 38.357142857142854
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 2,
+        "playerCount": 1400,
+        "opponentCount": 813,
+        "probability": 58.07142857142858
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 3,
+        "playerCount": 1400,
+        "opponentCount": 657,
+        "probability": 46.92857142857143
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 4,
+        "playerCount": 1400,
+        "opponentCount": 258,
+        "probability": 18.428571428571427
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 5,
+        "playerCount": 1400,
+        "opponentCount": 254,
+        "probability": 18.142857142857142
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 6,
+        "playerCount": 1400,
+        "opponentCount": 700,
+        "probability": 50
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 7,
+        "playerCount": 1400,
+        "opponentCount": 10,
+        "probability": 0.7142857142857143
+      },
+      {
+        "playerHandType": 7,
+        "opponentHandType": 8,
+        "playerCount": 1400,
+        "opponentCount": 1,
+        "probability": 0.07142857142857142
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 0,
+        "playerCount": 218,
+        "opponentCount": 39,
+        "probability": 17.889908256880734
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 1,
+        "playerCount": 218,
+        "opponentCount": 158,
+        "probability": 72.47706422018348
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 2,
+        "playerCount": 218,
+        "opponentCount": 179,
+        "probability": 82.11009174311926
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 3,
+        "playerCount": 218,
+        "opponentCount": 64,
+        "probability": 29.357798165137616
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 4,
+        "playerCount": 218,
+        "opponentCount": 114,
+        "probability": 52.293577981651374
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 5,
+        "playerCount": 218,
+        "opponentCount": 125,
+        "probability": 57.3394495412844
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 6,
+        "playerCount": 218,
+        "opponentCount": 50,
+        "probability": 22.93577981651376
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 7,
+        "playerCount": 218,
+        "opponentCount": 1,
+        "probability": 0.45871559633027525
+      },
+      {
+        "playerHandType": 8,
+        "opponentHandType": 8,
+        "playerCount": 218,
+        "opponentCount": 4,
+        "probability": 1.834862385321101
+      }
+    ],
+    "byStartingCategory": {
+      "single_suited-s": {
+        "category": "single_suited-s",
+        "count": 130542,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 5657,
+            "percentage": 4.333471219990502,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 34208,
+            "percentage": 26.204593157757657,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 50463,
+            "percentage": 38.65652433699499,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 8347,
+            "percentage": 6.394110707664965,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 16580,
+            "percentage": 12.700893199123653,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 8611,
+            "percentage": 6.596344471511085,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 6284,
+            "percentage": 4.813776409125032,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 277,
+            "percentage": 0.2121922446415713,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 100,
+            "percentage": 0.07660369842656004,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 15,
+            "percentage": 0.011490554763984005,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 16.985338052121158
+      },
+      "rundown": {
+        "category": "rundown",
+        "count": 489,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 30,
+            "percentage": 6.134969325153374,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 146,
+            "percentage": 29.85685071574642,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 157,
+            "percentage": 32.10633946830266,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 32,
+            "percentage": 6.5439672801636,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 102,
+            "percentage": 20.858895705521473,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 2,
+            "percentage": 0.408997955010225,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 20,
+            "percentage": 4.08997955010225,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 15.541922290388548
+      },
+      "low_pairs-s": {
+        "category": "low_pairs-s",
+        "count": 27079,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 7244,
+            "percentage": 26.751357140219355,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 9463,
+            "percentage": 34.94589903615348,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 3756,
+            "percentage": 13.870526976623951,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 1992,
+            "percentage": 7.356253923704716,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 1798,
+            "percentage": 6.639831603825843,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 2562,
+            "percentage": 9.461206100668415,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 245,
+            "percentage": 0.9047601462387829,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 17,
+            "percentage": 0.06277927545330331,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 2,
+            "percentage": 0.0073857971121533295,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 15.650504080652905
+      },
+      "double_paired-s": {
+        "category": "double_paired-s",
+        "count": 1707,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 374,
+            "percentage": 21.90978324545987,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 505,
+            "percentage": 29.584065612185118,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 369,
+            "percentage": 21.616871704745165,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 64,
+            "percentage": 3.7492677211482133,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 108,
+            "percentage": 6.32688927943761,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 247,
+            "percentage": 14.469830111306386,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 39,
+            "percentage": 2.2847100175746924,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 1,
+            "percentage": 0.05858230814294083,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 22.026947861745754
+      },
+      "high_pairs": {
+        "category": "high_pairs",
+        "count": 2804,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 859,
+            "percentage": 30.634807417974326,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 1056,
+            "percentage": 37.660485021398,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 418,
+            "percentage": 14.907275320970042,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 209,
+            "percentage": 7.453637660485021,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 238,
+            "percentage": 8.487874465049929,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 24,
+            "percentage": 0.8559201141226819,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 15.691868758915833
+      },
+      "double_suited-ds": {
+        "category": "double_suited-ds",
+        "count": 37319,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 1020,
+            "percentage": 2.733192207722608,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 8788,
+            "percentage": 23.548326589672822,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 12941,
+            "percentage": 34.67670623542967,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 2990,
+            "percentage": 8.012004608912351,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 3973,
+            "percentage": 10.646051609099922,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 5083,
+            "percentage": 13.620407835150997,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 2306,
+            "percentage": 6.1791580696160135,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 163,
+            "percentage": 0.4367748331948873,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 48,
+            "percentage": 0.12862080977518153,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 7,
+            "percentage": 0.018757201425547307,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 20.33548594549693
+      },
+      "connected-s": {
+        "category": "connected-s",
+        "count": 18827,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 1070,
+            "percentage": 5.683327136559197,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 4811,
+            "percentage": 25.553726031762892,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 6541,
+            "percentage": 34.74265682264833,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 1124,
+            "percentage": 5.970149253731343,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 3053,
+            "percentage": 16.216072661603018,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 1285,
+            "percentage": 6.825304084559409,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 881,
+            "percentage": 4.679449726456684,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 48,
+            "percentage": 0.2549529930419079,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 14,
+            "percentage": 0.07436128963722313,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 18.574387847240665
+      },
+      "uncoordinated": {
+        "category": "uncoordinated",
+        "count": 18762,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 876,
+            "percentage": 4.6690118324272465,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 5337,
+            "percentage": 28.44579469139751,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 7625,
+            "percentage": 40.640656646412964,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 1271,
+            "percentage": 6.774331094766016,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 2585,
+            "percentage": 13.777848843406886,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 108,
+            "percentage": 0.5756315957787016,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 912,
+            "percentage": 4.860889031020147,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 42,
+            "percentage": 0.2238567316917173,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 5,
+            "percentage": 0.026649610915680633,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 1,
+            "percentage": 0.005329922183136126,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 14.374800127918133
+      },
+      "aces-s": {
+        "category": "aces-s",
+        "count": 5759,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 1604,
+            "percentage": 27.85205764889738,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 2007,
+            "percentage": 34.849800312554265,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 848,
+            "percentage": 14.724778607397118,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 319,
+            "percentage": 5.539156103490189,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 347,
+            "percentage": 6.025351623545754,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 573,
+            "percentage": 9.949644035422816,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 60,
+            "percentage": 1.041847542976211,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 1,
+            "percentage": 0.017364125716270183,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 24.448689008508424
+      },
+      "medium_pairs-s": {
+        "category": "medium_pairs-s",
+        "count": 21571,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 5488,
+            "percentage": 25.44156506420657,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 7695,
+            "percentage": 35.6728941634602,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 2972,
+            "percentage": 13.77775717398359,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 1829,
+            "percentage": 8.478976403504705,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 1314,
+            "percentage": 6.09151175188911,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 2047,
+            "percentage": 9.489592508460433,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 206,
+            "percentage": 0.954985860646238,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 17,
+            "percentage": 0.07880951277177692,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 3,
+            "percentage": 0.013907561077372397,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 18.48778452552037
+      },
+      "low_pairs": {
+        "category": "low_pairs",
+        "count": 4780,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 1387,
+            "percentage": 29.016736401673644,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 1837,
+            "percentage": 38.43096234309623,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 672,
+            "percentage": 14.058577405857742,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 373,
+            "percentage": 7.803347280334728,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 475,
+            "percentage": 9.937238493723848,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 36,
+            "percentage": 0.7531380753138075,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 13.284518828451883
+      },
+      "aces-ds": {
+        "category": "aces-ds",
+        "count": 950,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 233,
+            "percentage": 24.526315789473685,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 328,
+            "percentage": 34.526315789473685,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 141,
+            "percentage": 14.842105263157896,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 47,
+            "percentage": 4.947368421052632,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 112,
+            "percentage": 11.789473684210526,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 81,
+            "percentage": 8.526315789473685,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 8,
+            "percentage": 0.8421052631578947,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 26.94736842105263
+      },
+      "high_pairs-s": {
+        "category": "high_pairs-s",
+        "count": 16432,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 4461,
+            "percentage": 27.14824732229795,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 5852,
+            "percentage": 35.613437195715676,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 2271,
+            "percentage": 13.820593962999025,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 1062,
+            "percentage": 6.4629990262901655,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 1001,
+            "percentage": 6.091772151898734,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 1593,
+            "percentage": 9.694498539435248,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 179,
+            "percentage": 1.0893378773125608,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 11,
+            "percentage": 0.06694255111976631,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 2,
+            "percentage": 0.012171372930866602,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 21.610272638753653
+      },
+      "aces": {
+        "category": "aces",
+        "count": 960,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 295,
+            "percentage": 30.729166666666668,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 359,
+            "percentage": 37.395833333333336,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 140,
+            "percentage": 14.583333333333334,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 59,
+            "percentage": 6.145833333333333,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 98,
+            "percentage": 10.208333333333334,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 9,
+            "percentage": 0.9375,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 20.625
+      },
+      "medium_pairs": {
+        "category": "medium_pairs",
+        "count": 3729,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 1006,
+            "percentage": 26.97774202198981,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 1454,
+            "percentage": 38.991686779297396,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 546,
+            "percentage": 14.641995172968624,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 345,
+            "percentage": 9.25181013676589,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 346,
+            "percentage": 9.278626977742022,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 32,
+            "percentage": 0.8581389112362564,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 14.883346741753822
+      },
+      "rundown-s": {
+        "category": "rundown-s",
+        "count": 3023,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 146,
+            "percentage": 4.829639431028779,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 901,
+            "percentage": 29.80482963943103,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 873,
+            "percentage": 28.878597419781677,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 210,
+            "percentage": 6.946741647370162,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 557,
+            "percentage": 18.425405226596098,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 179,
+            "percentage": 5.921270261329805,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 150,
+            "percentage": 4.961958319550116,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 6,
+            "percentage": 0.19847833278200464,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 1,
+            "percentage": 0.03307972213033411,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 18.921601058551108
+      },
+      "double_paired": {
+        "category": "double_paired",
+        "count": 447,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 109,
+            "percentage": 24.384787472035793,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 145,
+            "percentage": 32.43847874720358,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 108,
+            "percentage": 24.161073825503358,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 22,
+            "percentage": 4.921700223713646,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 58,
+            "percentage": 12.97539149888143,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 5,
+            "percentage": 1.1185682326621924,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 17.225950782997764
+      },
+      "high_pairs-ds": {
+        "category": "high_pairs-ds",
+        "count": 895,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 212,
+            "percentage": 23.687150837988828,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 300,
+            "percentage": 33.5195530726257,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 115,
+            "percentage": 12.849162011173185,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 54,
+            "percentage": 6.033519553072626,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 121,
+            "percentage": 13.519553072625698,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 82,
+            "percentage": 9.162011173184357,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 10,
+            "percentage": 1.1173184357541899,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 1,
+            "percentage": 0.11173184357541899,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 25.139664804469277
+      },
+      "connected": {
+        "category": "connected",
+        "count": 2648,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 175,
+            "percentage": 6.608761329305136,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 725,
+            "percentage": 27.37915407854985,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 963,
+            "percentage": 36.36706948640484,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 168,
+            "percentage": 6.3444108761329305,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 461,
+            "percentage": 17.409365558912388,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 10,
+            "percentage": 0.3776435045317221,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 140,
+            "percentage": 5.287009063444108,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 5,
+            "percentage": 0.18882175226586104,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 1,
+            "percentage": 0.0377643504531722,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 16.691842900302113
+      },
+      "rundown-ds": {
+        "category": "rundown-ds",
+        "count": 572,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 26,
+            "percentage": 4.545454545454546,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 150,
+            "percentage": 26.223776223776223,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 162,
+            "percentage": 28.321678321678323,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 25,
+            "percentage": 4.370629370629371,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 97,
+            "percentage": 16.95804195804196,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 79,
+            "percentage": 13.81118881118881,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 31,
+            "percentage": 5.419580419580419,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 2,
+            "percentage": 0.34965034965034963,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 21.153846153846153
+      },
+      "broadway-s": {
+        "category": "broadway-s",
+        "count": 221,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 13,
+            "percentage": 5.88235294117647,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 70,
+            "percentage": 31.674208144796378,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 63,
+            "percentage": 28.50678733031674,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 19,
+            "percentage": 8.597285067873303,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 34,
+            "percentage": 15.384615384615385,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 12,
+            "percentage": 5.429864253393665,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 10,
+            "percentage": 4.524886877828054,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 25.339366515837103
+      },
+      "double_paired-ds": {
+        "category": "double_paired-ds",
+        "count": 454,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 89,
+            "percentage": 19.60352422907489,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 133,
+            "percentage": 29.295154185022028,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 76,
+            "percentage": 16.740088105726873,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 14,
+            "percentage": 3.0837004405286343,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 65,
+            "percentage": 14.317180616740089,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 70,
+            "percentage": 15.418502202643172,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 6,
+            "percentage": 1.3215859030837005,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 1,
+            "percentage": 0.22026431718061676,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 23.788546255506606
+      },
+      "broadway": {
+        "category": "broadway",
+        "count": 30,
+        "finalHandDistribution": [
+          {
+            "handType": 0,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 1,
+            "count": 6,
+            "percentage": 20,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 2,
+            "count": 12,
+            "percentage": 40,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 3,
+            "count": 3,
+            "percentage": 10,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 4,
+            "count": 7,
+            "percentage": 23.333333333333332,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 5,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 6,
+            "count": 2,
+            "percentage": 6.666666666666667,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 7,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 8,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          },
+          {
+            "handType": 9,
+            "count": 0,
+            "percentage": 0,
+            "wins": 0,
+            "winRate": 0
+          }
+        ],
+        "winRate": 36.666666666666664
+      }
+    }
+  }
+}
