@@ -18,48 +18,48 @@ import { S3Client, PutObjectCommand, ListObjectsV2Command } from '@aws-sdk/clien
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { HAND_TYPE_NAMES, dealAndEvaluate, determineWinners } from './poker-evaluator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configuration
-const ITERATIONS = 1000000; // 1M iterations for high statistical accuracy
+const ITERATIONS = 100000; // 100K iterations - matches original Smalltalk ph_t2.html
 const OUTPUT_DIR = path.join(__dirname, '../data/tier2');
 
 // Game variants and player counts to simulate
+// Note: Original Smalltalk was Omaha 4-card only
 const SCENARIOS = [
-  { game: 'omaha4', players: [2, 3, 4, 5, 6, 7, 8, 9] },
-  { game: 'omaha5', players: [2, 3, 4, 5, 6, 7, 8, 9] },
-  { game: 'omaha6', players: [2, 3, 4, 5, 6] },
+  { game: 'omaha4', players: [2, 3, 4, 5, 6, 7, 8, 9], holeCards: 4 },
+  { game: 'omaha5', players: [2, 3, 4, 5, 6, 7, 8], holeCards: 5 },
+  { game: 'omaha6', players: [2, 3, 4, 5, 6], holeCards: 6 },
 ];
 
-// Hand categories for detailed breakdowns
-const HAND_CATEGORIES = [
-  'premium-pairs',      // AA, KK, QQ with suits
-  'broadway-rundowns',  // Connected high cards
-  'suited-aces',        // Ax suited combinations
-  'double-suited',      // Hands with two flush draws
-  'wrap-potential',     // Hands that make wraps
-  'speculative',        // Lower pairs, suited connectors
-];
-
-// Simplified Monte Carlo simulation (same logic as API)
-// NOW MATCHES ORIGINAL SMALLTALK: Matrix shows "threat landscape" - 
-// What % of hands have at least one opponent with each hand type?
+/**
+ * Run Monte Carlo simulation with ACTUAL card dealing and hand evaluation
+ * This matches the original Smalltalk implementation exactly:
+ * - Deals real cards from a shuffled deck
+ * - Evaluates best Omaha hand (2 hole + 3 board)
+ * - Matrix shows: "When I have X, what % of hands have at least one opponent with Y?"
+ */
 function runSimulation(gameVariant, playerCount, iterations) {
-  const handTypeNames = [
-    'High Card', 'One Pair', 'Two Pair', 'Three of a Kind',
-    'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush'
-  ];
+  // Determine hole card count based on variant
+  const holeCardCount = gameVariant === 'omaha6' ? 6 : gameVariant === 'omaha5' ? 5 : 4;
+
+  // Check if we have enough cards
+  const cardsNeeded = playerCount * holeCardCount + 8; // +8 for burns and board
+  if (cardsNeeded > 52) {
+    console.warn(`  ⚠ ${gameVariant} with ${playerCount} players needs ${cardsNeeded} cards - skipping`);
+    return null;
+  }
 
   const handTypeCounts = new Array(9).fill(0);
   const handTypeWins = new Array(9).fill(0);
   let heroWins = 0;
 
-  // THREAT LANDSCAPE MATRIX:
-  // threatMatrix[heroType][oppType] = count of hands where hero had heroType 
+  // THREAT LANDSCAPE MATRIX (matches original Smalltalk exactly):
+  // threatMatrix[heroType][oppType] = count of hands where hero had heroType
   // AND at least one opponent had oppType as their BEST hand
-  // NOTE: A single hand can increment multiple columns if different opponents have different best hands
   const threatMatrix = Array.from({ length: 9 }, () => new Array(9).fill(0));
 
   // Also track win rates for each matchup (secondary data)
@@ -67,33 +67,37 @@ function runSimulation(gameVariant, playerCount, iterations) {
     Array.from({ length: 9 }, () => ({ count: 0, wins: 0 }))
   );
 
-  // Probability weights for PLO hand types (simplified model)
-  const weights = gameVariant === 'omaha6'
-    ? [0.05, 0.25, 0.25, 0.08, 0.12, 0.10, 0.10, 0.03, 0.02]
-    : gameVariant === 'omaha5'
-    ? [0.08, 0.28, 0.23, 0.08, 0.11, 0.09, 0.08, 0.03, 0.02]
-    : [0.12, 0.32, 0.22, 0.07, 0.10, 0.08, 0.05, 0.025, 0.015];
+  const startTime = Date.now();
+  const logInterval = Math.floor(iterations / 10);
 
   for (let i = 0; i < iterations; i++) {
-    const heroHandType = weightedRandom(weights);
+    if (i > 0 && i % logInterval === 0) {
+      const pct = Math.round(i / iterations * 100);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      process.stdout.write(`\r    ${pct}% (${elapsed}s)...`);
+    }
+
+    // ACTUALLY DEAL AND EVALUATE HANDS
+    const results = dealAndEvaluate(playerCount, holeCardCount);
+    const heroResult = results[0]; // Player 0 is "hero"
+    const heroHandType = heroResult.handType;
+
     handTypeCounts[heroHandType]++;
 
-    let heroWon = true;
-    let strongestOppType = -1;
-    
     // Track which opponent hand types appear in THIS hand (for threat matrix)
     const oppTypesPresent = new Set();
+    let strongestOppType = -1;
+    let strongestOppTiebreaker = -1;
 
-    for (let opp = 0; opp < playerCount - 1; opp++) {
-      const oppHandType = weightedRandom(weights);
-      oppTypesPresent.add(oppHandType);
-      
-      // Track the strongest opponent hand we face
-      if (oppHandType > strongestOppType) {
-        strongestOppType = oppHandType;
-      }
-      if (oppHandType > heroHandType || (oppHandType === heroHandType && Math.random() > 0.5)) {
-        heroWon = false;
+    for (let opp = 1; opp < playerCount; opp++) {
+      const oppType = results[opp].handType;
+      const oppTiebreaker = results[opp].tiebreaker;
+      oppTypesPresent.add(oppType);
+
+      if (oppType > strongestOppType ||
+          (oppType === strongestOppType && oppTiebreaker > strongestOppTiebreaker)) {
+        strongestOppType = oppType;
+        strongestOppTiebreaker = oppTiebreaker;
       }
     }
 
@@ -103,7 +107,11 @@ function runSimulation(gameVariant, playerCount, iterations) {
       threatMatrix[heroHandType][oppType]++;
     }
 
-    // WIN RATE MATRIX: Track wins vs the strongest opponent (secondary data)
+    // Determine if hero won
+    const winners = determineWinners(results);
+    const heroWon = winners.includes(0);
+
+    // WIN RATE MATRIX: Track wins vs the strongest opponent
     if (strongestOppType >= 0) {
       winMatrix[heroHandType][strongestOppType].count++;
       if (heroWon) {
@@ -117,16 +125,20 @@ function runSimulation(gameVariant, playerCount, iterations) {
     }
   }
 
+  process.stdout.write(`\r    100%         \n`);
+
+  const durationMs = Date.now() - startTime;
+
   // Match the format expected by displayScenarioResults and displayMatrix
   return {
     metadata: {
       id: `tier2_${gameVariant}_${playerCount}p`,
       config: { gameVariant, playerCount, iterations },
       createdAt: new Date().toISOString(),
-      durationMs: 0 // Pre-computed
+      durationMs
     },
     statistics: {
-      handTypeDistribution: handTypeNames.map((name, i) => ({
+      handTypeDistribution: HAND_TYPE_NAMES.map((name, i) => ({
         handType: i,
         name,
         count: handTypeCounts[i],
@@ -135,11 +147,11 @@ function runSimulation(gameVariant, playerCount, iterations) {
         winRate: handTypeCounts[i] > 0 ? parseFloat((handTypeWins[i] / handTypeCounts[i] * 100).toFixed(2)) : 0
       })),
       overallWinRate: parseFloat((heroWins / iterations * 100).toFixed(2)),
-      // THREAT LANDSCAPE MATRIX - matches original Smalltalk behavior
+      // THREAT LANDSCAPE MATRIX - matches original Smalltalk behavior exactly
       // threatPct: "When I have heroHand, what % of hands have at least one opponent with oppHand?"
       // NOTE: Row totals can exceed 100% because multiple opponents can have different hand types
-      probabilityMatrix: handTypeNames.map((heroHand, heroIdx) =>
-        handTypeNames.map((oppHand, oppIdx) => {
+      probabilityMatrix: HAND_TYPE_NAMES.map((heroHand, heroIdx) =>
+        HAND_TYPE_NAMES.map((oppHand, oppIdx) => {
           const heroCount = handTypeCounts[heroIdx];
           const threatCount = threatMatrix[heroIdx][oppIdx];
           const winCell = winMatrix[heroIdx][oppIdx];
@@ -157,16 +169,6 @@ function runSimulation(gameVariant, playerCount, iterations) {
       )
     }
   };
-}
-
-function weightedRandom(weights) {
-  const total = weights.reduce((a, b) => a + b, 0);
-  let random = Math.random() * total;
-  for (let i = 0; i < weights.length; i++) {
-    random -= weights[i];
-    if (random <= 0) return i;
-  }
-  return weights.length - 1;
 }
 
 // Generate all data files
