@@ -18,6 +18,20 @@ If any step fails, fix the issue and repeat until everything passes.
 
 ---
 
+## ⚠️ Bot Testing & Validation Directive
+
+**CRITICAL: The AI agent is responsible for RUNNING tests, not providing instructions for the operator to run.**
+
+When working with the bot testing framework:
+1. **Run tests directly** using Desktop Commander or Bash tools
+2. **Do NOT** tell the user to run commands manually
+3. **Capture and analyze** test results automatically
+4. **Report findings** with statistics and insights
+
+The operator should NOT have to execute any test commands. The agent handles all test execution.
+
+---
+
 ## Before Starting Any Task
 
 1. **Check the task breakdown**: Read `TASK-BREAKDOWN.md` in the parent poker directory
@@ -101,8 +115,29 @@ Stay with Sonnet for:
 | `packages/web/src/public/poker-stats.js` | Statistics calculations |
 | `api/simulate.js` | Tier 3 simulation API |
 | `api/data.js` | Tier 2 R2 data API |
+| `api/advise.js` | **NEW: Play Advisor API (Phase 1)** |
 | `scripts/generate-tier2-data.js` | Generate Tier 2 data |
 | `e2e/app.spec.ts` | E2E test suite |
+
+---
+
+## Play Advisor API
+
+**Endpoint:** `POST /api/advise`
+
+**Phase 1 Complete:** Real-time hand analysis for Omaha poker
+- Hand evaluation (type, strength, nuts detection)
+- Board texture analysis (12 categories)
+- Threat probability from Tier 1 data
+- Outs counting (flush/straight draws)
+- Pot odds calculation
+
+**Example:**
+```bash
+curl -X POST https://poker-scenario-analyzer.vercel.app/api/advise \
+  -H "Content-Type: application/json" \
+  -d '{"gameVariant":"omaha4","holeCards":["As","Ks","Qs","Js"],"board":["Ts","9s","2h"],"playersInHand":3,"potSize":150,"toCall":50}'
+```
 
 ---
 

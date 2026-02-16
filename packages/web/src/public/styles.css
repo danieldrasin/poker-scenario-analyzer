@@ -2531,3 +2531,929 @@ footer {
     overflow-x: auto;
   }
 }
+
+/* ============================================ */
+/* PLAY ADVISOR STYLES                          */
+/* ============================================ */
+
+/* Play Advisor Tab Container */
+#advisor-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Advisor Layout - Two Column */
+.advisor-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .advisor-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Input Panel */
+.advisor-input-panel {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.advisor-input-panel h3 {
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Card Selection Mode */
+.card-mode-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-mode-selector label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card-mode-selector input[type="radio"] {
+  accent-color: var(--primary);
+}
+
+.card-mode-selector label:has(input:checked) {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+/* Card Selector Grid */
+#card-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.card-btn {
+  aspect-ratio: 3/4;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.15s;
+  padding: 4px;
+}
+
+.card-btn:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow);
+}
+
+.card-btn.selected {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.card-btn.hole {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.card-btn.board {
+  border-color: var(--success);
+  background: var(--success-light);
+}
+
+.card-btn .card-rank {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.card-btn .card-suit {
+  font-size: 0.9rem;
+}
+
+/* Selected Cards Display */
+.selected-cards-section {
+  margin-bottom: 20px;
+}
+
+.selected-cards-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.selected-cards-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 80px;
+}
+
+.selected-cards-display {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.selected-card {
+  width: 44px;
+  height: 60px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.selected-card.empty {
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+.selected-card.board-slot {
+  border-style: dashed;
+}
+
+.clear-btn {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  background: var(--danger);
+  color: white;
+}
+
+/* Street Indicator */
+.street-indicator {
+  text-align: center;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 16px;
+}
+
+/* Betting Inputs */
+.betting-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.betting-input {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.betting-input label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.betting-input input {
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.betting-input input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Situation Inputs */
+.situation-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.situation-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.situation-select label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.situation-select select {
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+}
+
+.situation-select select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Villain Actions */
+.villain-actions-section {
+  margin-bottom: 20px;
+}
+
+.villain-actions-section h4 {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.villain-action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.villain-action-btn {
+  padding: 8px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.villain-action-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.villain-action-btn[data-action="raise"] { border-color: var(--danger); color: var(--danger); }
+.villain-action-btn[data-action="bet"] { border-color: var(--warning); color: var(--warning); }
+.villain-action-btn[data-action="call"] { border-color: var(--success); color: var(--success); }
+.villain-action-btn[data-action="check"] { border-color: var(--secondary); color: var(--secondary); }
+
+#villain-actions-display {
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-tag {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.no-actions {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Analyze Button */
+#analyze-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+#analyze-btn:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+#analyze-btn:disabled {
+  background: var(--secondary);
+  cursor: not-allowed;
+}
+
+/* Results Panel */
+.advisor-results-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#advisor-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#advisor-results.has-results {
+  display: flex;
+}
+
+/* Result Cards */
+.advisor-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.advisor-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.advisor-card .card-icon {
+  font-size: 1.2rem;
+}
+
+.advisor-card .card-title {
+  font-weight: 600;
+  flex: 1;
+}
+
+.advisor-card .card-body {
+  padding: 16px;
+}
+
+/* Hand Strength Card */
+.hand-strength-card .hand-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.nuts-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* Equity Card */
+.equity-card .equity-value {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.equity-card .equity-range {
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.equity-card .draw-equity {
+  color: var(--success);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.equity-bar {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.equity-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+/* Recommendation Card */
+.recommendation-card .action-badge {
+  display: inline-block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  letter-spacing: 1px;
+}
+
+.recommendation-card .sizing-info {
+  margin-top: 12px;
+  font-size: 1.2rem;
+}
+
+.recommendation-card .sizing-optimal {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.recommendation-card .sizing-percent {
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.confidence-badge {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  border-radius: 4px;
+}
+
+/* Reasoning Card */
+.reasoning-card .reasoning-primary {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.reasoning-card .reasoning-math {
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.reasoning-card .reasoning-strategic {
+  color: var(--secondary);
+}
+
+/* Warnings Card */
+.warnings-card {
+  border-left: 4px solid var(--warning);
+}
+
+.warnings-list {
+  list-style: none;
+}
+
+.warnings-list li {
+  padding: 8px 0;
+  color: var(--warning);
+  font-weight: 500;
+}
+
+.warnings-list li::before {
+  content: '⚠️ ';
+}
+
+/* Sizing Card */
+.sizing-card .sizing-range {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+
+.sizing-card .optimal {
+  font-weight: 700;
+  color: var(--success);
+}
+
+.sizing-card .sizing-explanation {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.commitment-info {
+  display: flex;
+  gap: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.commitment-info .spr {
+  color: var(--text-muted);
+}
+
+.commitment-info .committing {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.commitment-info .all-in {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* Alternatives Card */
+.alternative {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.alternative:last-child {
+  border-bottom: none;
+}
+
+.alt-action {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.alt-tradeoff {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Texture Card */
+.texture-card .texture-category {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.texture-card .texture-danger {
+  color: var(--danger);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.texture-card .texture-desc {
+  color: var(--text-muted);
+}
+
+/* Placeholder & Error States */
+.advisor-placeholder {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  font-size: 1.1rem;
+}
+
+.advisor-error {
+  text-align: center;
+  padding: 20px;
+  color: var(--danger);
+  background: var(--danger-light);
+  border-radius: var(--radius-lg);
+}
+
+.latency-info {
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 8px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  #card-selector-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+  }
+
+  .card-btn {
+    font-size: 0.85rem;
+  }
+
+  .card-btn .card-rank {
+    font-size: 1rem;
+  }
+
+  .betting-inputs,
+  .situation-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-card {
+    width: 36px;
+    height: 50px;
+    font-size: 0.9rem;
+  }
+
+  .recommendation-card .action-badge {
+    font-size: 1.2rem;
+    padding: 10px 20px;
+  }
+
+  .equity-card .equity-value {
+    font-size: 1.5rem;
+  }
+}
+
+/* ============================================ */
+/* FEEDBACK STYLES                              */
+/* ============================================ */
+
+.feedback-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.feedback-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.feedback-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.feedback-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feedback-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.feedback-btn.positive:hover:not(:disabled) {
+  border-color: var(--success);
+  background: var(--success-light);
+}
+
+.feedback-btn.negative:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: var(--danger-light);
+}
+
+.feedback-btn.selected {
+  transform: scale(1.15);
+}
+
+.feedback-btn.positive.selected {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.feedback-btn.negative.selected {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+.feedback-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feedback-status {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.feedback-status.positive {
+  color: var(--success);
+}
+
+.feedback-status.negative {
+  color: var(--warning);
+}
+
+/* ============================================ */
+/* ANALYTICS SECTION STYLES                     */
+/* ============================================ */
+
+.analytics-section {
+  margin-top: 24px;
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.analytics-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: var(--bg);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.analytics-header:hover {
+  background: var(--border);
+}
+
+.analytics-icon {
+  font-size: 1.2rem;
+}
+
+.analytics-title {
+  flex: 1;
+  font-weight: 600;
+}
+
+.analytics-toggle-icon {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.analytics-body {
+  padding: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+  .analytics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.analytics-stat {
+  text-align: center;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.analytics-stat.positive .stat-value {
+  color: var(--success);
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.analytics-body h4 {
+  margin: 20px 0 12px;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.action-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-name {
+  width: 60px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.action-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.action-bar-fill {
+  height: 100%;
+  background: var(--success);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.action-rate {
+  width: 40px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.action-count {
+  width: 40px;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.recent-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.comment.positive {
+  border-left: 3px solid var(--success);
+}
+
+.comment.negative {
+  border-left: 3px solid var(--danger);
+}
+
+.comment-icon {
+  font-size: 1.2rem;
+}
+
+.comment-text {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.comment-action {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  background: var(--border);
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.analytics-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.analytics-empty .hint {
+  font-size: 0.9rem;
+  margin-top: 8px;
+}

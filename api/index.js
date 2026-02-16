@@ -9,6 +9,7 @@ import dataHandler from './data.js';
 import healthHandler from './health.js';
 import variantsHandler from './variants.js';
 import simulateHandler from './simulate.js';
+import adviseHandler from './advise.js';
 
 export default async function handler(req, res) {
   const { method, url } = req;
@@ -40,6 +41,10 @@ export default async function handler(req, res) {
     return simulateHandler(req, res);
   }
 
+  if (path === '/advise' || path === '/advise/') {
+    return adviseHandler(req, res);
+  }
+
   // Server simulations storage not supported
   if (path.startsWith('/simulations')) {
     return res.status(200).json({
@@ -53,6 +58,6 @@ export default async function handler(req, res) {
   return res.status(404).json({
     error: 'Not found',
     path: path,
-    availableEndpoints: ['/api/health', '/api/variants', '/api/data', '/api/simulate', '/api/simulations']
+    availableEndpoints: ['/api/health', '/api/variants', '/api/data', '/api/simulate', '/api/advise', '/api/simulations']
   });
 }

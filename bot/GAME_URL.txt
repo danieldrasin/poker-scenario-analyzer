@@ -1,0 +1,10 @@
+PokerNow Game URL
+==================
+https://www.pokernow.com/games/pgl2wy20QIsPBt_NSZ5zQfL4X
+
+Game Settings:
+- Variant: Pot Limit Omaha Hi
+- Blinds: 10/20
+- Duration: Unlimited
+
+Created: February 2026

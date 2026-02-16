@@ -1,0 +1,1912 @@
+{
+  "PLO4_2p": {
+    "variant": "PLO4",
+    "num_players": 2,
+    "styles": [
+      "tag",
+      "lag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 259.5,
+        "ci": [
+          21.4,
+          497.6
+        ],
+        "win_rate": 61.5,
+        "flop_pct": 84.5,
+        "vpip": 101.5,
+        "actions": {
+          "raise": 234,
+          "fold": 62,
+          "call": 250
+        },
+        "streets": {
+          "preflop": 240,
+          "flop": 169,
+          "turn": 90,
+          "river": 47
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 200,
+        "bb100": -109.5,
+        "ci": [
+          -347.6,
+          128.6
+        ],
+        "win_rate": 39.5,
+        "flop_pct": 89.0,
+        "vpip": 94.0,
+        "actions": {
+          "call": 204,
+          "raise": 261,
+          "fold": 95
+        },
+        "streets": {
+          "preflop": 235,
+          "flop": 178,
+          "turn": 96,
+          "river": 51
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO4_3p": {
+    "variant": "PLO4",
+    "num_players": 3,
+    "styles": [
+      "tag",
+      "lag",
+      "rock"
+    ],
+    "hands": 200,
+    "elapsed": 0.0,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 112.8,
+        "ci": [
+          11.9,
+          213.6
+        ],
+        "win_rate": 77.5,
+        "flop_pct": 62.0,
+        "vpip": 72.0,
+        "actions": {
+          "call": 173,
+          "raise": 190,
+          "fold": 32
+        },
+        "streets": {
+          "preflop": 169,
+          "flop": 124,
+          "turn": 70,
+          "river": 32
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": 12.5,
+        "ci": [
+          -23.8,
+          48.8
+        ],
+        "win_rate": 12.0,
+        "flop_pct": 40.0,
+        "vpip": 9.0,
+        "actions": {
+          "fold": 172,
+          "call": 138,
+          "raise": 31
+        },
+        "streets": {
+          "preflop": 204,
+          "flop": 80,
+          "turn": 39,
+          "river": 18
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 200,
+        "bb100": -37.8,
+        "ci": [
+          -127.6,
+          52.1
+        ],
+        "win_rate": 11.0,
+        "flop_pct": 30.5,
+        "vpip": 27.0,
+        "actions": {
+          "call": 81,
+          "fold": 23,
+          "raise": 66
+        },
+        "streets": {
+          "preflop": 65,
+          "flop": 61,
+          "turn": 30,
+          "river": 14
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO4_4p": {
+    "variant": "PLO4",
+    "num_players": 4,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag"
+    ],
+    "hands": 200,
+    "elapsed": 0.0,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 43.5,
+        "ci": [
+          -78.5,
+          165.5
+        ],
+        "win_rate": 50.0,
+        "flop_pct": 78.0,
+        "vpip": 85.5,
+        "actions": {
+          "raise": 407,
+          "call": 211,
+          "fold": 21
+        },
+        "streets": {
+          "preflop": 205,
+          "flop": 156,
+          "turn": 142,
+          "river": 136
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": 17.0,
+        "ci": [
+          -4.1,
+          38.1
+        ],
+        "win_rate": 27.0,
+        "flop_pct": 51.0,
+        "vpip": 13.0,
+        "actions": {
+          "fold": 101,
+          "call": 227,
+          "raise": 162
+        },
+        "streets": {
+          "preflop": 201,
+          "flop": 102,
+          "turn": 94,
+          "river": 93
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": 18.4,
+        "ci": [
+          -42.2,
+          78.9
+        ],
+        "win_rate": 11.5,
+        "flop_pct": 23.8,
+        "vpip": 13.0,
+        "actions": {
+          "fold": 153,
+          "call": 136,
+          "raise": 199
+        },
+        "streets": {
+          "preflop": 238,
+          "flop": 95,
+          "turn": 81,
+          "river": 74
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO4_5p": {
+    "variant": "PLO4",
+    "num_players": 5,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag"
+    ],
+    "hands": 200,
+    "elapsed": 0.0,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": -38.5,
+        "ci": [
+          -138.3,
+          61.3
+        ],
+        "win_rate": 13.0,
+        "flop_pct": 32.5,
+        "vpip": 34.8,
+        "actions": {
+          "call": 186,
+          "fold": 32,
+          "raise": 304
+        },
+        "streets": {
+          "preflop": 167,
+          "flop": 130,
+          "turn": 118,
+          "river": 107
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": 21.0,
+        "ci": [
+          -35.4,
+          77.4
+        ],
+        "win_rate": 15.5,
+        "flop_pct": 36.5,
+        "vpip": 19.5,
+        "actions": {
+          "raise": 114,
+          "call": 142,
+          "fold": 139
+        },
+        "streets": {
+          "preflop": 202,
+          "flop": 73,
+          "turn": 61,
+          "river": 59
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": 73.5,
+        "ci": [
+          -56.4,
+          203.4
+        ],
+        "win_rate": 29.2,
+        "flop_pct": 59.0,
+        "vpip": 47.2,
+        "actions": {
+          "fold": 186,
+          "call": 339,
+          "raise": 504
+        },
+        "streets": {
+          "preflop": 414,
+          "flop": 236,
+          "turn": 201,
+          "river": 178
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO4_6p": {
+    "variant": "PLO4",
+    "num_players": 6,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock"
+    ],
+    "hands": 200,
+    "elapsed": 0.0,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": 68.9,
+        "ci": [
+          -37.0,
+          174.8
+        ],
+        "win_rate": 21.2,
+        "flop_pct": 48.5,
+        "vpip": 49.2,
+        "actions": {
+          "call": 283,
+          "fold": 36,
+          "raise": 417
+        },
+        "streets": {
+          "preflop": 242,
+          "flop": 194,
+          "turn": 162,
+          "river": 138
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 400,
+        "bb100": -25.9,
+        "ci": [
+          -57.8,
+          6.0
+        ],
+        "win_rate": 6.8,
+        "flop_pct": 19.8,
+        "vpip": 12.8,
+        "actions": {
+          "fold": 265,
+          "call": 161,
+          "raise": 124
+        },
+        "streets": {
+          "preflop": 343,
+          "flop": 79,
+          "turn": 69,
+          "river": 59
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": -0.8,
+        "ci": [
+          -92.9,
+          91.4
+        ],
+        "win_rate": 22.8,
+        "flop_pct": 59.2,
+        "vpip": 53.0,
+        "actions": {
+          "fold": 182,
+          "call": 346,
+          "raise": 534
+        },
+        "streets": {
+          "preflop": 438,
+          "flop": 237,
+          "turn": 202,
+          "river": 185
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO4_7p": {
+    "variant": "PLO4",
+    "num_players": 7,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock",
+      "tag"
+    ],
+    "hands": 200,
+    "elapsed": 0.0,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": -47.8,
+        "ci": [
+          -98.2,
+          2.7
+        ],
+        "win_rate": 2.0,
+        "flop_pct": 5.0,
+        "vpip": 6.2,
+        "actions": {
+          "call": 24,
+          "raise": 42,
+          "fold": 20
+        },
+        "streets": {
+          "preflop": 43,
+          "flop": 20,
+          "turn": 13,
+          "river": 10
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 400,
+        "bb100": 9.1,
+        "ci": [
+          -5.5,
+          23.8
+        ],
+        "win_rate": 9.8,
+        "flop_pct": 22.0,
+        "vpip": 10.2,
+        "actions": {
+          "fold": 320,
+          "call": 190,
+          "raise": 133
+        },
+        "streets": {
+          "preflop": 404,
+          "flop": 88,
+          "turn": 76,
+          "river": 75
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 600,
+        "bb100": 54.2,
+        "ci": [
+          8.9,
+          99.4
+        ],
+        "win_rate": 25.8,
+        "flop_pct": 51.2,
+        "vpip": 40.0,
+        "actions": {
+          "fold": 286,
+          "call": 470,
+          "raise": 723
+        },
+        "streets": {
+          "preflop": 616,
+          "flop": 307,
+          "turn": 284,
+          "river": 272
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO4_8p": {
+    "variant": "PLO4",
+    "num_players": 8,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 600,
+        "bb100": -45.8,
+        "ci": [
+          -104.7,
+          13.2
+        ],
+        "win_rate": 5.2,
+        "flop_pct": 13.8,
+        "vpip": 13.0,
+        "actions": {
+          "call": 125,
+          "fold": 72,
+          "raise": 164
+        },
+        "streets": {
+          "preflop": 143,
+          "flop": 83,
+          "turn": 74,
+          "river": 61
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 400,
+        "bb100": 37.8,
+        "ci": [
+          -5.9,
+          81.4
+        ],
+        "win_rate": 10.2,
+        "flop_pct": 21.0,
+        "vpip": 12.2,
+        "actions": {
+          "fold": 325,
+          "call": 173,
+          "raise": 127
+        },
+        "streets": {
+          "preflop": 403,
+          "flop": 84,
+          "turn": 73,
+          "river": 65
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 600,
+        "bb100": 47.1,
+        "ci": [
+          -57.3,
+          151.4
+        ],
+        "win_rate": 21.7,
+        "flop_pct": 46.7,
+        "vpip": 37.7,
+        "actions": {
+          "fold": 328,
+          "raise": 663,
+          "call": 403
+        },
+        "streets": {
+          "preflop": 614,
+          "flop": 280,
+          "turn": 260,
+          "river": 240
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO4_9p": {
+    "variant": "PLO4",
+    "num_players": 9,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 600,
+        "bb100": 18.2,
+        "ci": [
+          -52.9,
+          89.4
+        ],
+        "win_rate": 12.8,
+        "flop_pct": 33.7,
+        "vpip": 34.8,
+        "actions": {
+          "call": 262,
+          "fold": 21,
+          "raise": 529
+        },
+        "streets": {
+          "preflop": 235,
+          "flop": 202,
+          "turn": 197,
+          "river": 178
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 600,
+        "bb100": 32.8,
+        "ci": [
+          -33.1,
+          98.8
+        ],
+        "win_rate": 7.0,
+        "flop_pct": 47.5,
+        "vpip": 9.0,
+        "actions": {
+          "fold": 326,
+          "call": 600,
+          "raise": 513
+        },
+        "streets": {
+          "preflop": 601,
+          "flop": 285,
+          "turn": 277,
+          "river": 276
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 600,
+        "bb100": -33.7,
+        "ci": [
+          -78.6,
+          11.3
+        ],
+        "win_rate": 4.2,
+        "flop_pct": 22.7,
+        "vpip": 8.0,
+        "actions": {
+          "raise": 277,
+          "call": 238,
+          "fold": 115
+        },
+        "streets": {
+          "preflop": 245,
+          "flop": 136,
+          "turn": 129,
+          "river": 120
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO5_2p": {
+    "variant": "PLO5",
+    "num_players": 2,
+    "styles": [
+      "tag",
+      "lag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 229.2,
+        "ci": [
+          -39.9,
+          498.4
+        ],
+        "win_rate": 53.5,
+        "flop_pct": 100.0,
+        "vpip": 154.5,
+        "actions": {
+          "raise": 371,
+          "call": 259,
+          "fold": 62
+        },
+        "streets": {
+          "preflop": 322,
+          "flop": 200,
+          "turn": 112,
+          "river": 58
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 200,
+        "bb100": -79.2,
+        "ci": [
+          -348.4,
+          189.9
+        ],
+        "win_rate": 47.0,
+        "flop_pct": 100.5,
+        "vpip": 153.0,
+        "actions": {
+          "raise": 358,
+          "call": 266,
+          "fold": 69
+        },
+        "streets": {
+          "preflop": 309,
+          "flop": 201,
+          "turn": 119,
+          "river": 64
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO5_3p": {
+    "variant": "PLO5",
+    "num_players": 3,
+    "styles": [
+      "tag",
+      "lag",
+      "rock"
+    ],
+    "hands": 200,
+    "elapsed": 0.0,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 124.0,
+        "ci": [
+          -11.4,
+          259.4
+        ],
+        "win_rate": 87.5,
+        "flop_pct": 48.0,
+        "vpip": 91.5,
+        "actions": {
+          "raise": 216,
+          "call": 146,
+          "fold": 13
+        },
+        "streets": {
+          "preflop": 187,
+          "flop": 96,
+          "turn": 54,
+          "river": 38
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": -36.8,
+        "ci": [
+          -100.2,
+          26.7
+        ],
+        "win_rate": 11.0,
+        "flop_pct": 42.5,
+        "vpip": 33.5,
+        "actions": {
+          "fold": 170,
+          "raise": 73,
+          "call": 143
+        },
+        "streets": {
+          "preflop": 221,
+          "flop": 85,
+          "turn": 47,
+          "river": 33
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 200,
+        "bb100": -16.0,
+        "ci": [
+          -152.5,
+          120.5
+        ],
+        "win_rate": 1.5,
+        "flop_pct": 5.0,
+        "vpip": 10.0,
+        "actions": {
+          "raise": 25,
+          "call": 12,
+          "fold": 4
+        },
+        "streets": {
+          "preflop": 20,
+          "flop": 10,
+          "turn": 9,
+          "river": 2
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO5_4p": {
+    "variant": "PLO5",
+    "num_players": 4,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 0.2,
+        "ci": [
+          -179.6,
+          180.1
+        ],
+        "win_rate": 50.0,
+        "flop_pct": 86.0,
+        "vpip": 106.5,
+        "actions": {
+          "call": 223,
+          "raise": 485,
+          "fold": 6
+        },
+        "streets": {
+          "preflop": 217,
+          "flop": 172,
+          "turn": 165,
+          "river": 160
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": -6.5,
+        "ci": [
+          -56.5,
+          43.5
+        ],
+        "win_rate": 28.0,
+        "flop_pct": 67.5,
+        "vpip": 44.0,
+        "actions": {
+          "call": 267,
+          "fold": 80,
+          "raise": 236
+        },
+        "streets": {
+          "preflop": 207,
+          "flop": 135,
+          "turn": 123,
+          "river": 118
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": 49.4,
+        "ci": [
+          -42.7,
+          141.4
+        ],
+        "win_rate": 11.0,
+        "flop_pct": 23.8,
+        "vpip": 20.5,
+        "actions": {
+          "fold": 118,
+          "raise": 247,
+          "call": 134
+        },
+        "streets": {
+          "preflop": 229,
+          "flop": 95,
+          "turn": 88,
+          "river": 87
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO5_5p": {
+    "variant": "PLO5",
+    "num_players": 5,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": -8.2,
+        "ci": [
+          -79.3,
+          62.8
+        ],
+        "win_rate": 23.8,
+        "flop_pct": 54.0,
+        "vpip": 63.2,
+        "actions": {
+          "raise": 563,
+          "call": 262,
+          "fold": 20
+        },
+        "streets": {
+          "preflop": 261,
+          "flop": 216,
+          "turn": 187,
+          "river": 181
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": 121.0,
+        "ci": [
+          -22.1,
+          264.1
+        ],
+        "win_rate": 30.5,
+        "flop_pct": 67.5,
+        "vpip": 47.5,
+        "actions": {
+          "fold": 79,
+          "call": 263,
+          "raise": 242
+        },
+        "streets": {
+          "preflop": 208,
+          "flop": 135,
+          "turn": 123,
+          "river": 118
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": -17.4,
+        "ci": [
+          -65.5,
+          30.7
+        ],
+        "win_rate": 11.2,
+        "flop_pct": 25.8,
+        "vpip": 14.5,
+        "actions": {
+          "fold": 113,
+          "call": 156,
+          "raise": 232
+        },
+        "streets": {
+          "preflop": 212,
+          "flop": 103,
+          "turn": 94,
+          "river": 92
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO5_6p": {
+    "variant": "PLO5",
+    "num_players": 6,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": 37.4,
+        "ci": [
+          -58.9,
+          133.6
+        ],
+        "win_rate": 16.0,
+        "flop_pct": 49.0,
+        "vpip": 48.2,
+        "actions": {
+          "raise": 544,
+          "call": 238,
+          "fold": 6
+        },
+        "streets": {
+          "preflop": 219,
+          "flop": 196,
+          "turn": 190,
+          "river": 183
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 400,
+        "bb100": 31.5,
+        "ci": [
+          -36.7,
+          99.7
+        ],
+        "win_rate": 12.5,
+        "flop_pct": 76.5,
+        "vpip": 35.2,
+        "actions": {
+          "fold": 109,
+          "call": 641,
+          "raise": 554
+        },
+        "streets": {
+          "preflop": 403,
+          "flop": 306,
+          "turn": 303,
+          "river": 292
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": -48.8,
+        "ci": [
+          -106.6,
+          9.1
+        ],
+        "win_rate": 0.5,
+        "flop_pct": 3.8,
+        "vpip": 2.8,
+        "actions": {
+          "fold": 16,
+          "raise": 32,
+          "call": 21
+        },
+        "streets": {
+          "preflop": 30,
+          "flop": 15,
+          "turn": 12,
+          "river": 12
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO5_7p": {
+    "variant": "PLO5",
+    "num_players": 7,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock",
+      "tag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": 84.1,
+        "ci": [
+          -89.1,
+          257.3
+        ],
+        "win_rate": 13.8,
+        "flop_pct": 48.2,
+        "vpip": 46.0,
+        "actions": {
+          "call": 264,
+          "fold": 23,
+          "raise": 481
+        },
+        "streets": {
+          "preflop": 232,
+          "flop": 193,
+          "turn": 179,
+          "river": 164
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 400,
+        "bb100": 7.9,
+        "ci": [
+          -48.5,
+          64.3
+        ],
+        "win_rate": 5.5,
+        "flop_pct": 66.5,
+        "vpip": 25.8,
+        "actions": {
+          "fold": 164,
+          "raise": 453,
+          "call": 534
+        },
+        "streets": {
+          "preflop": 412,
+          "flop": 266,
+          "turn": 237,
+          "river": 236
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 600,
+        "bb100": -43.9,
+        "ci": [
+          -138.8,
+          51.0
+        ],
+        "win_rate": 5.5,
+        "flop_pct": 17.3,
+        "vpip": 19.5,
+        "actions": {
+          "fold": 109,
+          "raise": 249,
+          "call": 139
+        },
+        "streets": {
+          "preflop": 227,
+          "flop": 104,
+          "turn": 87,
+          "river": 79
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO5_8p": {
+    "variant": "PLO5",
+    "num_players": 8,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 600,
+        "bb100": 59.2,
+        "ci": [
+          -121.1,
+          239.4
+        ],
+        "win_rate": 17.2,
+        "flop_pct": 66.8,
+        "vpip": 79.7,
+        "actions": {
+          "call": 464,
+          "raise": 1114,
+          "fold": 24
+        },
+        "streets": {
+          "preflop": 491,
+          "flop": 401,
+          "turn": 361,
+          "river": 349
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 400,
+        "bb100": -10.5,
+        "ci": [
+          -54.0,
+          33.0
+        ],
+        "win_rate": 4.5,
+        "flop_pct": 33.0,
+        "vpip": 11.2,
+        "actions": {
+          "fold": 104,
+          "raise": 228,
+          "call": 285
+        },
+        "streets": {
+          "preflop": 239,
+          "flop": 132,
+          "turn": 125,
+          "river": 121
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 600,
+        "bb100": -35.8,
+        "ci": [
+          -84.6,
+          12.9
+        ],
+        "win_rate": 3.2,
+        "flop_pct": 25.2,
+        "vpip": 12.7,
+        "actions": {
+          "fold": 98,
+          "raise": 309,
+          "call": 250
+        },
+        "streets": {
+          "preflop": 243,
+          "flop": 151,
+          "turn": 134,
+          "river": 129
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO5_9p": {
+    "variant": "PLO5",
+    "num_players": 9,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 600,
+        "bb100": 7.8,
+        "ci": [
+          -145.0,
+          160.5
+        ],
+        "win_rate": 7.3,
+        "flop_pct": 38.0,
+        "vpip": 44.0,
+        "actions": {
+          "raise": 557,
+          "call": 271,
+          "fold": 35
+        },
+        "streets": {
+          "preflop": 273,
+          "flop": 228,
+          "turn": 193,
+          "river": 169
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 600,
+        "bb100": 8.8,
+        "ci": [
+          -49.4,
+          66.9
+        ],
+        "win_rate": 3.3,
+        "flop_pct": 70.2,
+        "vpip": 27.3,
+        "actions": {
+          "fold": 220,
+          "call": 853,
+          "raise": 720
+        },
+        "streets": {
+          "preflop": 621,
+          "flop": 421,
+          "turn": 384,
+          "river": 367
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 600,
+        "bb100": 2.5,
+        "ci": [
+          -91.2,
+          96.2
+        ],
+        "win_rate": 4.2,
+        "flop_pct": 35.7,
+        "vpip": 29.3,
+        "actions": {
+          "fold": 86,
+          "raise": 439,
+          "call": 309
+        },
+        "streets": {
+          "preflop": 295,
+          "flop": 214,
+          "turn": 174,
+          "river": 151
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO6_2p": {
+    "variant": "PLO6",
+    "num_players": 2,
+    "styles": [
+      "tag",
+      "lag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 305.8,
+        "ci": [
+          58.7,
+          552.8
+        ],
+        "win_rate": 60.5,
+        "flop_pct": 92.5,
+        "vpip": 177.5,
+        "actions": {
+          "raise": 393,
+          "call": 263,
+          "fold": 47
+        },
+        "streets": {
+          "preflop": 355,
+          "flop": 185,
+          "turn": 107,
+          "river": 56
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 200,
+        "bb100": -155.8,
+        "ci": [
+          -402.8,
+          91.3
+        ],
+        "win_rate": 40.0,
+        "flop_pct": 97.5,
+        "vpip": 171.0,
+        "actions": {
+          "call": 239,
+          "fold": 82,
+          "raise": 401
+        },
+        "streets": {
+          "preflop": 342,
+          "flop": 195,
+          "turn": 120,
+          "river": 65
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO6_3p": {
+    "variant": "PLO6",
+    "num_players": 3,
+    "styles": [
+      "tag",
+      "lag",
+      "rock"
+    ],
+    "hands": 200,
+    "elapsed": 0.0,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 135.2,
+        "ci": [
+          -9.7,
+          280.2
+        ],
+        "win_rate": 80.0,
+        "flop_pct": 62.5,
+        "vpip": 114.5,
+        "actions": {
+          "raise": 290,
+          "call": 139,
+          "fold": 22
+        },
+        "streets": {
+          "preflop": 229,
+          "flop": 125,
+          "turn": 62,
+          "river": 35
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": -26.5,
+        "ci": [
+          -196.4,
+          143.4
+        ],
+        "win_rate": 15.5,
+        "flop_pct": 58.0,
+        "vpip": 75.0,
+        "actions": {
+          "raise": 127,
+          "call": 192,
+          "fold": 151
+        },
+        "streets": {
+          "preflop": 253,
+          "flop": 116,
+          "turn": 64,
+          "river": 37
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 200,
+        "bb100": -34.5,
+        "ci": [
+          -150.5,
+          81.5
+        ],
+        "win_rate": 4.5,
+        "flop_pct": 7.0,
+        "vpip": 16.5,
+        "actions": {
+          "raise": 39,
+          "call": 18,
+          "fold": 3
+        },
+        "streets": {
+          "preflop": 33,
+          "flop": 14,
+          "turn": 10,
+          "river": 3
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO6_4p": {
+    "variant": "PLO6",
+    "num_players": 4,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 200,
+        "bb100": 124.2,
+        "ci": [
+          -89.3,
+          337.8
+        ],
+        "win_rate": 21.0,
+        "flop_pct": 71.5,
+        "vpip": 92.0,
+        "actions": {
+          "call": 180,
+          "raise": 389,
+          "fold": 8
+        },
+        "streets": {
+          "preflop": 184,
+          "flop": 143,
+          "turn": 128,
+          "river": 122
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": -91.0,
+        "ci": [
+          -176.4,
+          -5.6
+        ],
+        "win_rate": 8.5,
+        "flop_pct": 71.0,
+        "vpip": 74.0,
+        "actions": {
+          "call": 266,
+          "raise": 261,
+          "fold": 38
+        },
+        "streets": {
+          "preflop": 199,
+          "flop": 142,
+          "turn": 117,
+          "river": 107
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": 8.8,
+        "ci": [
+          -133.5,
+          151.0
+        ],
+        "win_rate": 10.0,
+        "flop_pct": 33.0,
+        "vpip": 37.2,
+        "actions": {
+          "fold": 28,
+          "raise": 329,
+          "call": 178
+        },
+        "streets": {
+          "preflop": 183,
+          "flop": 132,
+          "turn": 115,
+          "river": 105
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO6_5p": {
+    "variant": "PLO6",
+    "num_players": 5,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": 75.2,
+        "ci": [
+          -63.6,
+          214.1
+        ],
+        "win_rate": 11.2,
+        "flop_pct": 45.8,
+        "vpip": 51.2,
+        "actions": {
+          "call": 229,
+          "raise": 500,
+          "fold": 4
+        },
+        "streets": {
+          "preflop": 207,
+          "flop": 183,
+          "turn": 174,
+          "river": 169
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 200,
+        "bb100": -46.2,
+        "ci": [
+          -228.3,
+          135.8
+        ],
+        "win_rate": 2.5,
+        "flop_pct": 11.5,
+        "vpip": 15.0,
+        "actions": {
+          "call": 33,
+          "raise": 54,
+          "fold": 10
+        },
+        "streets": {
+          "preflop": 38,
+          "flop": 23,
+          "turn": 18,
+          "river": 18
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": -37.0,
+        "ci": [
+          -84.0,
+          10.0
+        ],
+        "win_rate": 4.0,
+        "flop_pct": 43.2,
+        "vpip": 29.0,
+        "actions": {
+          "raise": 418,
+          "fold": 38,
+          "call": 274
+        },
+        "streets": {
+          "preflop": 230,
+          "flop": 173,
+          "turn": 167,
+          "river": 160
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO6_6p": {
+    "variant": "PLO6",
+    "num_players": 6,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": 64.4,
+        "ci": [
+          -45.5,
+          174.3
+        ],
+        "win_rate": 20.0,
+        "flop_pct": 47.5,
+        "vpip": 57.8,
+        "actions": {
+          "call": 218,
+          "fold": 14,
+          "raise": 532
+        },
+        "streets": {
+          "preflop": 231,
+          "flop": 190,
+          "turn": 177,
+          "river": 166
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 400,
+        "bb100": 4.5,
+        "ci": [
+          -74.1,
+          83.1
+        ],
+        "win_rate": 13.2,
+        "flop_pct": 49.8,
+        "vpip": 45.0,
+        "actions": {
+          "fold": 84,
+          "call": 342,
+          "raise": 394
+        },
+        "streets": {
+          "preflop": 274,
+          "flop": 199,
+          "turn": 177,
+          "river": 170
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 400,
+        "bb100": -42.9,
+        "ci": [
+          -126.5,
+          40.8
+        ],
+        "win_rate": 9.2,
+        "flop_pct": 29.8,
+        "vpip": 30.0,
+        "actions": {
+          "call": 141,
+          "fold": 64,
+          "raise": 287
+        },
+        "streets": {
+          "preflop": 190,
+          "flop": 119,
+          "turn": 96,
+          "river": 87
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  },
+  "PLO6_7p": {
+    "variant": "PLO6",
+    "num_players": 7,
+    "styles": [
+      "tag",
+      "lag",
+      "rock",
+      "tag",
+      "lag",
+      "rock",
+      "tag"
+    ],
+    "hands": 200,
+    "elapsed": 0.1,
+    "results": {
+      "lag": {
+        "name": "LAG (Loose-Aggressive)",
+        "hands": 400,
+        "bb100": 121.9,
+        "ci": [
+          -93.4,
+          337.2
+        ],
+        "win_rate": 18.0,
+        "flop_pct": 97.5,
+        "vpip": 106.7,
+        "actions": {
+          "raise": 1057,
+          "call": 449,
+          "fold": 25
+        },
+        "streets": {
+          "preflop": 443,
+          "flop": 390,
+          "turn": 356,
+          "river": 342
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "rock": {
+        "name": "Rock (Tight-Passive)",
+        "hands": 400,
+        "bb100": -30.0,
+        "ci": [
+          -69.5,
+          9.5
+        ],
+        "win_rate": 5.8,
+        "flop_pct": 44.0,
+        "vpip": 18.2,
+        "actions": {
+          "fold": 56,
+          "call": 388,
+          "raise": 281
+        },
+        "streets": {
+          "preflop": 228,
+          "flop": 176,
+          "turn": 162,
+          "river": 159
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      },
+      "tag": {
+        "name": "TAG (Tight-Aggressive)",
+        "hands": 600,
+        "bb100": -46.2,
+        "ci": [
+          -107.7,
+          15.4
+        ],
+        "win_rate": 2.0,
+        "flop_pct": 13.2,
+        "vpip": 14.3,
+        "actions": {
+          "call": 108,
+          "fold": 42,
+          "raise": 174
+        },
+        "streets": {
+          "preflop": 130,
+          "flop": 79,
+          "turn": 62,
+          "river": 53
+        },
+        "advisor_calls": 0,
+        "api_errors": 0
+      }
+    }
+  }
+}

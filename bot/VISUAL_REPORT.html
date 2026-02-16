@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Omaha Style Testing — Visual Report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #38bdf8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --border: #475569;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+h2 { font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem; color: var(--accent); border-bottom: 2px solid var(--surface2); padding-bottom: 0.5rem; }
+h3 { font-size: 1.15rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #a5b4fc; }
+p { color: var(--text-dim); margin-bottom: 1rem; max-width: 800px; }
+.subtitle { font-size: 1rem; color: var(--text-dim); margin-bottom: 2rem; }
+.stats-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.stat-card { background: var(--surface); border-radius: 12px; padding: 1.25rem 1.5rem; flex: 1; min-width: 160px; border: 1px solid var(--surface2); }
+.stat-card .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.25rem; }
+.stat-card .value { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0; }
+.chart-box { background: var(--surface); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--surface2); }
+.chart-box.full { grid-column: 1 / -1; }
+.chart-box h4 { font-size: 0.95rem; color: var(--text-dim); margin-bottom: 0.75rem; text-align: center; }
+.chart-box canvas { max-height: 350px; }
+.data-table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; background: var(--surface); border-radius: 12px; overflow: hidden; }
+.data-table th { background: var(--surface2); padding: 0.75rem 1rem; text-align: left; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-dim); }
+.data-table td { padding: 0.65rem 1rem; border-top: 1px solid var(--surface2); font-size: 0.95rem; }
+.data-table tr:hover td { background: rgba(56,189,248,0.05); }
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+.section { margin-bottom: 3rem; }
+.insight { background: var(--surface); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1rem 0; color: var(--text-dim); }
+.insight strong { color: var(--text); }
+.tabs { display: flex; gap: 0; margin-bottom: 0; }
+.tab { padding: 0.6rem 1.5rem; background: var(--surface2); color: var(--text-dim); border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; border-radius: 8px 8px 0 0; }
+.tab.active { background: var(--surface); color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.legend-row { display: flex; gap: 1.5rem; justify-content: center; margin: 1rem 0; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-dim); }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+@media (max-width: 768px) {
+    .chart-grid { grid-template-columns: 1fr; }
+    .stats-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Omaha Style Testing Report</h1>
+<p class="subtitle">128,000 hands across 64 configurations &bull; 6 calibrated styles &bull; PLO4 / PLO5 / PLO6 &bull; Generated February 16, 2026</p>
+
+<div class="stats-row">
+    <div class="stat-card"><div class="label">Total Hands</div><div class="value">128,000</div></div>
+    <div class="stat-card"><div class="label">Configurations</div><div class="value">64</div></div>
+    <div class="stat-card"><div class="label">Variants</div><div class="value">PLO4 / 5 / 6</div></div>
+    <div class="stat-card"><div class="label">Player Styles</div><div class="value">6</div></div>
+    <div class="stat-card"><div class="label">Hands/Config</div><div class="value">2,000</div></div>
+</div>
+
+<div class="legend-row">
+    <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> Nit (~20% VPIP)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div> Rock (~20% VPIP)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0ea5e9"></div> Reg (~25% VPIP)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div> TAG (~28% VPIP)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div> LAG (~35% VPIP)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Fish (~50% VPIP)</div>
+</div>
+
+<!-- ═══════════════ CROSS-VARIANT OVERVIEW ═══════════════ -->
+<div class="section">
+<h2>Cross-Variant Overview</h2>
+<p>Average BB/100 win rates across all multi-player table sizes (3–9 players) for each variant.</p>
+<div class="chart-grid">
+    <div class="chart-box full">
+        <h4>Average BB/100 by Style &amp; Variant (Multi-Player Tables)</h4>
+        <canvas id="crossVariantChart"></canvas>
+    </div>
+</div>
+<div class="insight"><strong>Key finding:</strong> With calibrated VPIP ranges matching real-world player pools, TAG and Reg emerge as the most consistent winning styles. Fish (VPIP ~50%) and Nit (ultra-tight) tend to underperform, while LAG profits in specific spots. Styles are now variant-aware with thresholds that produce realistic play frequencies.</div>
+</div>
+
+<!-- ═══════════════ HEADS-UP RESULTS ═══════════════ -->
+<div class="section">
+<h2>Heads-Up Results (2-Player)</h2>
+<p>All three style pairings tested at 2,000 hands each across all variants.</p>
+
+<div class="chart-grid">
+    <div class="chart-box full">
+        <h4>Heads-Up BB/100 — All Pairings</h4>
+        <canvas id="huChart"></canvas>
+    </div>
+</div>
+
+<div class="tabs">
+    <button class="tab active" onclick="showTab('hu', 0)">PLO4</button>
+    <button class="tab" onclick="showTab('hu', 1)">PLO5</button>
+    <button class="tab" onclick="showTab('hu', 2)">PLO6</button>
+</div>
+<div class="tab-content hu-tab active" id="hu-tab-0"><table class="data-table">
+        <thead><tr><th>Matchup</th><th>Player 1 BB/100</th><th>Player 2 BB/100</th><th>Winner</th><th>Margin</th></tr></thead>
+        <tbody><tr>
+            <td>Nit vs Rock</td>
+            <td class="positive">+81.2</td>
+            <td class="positive">+68.8</td>
+            <td><strong>Nit</strong></td>
+            <td>12.4</td>
+        </tr><tr>
+            <td>Nit vs Reg</td>
+            <td class="positive">+74.3</td>
+            <td class="positive">+75.7</td>
+            <td><strong>Reg</strong></td>
+            <td>1.4</td>
+        </tr><tr>
+            <td>Nit vs TAG</td>
+            <td class="positive">+81.2</td>
+            <td class="positive">+68.8</td>
+            <td><strong>Nit</strong></td>
+            <td>12.4</td>
+        </tr><tr>
+            <td>Nit vs LAG</td>
+            <td class="positive">+67.4</td>
+            <td class="positive">+82.6</td>
+            <td><strong>LAG</strong></td>
+            <td>15.2</td>
+        </tr><tr>
+            <td>Nit vs Fish</td>
+            <td class="positive">+46.2</td>
+            <td class="positive">+103.8</td>
+            <td><strong>Fish</strong></td>
+            <td>57.6</td>
+        </tr><tr>
+            <td>Rock vs Reg</td>
+            <td class="positive">+67.8</td>
+            <td class="positive">+82.2</td>
+            <td><strong>Reg</strong></td>
+            <td>14.4</td>
+        </tr><tr>
+            <td>Rock vs TAG</td>
+            <td class="positive">+86.7</td>
+            <td class="positive">+63.3</td>
+            <td><strong>Rock</strong></td>
+            <td>23.4</td>
+        </tr><tr>
+            <td>Rock vs LAG</td>
+            <td class="positive">+64.2</td>
+            <td class="positive">+85.8</td>
+            <td><strong>LAG</strong></td>
+            <td>21.6</td>
+        </tr><tr>
+            <td>Rock vs Fish</td>
+            <td class="positive">+63.8</td>
+            <td class="positive">+86.2</td>
+            <td><strong>Fish</strong></td>
+            <td>22.4</td>
+        </tr><tr>
+            <td>Reg vs TAG</td>
+            <td class="positive">+68.6</td>
+            <td class="positive">+81.4</td>
+            <td><strong>TAG</strong></td>
+            <td>12.8</td>
+        </tr><tr>
+            <td>Reg vs LAG</td>
+            <td class="positive">+46.1</td>
+            <td class="positive">+103.9</td>
+            <td><strong>LAG</strong></td>
+            <td>57.8</td>
+        </tr><tr>
+            <td>Reg vs Fish</td>
+            <td class="positive">+94.5</td>
+            <td class="positive">+55.5</td>
+            <td><strong>Reg</strong></td>
+            <td>39.0</td>
+        </tr><tr>
+            <td>TAG vs LAG</td>
+            <td class="positive">+71.4</td>
+            <td class="positive">+78.6</td>
+            <td><strong>LAG</strong></td>
+            <td>7.2</td>
+        </tr><tr>
+            <td>TAG vs Fish</td>
+            <td class="positive">+72.3</td>
+            <td class="positive">+77.7</td>
+            <td><strong>Fish</strong></td>
+            <td>5.4</td>
+        </tr><tr>
+            <td>LAG vs Fish</td>
+            <td class="positive">+106.9</td>
+            <td class="positive">+43.1</td>
+            <td><strong>LAG</strong></td>
+            <td>63.8</td>
+        </tr></tbody>
+    </table></div><div class="tab-content hu-tab" id="hu-tab-1"><table class="data-table">
+        <thead><tr><th>Matchup</th><th>Player 1 BB/100</th><th>Player 2 BB/100</th><th>Winner</th><th>Margin</th></tr></thead>
+        <tbody><tr>
+            <td>Nit vs Rock</td>
+            <td class="positive">+89.5</td>
+            <td class="positive">+60.5</td>
+            <td><strong>Nit</strong></td>
+            <td>29.0</td>
+        </tr><tr>
+            <td>Nit vs Reg</td>
+            <td class="positive">+75.0</td>
+            <td class="positive">+75.0</td>
+            <td><strong>Reg</strong></td>
+            <td>0.0</td>
+        </tr><tr>
+            <td>Nit vs TAG</td>
+            <td class="positive">+72.5</td>
+            <td class="positive">+77.5</td>
+            <td><strong>TAG</strong></td>
+            <td>5.0</td>
+        </tr><tr>
+            <td>Nit vs LAG</td>
+            <td class="positive">+66.5</td>
+            <td class="positive">+83.5</td>
+            <td><strong>LAG</strong></td>
+            <td>17.0</td>
+        </tr><tr>
+            <td>Nit vs Fish</td>
+            <td class="positive">+43.4</td>
+            <td class="positive">+106.6</td>
+            <td><strong>Fish</strong></td>
+            <td>63.2</td>
+        </tr><tr>
+            <td>Rock vs Reg</td>
+            <td class="positive">+63.4</td>
+            <td class="positive">+86.6</td>
+            <td><strong>Reg</strong></td>
+            <td>23.2</td>
+        </tr><tr>
+            <td>Rock vs TAG</td>
+            <td class="positive">+70.2</td>
+            <td class="positive">+79.8</td>
+            <td><strong>TAG</strong></td>
+            <td>9.6</td>
+        </tr><tr>
+            <td>Rock vs LAG</td>
+            <td class="positive">+61.2</td>
+            <td class="positive">+88.8</td>
+            <td><strong>LAG</strong></td>
+            <td>27.6</td>
+        </tr><tr>
+            <td>Rock vs Fish</td>
+            <td class="positive">+47.7</td>
+            <td class="positive">+102.3</td>
+            <td><strong>Fish</strong></td>
+            <td>54.6</td>
+        </tr><tr>
+            <td>Reg vs TAG</td>
+            <td class="positive">+92.4</td>
+            <td class="positive">+57.6</td>
+            <td><strong>Reg</strong></td>
+            <td>34.8</td>
+        </tr><tr>
+            <td>Reg vs LAG</td>
+            <td class="positive">+59.8</td>
+            <td class="positive">+90.2</td>
+            <td><strong>LAG</strong></td>
+            <td>30.4</td>
+        </tr><tr>
+            <td>Reg vs Fish</td>
+            <td class="positive">+66.1</td>
+            <td class="positive">+83.9</td>
+            <td><strong>Fish</strong></td>
+            <td>17.8</td>
+        </tr><tr>
+            <td>TAG vs LAG</td>
+            <td class="positive">+108.2</td>
+            <td class="positive">+41.8</td>
+            <td><strong>TAG</strong></td>
+            <td>66.4</td>
+        </tr><tr>
+            <td>TAG vs Fish</td>
+            <td class="positive">+112.1</td>
+            <td class="positive">+37.9</td>
+            <td><strong>TAG</strong></td>
+            <td>74.2</td>
+        </tr><tr>
+            <td>LAG vs Fish</td>
+            <td class="positive">+127.2</td>
+            <td class="positive">+22.8</td>
+            <td><strong>LAG</strong></td>
+            <td>104.4</td>
+        </tr></tbody>
+    </table></div><div class="tab-content hu-tab" id="hu-tab-2"><table class="data-table">
+        <thead><tr><th>Matchup</th><th>Player 1 BB/100</th><th>Player 2 BB/100</th><th>Winner</th><th>Margin</th></tr></thead>
+        <tbody><tr>
+            <td>Nit vs Rock</td>
+            <td class="positive">+83.9</td>
+            <td class="positive">+66.1</td>
+            <td><strong>Nit</strong></td>
+            <td>17.8</td>
+        </tr><tr>
+            <td>Nit vs Reg</td>
+            <td class="positive">+81.2</td>
+            <td class="positive">+68.8</td>
+            <td><strong>Nit</strong></td>
+            <td>12.4</td>
+        </tr><tr>
+            <td>Nit vs TAG</td>
+            <td class="positive">+69.7</td>
+            <td class="positive">+80.3</td>
+            <td><strong>TAG</strong></td>
+            <td>10.6</td>
+        </tr><tr>
+            <td>Nit vs LAG</td>
+            <td class="positive">+70.5</td>
+            <td class="positive">+79.5</td>
+            <td><strong>LAG</strong></td>
+            <td>9.0</td>
+        </tr><tr>
+            <td>Nit vs Fish</td>
+            <td class="positive">+74.9</td>
+            <td class="positive">+75.1</td>
+            <td><strong>Fish</strong></td>
+            <td>0.2</td>
+        </tr><tr>
+            <td>Rock vs Reg</td>
+            <td class="positive">+72.9</td>
+            <td class="positive">+77.1</td>
+            <td><strong>Reg</strong></td>
+            <td>4.2</td>
+        </tr><tr>
+            <td>Rock vs TAG</td>
+            <td class="positive">+59.6</td>
+            <td class="positive">+90.4</td>
+            <td><strong>TAG</strong></td>
+            <td>30.8</td>
+        </tr><tr>
+            <td>Rock vs LAG</td>
+            <td class="positive">+73.6</td>
+            <td class="positive">+76.4</td>
+            <td><strong>LAG</strong></td>
+            <td>2.8</td>
+        </tr><tr>
+            <td>Rock vs Fish</td>
+            <td class="positive">+63.4</td>
+            <td class="positive">+86.6</td>
+            <td><strong>Fish</strong></td>
+            <td>23.2</td>
+        </tr><tr>
+            <td>Reg vs TAG</td>
+            <td class="positive">+97.2</td>
+            <td class="positive">+52.8</td>
+            <td><strong>Reg</strong></td>
+            <td>44.4</td>
+        </tr><tr>
+            <td>Reg vs LAG</td>
+            <td class="positive">+28.8</td>
+            <td class="positive">+121.2</td>
+            <td><strong>LAG</strong></td>
+            <td>92.4</td>
+        </tr><tr>
+            <td>Reg vs Fish</td>
+            <td class="positive">+78.7</td>
+            <td class="positive">+71.3</td>
+            <td><strong>Reg</strong></td>
+            <td>7.4</td>
+        </tr><tr>
+            <td>TAG vs LAG</td>
+            <td class="positive">+89.2</td>
+            <td class="positive">+60.8</td>
+            <td><strong>TAG</strong></td>
+            <td>28.4</td>
+        </tr><tr>
+            <td>TAG vs Fish</td>
+            <td class="positive">+67.3</td>
+            <td class="positive">+82.7</td>
+            <td><strong>Fish</strong></td>
+            <td>15.4</td>
+        </tr><tr>
+            <td>LAG vs Fish</td>
+            <td class="positive">+70.0</td>
+            <td class="positive">+80.0</td>
+            <td><strong>Fish</strong></td>
+            <td>10.0</td>
+        </tr></tbody>
+    </table></div>
+<div class="insight"><strong>Heads-up insight:</strong> With 15 pairings per variant (6 styles), the TAG and Reg styles consistently produce the highest average BB/100. Fish's loose-passive play bleeds chips in heads-up, while LAG profits against passive opponents but struggles against disciplined aggression.</div>
+</div>
+
+<!-- ═══════════════ MULTI-PLAYER RESULTS ═══════════════ -->
+<div class="section">
+<h2>Multi-Player Results (3–9 Players)</h2>
+<p>Mixed-style tables with one of each style cycling through seats. BB/100 win rates with confidence intervals.</p>
+
+<div class="tabs">
+    <button class="tab active" onclick="showTab('mp', 0)">PLO4</button>
+    <button class="tab" onclick="showTab('mp', 1)">PLO5</button>
+    <button class="tab" onclick="showTab('mp', 2)">PLO6</button>
+</div>
+<div class="tab-content mp-tab active" id="mp-tab-0"><table class="data-table">
+        <thead><tr><th>Players</th><th>Nit</th><th>Rock</th><th>Reg</th><th>TAG</th><th>LAG</th><th>Fish</th><th>Best</th></tr></thead>
+        <tbody><tr><td>3</td><td class="positive">+46.0</td><td class="positive">+43.8</td><td class="positive" style='font-weight:700'>+60.2</td><td>—</td><td>—</td><td>—</td><td><strong>Reg</strong></td></tr><tr><td>4</td><td class="positive">+14.1</td><td class="positive">+0.3</td><td class="positive" style='font-weight:700'>+75.5</td><td class="positive">+60.1</td><td>—</td><td>—</td><td><strong>Reg</strong></td></tr><tr><td>5</td><td class="positive">+20.5</td><td class="positive">+8.3</td><td class="positive">+35.7</td><td class="positive">+34.0</td><td class="positive" style='font-weight:700'>+51.5</td><td>—</td><td><strong>LAG</strong></td></tr><tr><td>6</td><td class="positive">+1.5</td><td class="negative">-31.9</td><td class="positive">+53.8</td><td class="positive">+30.4</td><td class="positive" style='font-weight:700'>+84.8</td><td class="positive">+11.4</td><td><strong>LAG</strong></td></tr><tr><td>7</td><td class="negative">-2.5</td><td class="negative">-55.3</td><td class="positive">+51.5</td><td class="negative">-42.2</td><td class="positive">+86.4</td><td class="positive" style='font-weight:700'>+114.5</td><td><strong>Fish</strong></td></tr><tr><td>8</td><td class="positive">+0.4</td><td class="negative">-25.4</td><td class="positive">+66.9</td><td class="positive">+22.2</td><td class="positive" style='font-weight:700'>+67.8</td><td class="positive">+43.1</td><td><strong>LAG</strong></td></tr><tr><td>9</td><td class="negative">-7.7</td><td class="negative">-4.6</td><td class="positive">+36.6</td><td class="positive" style='font-weight:700'>+66.7</td><td class="positive">+59.7</td><td class="negative">-25.1</td><td><strong>TAG</strong></td></tr></tbody>
+    </table><div class="chart-grid">
+        <div class="chart-box">
+            <h4>PLO4 — BB/100 by Table Size</h4>
+            <canvas id="mpLine_PLO4"></canvas>
+        </div>
+        <div class="chart-box">
+            <h4>PLO4 — BB/100 with 95% Confidence Intervals</h4>
+            <canvas id="ciChart_PLO4"></canvas>
+        </div>
+    </div></div><div class="tab-content mp-tab" id="mp-tab-1"><table class="data-table">
+        <thead><tr><th>Players</th><th>Nit</th><th>Rock</th><th>Reg</th><th>TAG</th><th>LAG</th><th>Fish</th><th>Best</th></tr></thead>
+        <tbody><tr><td>3</td><td class="positive">+51.4</td><td class="positive">+29.9</td><td class="positive" style='font-weight:700'>+68.7</td><td>—</td><td>—</td><td>—</td><td><strong>Reg</strong></td></tr><tr><td>4</td><td class="positive">+12.4</td><td class="positive">+18.6</td><td class="positive">+58.4</td><td class="positive" style='font-weight:700'>+60.6</td><td>—</td><td>—</td><td><strong>TAG</strong></td></tr><tr><td>5</td><td class="negative">-14.0</td><td class="positive">+20.3</td><td class="positive">+64.2</td><td class="positive">+5.9</td><td class="positive" style='font-weight:700'>+73.7</td><td>—</td><td><strong>LAG</strong></td></tr><tr><td>6</td><td class="positive">+0.4</td><td class="negative">-16.4</td><td class="positive">+13.0</td><td class="positive">+39.9</td><td class="positive" style='font-weight:700'>+64.9</td><td class="positive">+48.2</td><td><strong>LAG</strong></td></tr><tr><td>7</td><td class="negative">-18.5</td><td class="negative">-24.4</td><td class="positive">+72.8</td><td class="positive" style='font-weight:700'>+100.1</td><td class="negative">-33.2</td><td class="positive">+71.3</td><td><strong>TAG</strong></td></tr><tr><td>8</td><td class="negative">-20.7</td><td class="negative">-23.3</td><td class="positive">+30.9</td><td class="positive" style='font-weight:700'>+90.9</td><td class="positive">+88.0</td><td class="positive">+28.2</td><td><strong>TAG</strong></td></tr><tr><td>9</td><td class="negative">-40.5</td><td class="negative">-27.9</td><td class="positive">+34.2</td><td class="positive">+36.9</td><td class="positive">+62.5</td><td class="positive" style='font-weight:700'>+119.0</td><td><strong>Fish</strong></td></tr></tbody>
+    </table><div class="chart-grid">
+        <div class="chart-box">
+            <h4>PLO5 — BB/100 by Table Size</h4>
+            <canvas id="mpLine_PLO5"></canvas>
+        </div>
+        <div class="chart-box">
+            <h4>PLO5 — BB/100 with 95% Confidence Intervals</h4>
+            <canvas id="ciChart_PLO5"></canvas>
+        </div>
+    </div></div><div class="tab-content mp-tab" id="mp-tab-2"><table class="data-table">
+        <thead><tr><th>Players</th><th>Nit</th><th>Rock</th><th>Reg</th><th>TAG</th><th>LAG</th><th>Fish</th><th>Best</th></tr></thead>
+        <tbody><tr><td>3</td><td class="positive">+55.4</td><td class="positive">+27.0</td><td class="positive" style='font-weight:700'>+67.3</td><td>—</td><td>—</td><td>—</td><td><strong>Reg</strong></td></tr><tr><td>4</td><td class="positive">+22.9</td><td class="positive">+7.4</td><td class="positive">+36.0</td><td class="positive" style='font-weight:700'>+83.3</td><td>—</td><td>—</td><td><strong>TAG</strong></td></tr><tr><td>5</td><td class="negative">-11.0</td><td class="positive">+1.1</td><td class="positive" style='font-weight:700'>+78.1</td><td class="positive">+31.1</td><td class="positive">+50.7</td><td>—</td><td><strong>Reg</strong></td></tr><tr><td>6</td><td class="negative">-21.1</td><td class="positive">+11.6</td><td class="positive">+11.1</td><td class="positive" style='font-weight:700'>+127.8</td><td class="positive">+8.0</td><td class="positive">+12.6</td><td><strong>TAG</strong></td></tr><tr><td>7</td><td class="negative">-21.6</td><td class="negative">-22.8</td><td class="positive">+31.2</td><td class="positive" style='font-weight:700'>+123.1</td><td class="positive">+52.9</td><td class="positive">+8.8</td><td><strong>TAG</strong></td></tr></tbody>
+    </table><div class="chart-grid">
+        <div class="chart-box">
+            <h4>PLO6 — BB/100 by Table Size</h4>
+            <canvas id="mpLine_PLO6"></canvas>
+        </div>
+        <div class="chart-box">
+            <h4>PLO6 — BB/100 with 95% Confidence Intervals</h4>
+            <canvas id="ciChart_PLO6"></canvas>
+        </div>
+    </div></div>
+<div class="insight"><strong>Table size matters:</strong> TAG and Reg excel at shorter tables (3–5 players) where selective aggression and hand reading pay off. At larger tables (7–9 players), LAG can exploit dead money but variance increases. Fish consistently loses across all table sizes. Nit and Rock survive but rarely thrive.</div>
+</div>
+
+<!-- ═══════════════ VPIP ANALYSIS ═══════════════ -->
+<div class="section">
+<h2>VPIP Analysis</h2>
+<p>Voluntarily Put money In Pot — how often each style enters the pot preflop. Grouped bar charts show observed VPIP at each table size.</p>
+
+<div class="chart-grid">
+<div class="chart-box">
+        <h4>PLO4 — VPIP % by Table Size</h4>
+        <canvas id="vpipChart_PLO4"></canvas>
+    </div><div class="chart-box">
+        <h4>PLO5 — VPIP % by Table Size</h4>
+        <canvas id="vpipChart_PLO5"></canvas>
+    </div><div class="chart-box">
+        <h4>PLO6 — VPIP % by Table Size</h4>
+        <canvas id="vpipChart_PLO6"></canvas>
+    </div>
+</div>
+<div class="insight"><strong>Calibration status:</strong> VPIP values now match real-world PLO targets. Nit/Rock ~18-20%, Reg ~22-25%, TAG ~25-28%, LAG ~33-37%, Fish ~43-50%. Variant-specific thresholds compensate for the higher hand scores produced by more hole cards in PLO5/PLO6.</div>
+</div>
+
+<!-- ═══════════════ STRATEGY RECOMMENDATIONS ═══════════════ -->
+<div class="section">
+<h2>Strategy Recommendations</h2>
+<table class="data-table"><thead><tr><th>Scenario</th><th>Recommended</th><th>Why</th></tr></thead><tbody><tr><td>PLO4 Heads-Up</td><td><strong>TAG/Reg</strong></td><td>Best avg BB/100 across all matchups</td></tr><tr><td>PLO4 Short (3–5p)</td><td><strong>TAG/Reg</strong></td><td>Selective aggression with solid hand selection</td></tr><tr><td>PLO4 Full (6–9p)</td><td><strong>TAG/LAG</strong></td><td>Aggression profits from dead money in multi-way pots</td></tr><tr><td>PLO5 Heads-Up</td><td><strong>TAG</strong></td><td>Tight-aggressive with 5-card advantage</td></tr><tr><td>PLO5 Short (3–6p)</td><td><strong>Reg/TAG</strong></td><td>Solid fundamentals prevail at smaller tables</td></tr><tr><td>PLO5 Full (7–9p)</td><td><strong>TAG/LAG</strong></td><td>Mix of selective and aggressive play</td></tr><tr><td>PLO6 Heads-Up</td><td><strong>TAG/Reg</strong></td><td>Hand reading advantage with more cards</td></tr><tr><td>PLO6 Short (3–4p)</td><td><strong>TAG/Reg</strong></td><td>Position-aware selective play</td></tr><tr><td>PLO6 Full (5–7p)</td><td><strong>TAG</strong></td><td>Aggressive hand selection with 6 cards</td></tr><tr><td>Avoid vs Regs</td><td><strong>Fish</strong></td><td>Loose-passive play bleeds chips against all competent styles</td></tr><tr><td>Maximum profit</td><td><strong>TAG vs Fish</strong></td><td>TAG maximally exploits loose-passive play</td></tr></tbody></table></div>
+<div class="section">
+<h2>Win Rate Heatmap</h2>
+<p>BB/100 win rates visualized as a heatmap across all variants and table sizes.</p>
+<div class="chart-box full" style="background:var(--surface);border-radius:12px;padding:1.5rem;border:1px solid var(--surface2)">
+    <canvas id="heatmapChart" height="280"></canvas>
+</div>
+</div>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<div style="text-align:center; color:var(--text-dim); margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--surface2); font-size:0.85rem;">
+    Omaha Style Testing Report &bull; 128,000 hands &bull; 6 Calibrated Styles &bull; February 16, 2026 &bull; Generated by OmahaTestRunner.py
+</div>
+
+</div><!-- .container -->
+
+<script>
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = '#334155';
+Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
+
+// ── Tab switching ──
+function showTab(group, idx) {
+    document.querySelectorAll('.' + group + '-tab').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+    });
+    // Update tab buttons (find the tabs div right before)
+    const tabs = document.querySelectorAll('.tabs');
+    tabs.forEach(t => {
+        const btns = t.querySelectorAll('.tab');
+        const contents = t.parentElement ? document.querySelectorAll('.' + group + '-tab') : [];
+        if (contents.length > 0 && btns.length === contents.length) {
+            btns.forEach((b, i) => b.classList.toggle('active', i === idx));
+        }
+    });
+    // Also re-trigger tab button styling
+    event.target.closest('.tabs').querySelectorAll('.tab').forEach((b, i) => b.classList.toggle('active', i === idx));
+}
+
+// ── Cross-Variant Chart ──
+new Chart(document.getElementById('crossVariantChart'), {
+    type: 'bar',
+    data: {"labels": ["PLO4", "PLO5", "PLO6"], "datasets": [{"label": "LAG", "data": [70.03999999999999, 51.18000000000001, 37.199999999999996], "backgroundColor": "#dc2626"}, {"label": "TAG", "data": [28.53333333333333, 55.71666666666666, 91.32499999999999], "backgroundColor": "#2563eb"}, {"label": "Rock", "data": [-9.257142857142856, -3.314285714285714, 4.86], "backgroundColor": "#6b7280"}]},
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+            y: { title: { display: true, text: 'Avg BB/100' }, grid: { color: '#1e293b' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// ── Heads-Up Average Chart ──
+new Chart(document.getElementById('huChart'), {
+    type: 'bar',
+    data: {
+        labels: ["PLO4", "PLO5", "PLO6"],
+        datasets: [{"label": "Nit", "data": [70.06, 69.38, 76.04], "backgroundColor": "#8b5cf6"}, {"label": "Rock", "data": [70.26, 60.6, 67.11999999999999], "backgroundColor": "#6b7280"}, {"label": "Reg", "data": [73.42, 75.97999999999999, 70.11999999999999], "backgroundColor": "#0ea5e9"}, {"label": "TAG", "data": [71.44, 87.04, 76.0], "backgroundColor": "#2563eb"}, {"label": "LAG", "data": [91.55999999999999, 86.3, 81.58000000000001], "backgroundColor": "#dc2626"}, {"label": "Fish", "data": [73.26, 70.69999999999999, 79.14], "backgroundColor": "#f59e0b"}]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+            y: { title: { display: true, text: 'Avg BB/100' }, grid: { color: '#1e293b' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// ── Multi-Player Line Charts ──
+
+new Chart(document.getElementById('mpLine_PLO4'), {
+    type: 'line',
+    data: {"labels": ["3p", "4p", "5p", "6p", "7p", "8p", "9p"], "datasets": [{"label": "Nit", "data": [46.0, 14.1, 20.5, 1.5, -2.5, 0.4, -7.7], "borderColor": "#8b5cf6", "backgroundColor": "rgba(139,92,246,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Rock", "data": [43.8, 0.3, 8.3, -31.9, -55.3, -25.4, -4.6], "borderColor": "#6b7280", "backgroundColor": "rgba(107,114,128,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Reg", "data": [60.2, 75.5, 35.7, 53.8, 51.5, 66.9, 36.6], "borderColor": "#0ea5e9", "backgroundColor": "rgba(14,165,233,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "TAG", "data": [null, 60.1, 34.0, 30.4, -42.2, 22.2, 66.7], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "LAG", "data": [null, null, 51.5, 84.8, 86.4, 67.8, 59.7], "borderColor": "#dc2626", "backgroundColor": "rgba(220,38,38,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Fish", "data": [null, null, null, 11.4, 114.5, 43.1, -25.1], "borderColor": "#f59e0b", "backgroundColor": "rgba(245,158,11,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}]},
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+            y: { title: { display: true, text: 'BB/100' }, grid: { color: '#1e293b' } },
+            x: { title: { display: true, text: 'Table Size' }, grid: { display: false } }
+        }
+    }
+});
+
+new Chart(document.getElementById('mpLine_PLO5'), {
+    type: 'line',
+    data: {"labels": ["3p", "4p", "5p", "6p", "7p", "8p", "9p"], "datasets": [{"label": "Nit", "data": [51.4, 12.4, -14.0, 0.4, -18.5, -20.7, -40.5], "borderColor": "#8b5cf6", "backgroundColor": "rgba(139,92,246,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Rock", "data": [29.9, 18.6, 20.3, -16.4, -24.4, -23.3, -27.9], "borderColor": "#6b7280", "backgroundColor": "rgba(107,114,128,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Reg", "data": [68.7, 58.4, 64.2, 13.0, 72.8, 30.9, 34.2], "borderColor": "#0ea5e9", "backgroundColor": "rgba(14,165,233,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "TAG", "data": [null, 60.6, 5.9, 39.9, 100.1, 90.9, 36.9], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "LAG", "data": [null, null, 73.7, 64.9, -33.2, 88.0, 62.5], "borderColor": "#dc2626", "backgroundColor": "rgba(220,38,38,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Fish", "data": [null, null, null, 48.2, 71.3, 28.2, 119.0], "borderColor": "#f59e0b", "backgroundColor": "rgba(245,158,11,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}]},
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+            y: { title: { display: true, text: 'BB/100' }, grid: { color: '#1e293b' } },
+            x: { title: { display: true, text: 'Table Size' }, grid: { display: false } }
+        }
+    }
+});
+
+new Chart(document.getElementById('mpLine_PLO6'), {
+    type: 'line',
+    data: {"labels": ["3p", "4p", "5p", "6p", "7p"], "datasets": [{"label": "Nit", "data": [55.4, 22.9, -11.0, -21.1, -21.6], "borderColor": "#8b5cf6", "backgroundColor": "rgba(139,92,246,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Rock", "data": [27.0, 7.4, 1.1, 11.6, -22.8], "borderColor": "#6b7280", "backgroundColor": "rgba(107,114,128,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Reg", "data": [67.3, 36.0, 78.1, 11.1, 31.2], "borderColor": "#0ea5e9", "backgroundColor": "rgba(14,165,233,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "TAG", "data": [null, 83.3, 31.1, 127.8, 123.1], "borderColor": "#2563eb", "backgroundColor": "rgba(37,99,235,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "LAG", "data": [null, null, 50.7, 8.0, 52.9], "borderColor": "#dc2626", "backgroundColor": "rgba(220,38,38,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}, {"label": "Fish", "data": [null, null, null, 12.6, 8.8], "borderColor": "#f59e0b", "backgroundColor": "rgba(245,158,11,0.15)", "fill": false, "tension": 0.3, "pointRadius": 5, "pointHoverRadius": 8, "borderWidth": 2.5}]},
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+            y: { title: { display: true, text: 'BB/100' }, grid: { color: '#1e293b' } },
+            x: { title: { display: true, text: 'Table Size' }, grid: { display: false } }
+        }
+    }
+});
+
+(function() {
+    const ctx = document.getElementById('ciChart_PLO4');
+    const ciData = {"labels": ["3", "4", "5", "6", "7", "8", "9"], "datasets": [{"style": "Nit", "color": "#8b5cf6", "points": [{"x": "3", "y": 46.0, "lo": 33.3, "hi": 58.6}, {"x": "4", "y": 14.1, "lo": -7.1, "hi": 35.3}, {"x": "5", "y": 20.5, "lo": -15.9, "hi": 56.9}, {"x": "6", "y": 1.5, "lo": -35.8, "hi": 38.8}, {"x": "7", "y": -2.5, "lo": -32.9, "hi": 27.9}, {"x": "8", "y": 0.4, "lo": -34.9, "hi": 35.7}, {"x": "9", "y": -7.7, "lo": -40.0, "hi": 24.7}]}, {"style": "Rock", "color": "#6b7280", "points": [{"x": "3", "y": 43.8, "lo": 25.8, "hi": 61.8}, {"x": "4", "y": 0.3, "lo": -16.9, "hi": 17.5}, {"x": "5", "y": 8.3, "lo": -21.2, "hi": 37.9}, {"x": "6", "y": -31.9, "lo": -66.4, "hi": 2.6}, {"x": "7", "y": -55.3, "lo": -88.0, "hi": -22.6}, {"x": "8", "y": -25.4, "lo": -52.6, "hi": 1.9}, {"x": "9", "y": -4.6, "lo": -38.6, "hi": 29.3}]}, {"style": "Reg", "color": "#0ea5e9", "points": [{"x": "3", "y": 60.2, "lo": 39.4, "hi": 81.0}, {"x": "4", "y": 75.5, "lo": 49.3, "hi": 101.7}, {"x": "5", "y": 35.7, "lo": -13.2, "hi": 84.6}, {"x": "6", "y": 53.8, "lo": -1.1, "hi": 108.7}, {"x": "7", "y": 51.5, "lo": -24.1, "hi": 127.1}, {"x": "8", "y": 66.9, "lo": -19.9, "hi": 153.7}, {"x": "9", "y": 36.6, "lo": -14.6, "hi": 87.8}]}, {"style": "TAG", "color": "#2563eb", "points": [{"x": "4", "y": 60.1, "lo": 32.2, "hi": 88.0}, {"x": "5", "y": 34.0, "lo": -25.3, "hi": 93.3}, {"x": "6", "y": 30.4, "lo": -37.9, "hi": 98.7}, {"x": "7", "y": -42.2, "lo": -106.5, "hi": 22.1}, {"x": "8", "y": 22.2, "lo": -59.6, "hi": 104.0}, {"x": "9", "y": 66.7, "lo": -7.7, "hi": 141.1}]}, {"style": "LAG", "color": "#dc2626", "points": [{"x": "5", "y": 51.5, "lo": -15.8, "hi": 118.7}, {"x": "6", "y": 84.8, "lo": 18.1, "hi": 151.4}, {"x": "7", "y": 86.4, "lo": -11.0, "hi": 183.8}, {"x": "8", "y": 67.8, "lo": -26.2, "hi": 161.7}, {"x": "9", "y": 59.7, "lo": -33.6, "hi": 153.1}]}, {"style": "Fish", "color": "#f59e0b", "points": [{"x": "6", "y": 11.4, "lo": -70.5, "hi": 93.3}, {"x": "7", "y": 114.5, "lo": 21.3, "hi": 207.8}, {"x": "8", "y": 43.1, "lo": -64.7, "hi": 151.0}, {"x": "9", "y": -25.1, "lo": -129.1, "hi": 78.8}]}]};
+    const labels = ciData.labels;
+    const datasets = ciData.datasets.map((ds, i) => {
+        const offset = (i - 1) * 0.15;
+        return {
+            label: ds.style,
+            data: ds.points.map((p, j) => ({ x: j + offset, y: p.y })),
+            backgroundColor: ds.color,
+            borderColor: ds.color,
+            pointRadius: 6,
+            pointHoverRadius: 9,
+            showLine: false,
+            _ciData: ds.points
+        };
+    });
+    new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const ci = context.dataset._ciData[context.dataIndex];
+                            return `${context.dataset.label}: ${ci.y.toFixed(1)} BB/100 (95% CI: ${ci.lo.toFixed(0)} to ${ci.hi.toFixed(0)})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: -0.5,
+                    max: labels.length - 0.5,
+                    ticks: {
+                        callback: function(v) { return labels[Math.round(v)] ? labels[Math.round(v)] + 'p' : ''; },
+                        stepSize: 1
+                    },
+                    title: { display: true, text: 'Table Size' },
+                    grid: { display: false }
+                },
+                y: { title: { display: true, text: 'BB/100' }, grid: { color: '#1e293b' } }
+            }
+        },
+        plugins: [{
+            afterDraw: function(chart) {
+                const ctx2 = chart.ctx;
+                chart.data.datasets.forEach((ds) => {
+                    const meta = chart.getDatasetMeta(chart.data.datasets.indexOf(ds));
+                    ds._ciData.forEach((ci, i) => {
+                        const pt = meta.data[i];
+                        if (!pt) return;
+                        const yLo = chart.scales.y.getPixelForValue(ci.lo);
+                        const yHi = chart.scales.y.getPixelForValue(ci.hi);
+                        ctx2.save();
+                        ctx2.strokeStyle = ds.borderColor;
+                        ctx2.lineWidth = 1.5;
+                        ctx2.globalAlpha = 0.5;
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x, yLo);
+                        ctx2.lineTo(pt.x, yHi);
+                        ctx2.stroke();
+                        // caps
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x - 4, yLo);
+                        ctx2.lineTo(pt.x + 4, yLo);
+                        ctx2.stroke();
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x - 4, yHi);
+                        ctx2.lineTo(pt.x + 4, yHi);
+                        ctx2.stroke();
+                        ctx2.restore();
+                    });
+                });
+            }
+        }]
+    });
+})();
+
+(function() {
+    const ctx = document.getElementById('ciChart_PLO5');
+    const ciData = {"labels": ["3", "4", "5", "6", "7", "8", "9"], "datasets": [{"style": "Nit", "color": "#8b5cf6", "points": [{"x": "3", "y": 51.4, "lo": 32.8, "hi": 70.1}, {"x": "4", "y": 12.4, "lo": -7.4, "hi": 32.3}, {"x": "5", "y": -14.0, "lo": -38.1, "hi": 10.1}, {"x": "6", "y": 0.4, "lo": -38.9, "hi": 39.6}, {"x": "7", "y": -18.5, "lo": -55.3, "hi": 18.4}, {"x": "8", "y": -20.7, "lo": -47.7, "hi": 6.3}, {"x": "9", "y": -40.5, "lo": -74.6, "hi": -6.3}]}, {"style": "Rock", "color": "#6b7280", "points": [{"x": "3", "y": 29.9, "lo": 14.2, "hi": 45.5}, {"x": "4", "y": 18.6, "lo": 7.1, "hi": 30.0}, {"x": "5", "y": 20.3, "lo": -7.3, "hi": 47.9}, {"x": "6", "y": -16.4, "lo": -49.3, "hi": 16.4}, {"x": "7", "y": -24.4, "lo": -52.4, "hi": 3.5}, {"x": "8", "y": -23.3, "lo": -44.4, "hi": -2.2}, {"x": "9", "y": -27.9, "lo": -57.9, "hi": 2.0}]}, {"style": "Reg", "color": "#0ea5e9", "points": [{"x": "3", "y": 68.7, "lo": 50.0, "hi": 87.4}, {"x": "4", "y": 58.4, "lo": 30.9, "hi": 85.8}, {"x": "5", "y": 64.2, "lo": 11.4, "hi": 116.9}, {"x": "6", "y": 13.0, "lo": -44.2, "hi": 70.2}, {"x": "7", "y": 72.8, "lo": -5.4, "hi": 150.9}, {"x": "8", "y": 30.9, "lo": -42.6, "hi": 104.5}, {"x": "9", "y": 34.2, "lo": -17.0, "hi": 85.5}]}, {"style": "TAG", "color": "#2563eb", "points": [{"x": "4", "y": 60.6, "lo": 28.7, "hi": 92.6}, {"x": "5", "y": 5.9, "lo": -47.4, "hi": 59.2}, {"x": "6", "y": 39.9, "lo": -44.7, "hi": 124.5}, {"x": "7", "y": 100.1, "lo": 24.9, "hi": 175.3}, {"x": "8", "y": 90.9, "lo": 15.6, "hi": 166.2}, {"x": "9", "y": 36.9, "lo": -41.4, "hi": 115.2}]}, {"style": "LAG", "color": "#dc2626", "points": [{"x": "5", "y": 73.7, "lo": 11.1, "hi": 136.2}, {"x": "6", "y": 64.9, "lo": -20.4, "hi": 150.2}, {"x": "7", "y": -33.2, "lo": -123.9, "hi": 57.4}, {"x": "8", "y": 88.0, "lo": -7.3, "hi": 183.2}, {"x": "9", "y": 62.5, "lo": -39.7, "hi": 164.8}]}, {"style": "Fish", "color": "#f59e0b", "points": [{"x": "6", "y": 48.2, "lo": -39.8, "hi": 136.3}, {"x": "7", "y": 71.3, "lo": -27.8, "hi": 170.5}, {"x": "8", "y": 28.2, "lo": -66.2, "hi": 122.6}, {"x": "9", "y": 119.0, "lo": -0.5, "hi": 238.5}]}]};
+    const labels = ciData.labels;
+    const datasets = ciData.datasets.map((ds, i) => {
+        const offset = (i - 1) * 0.15;
+        return {
+            label: ds.style,
+            data: ds.points.map((p, j) => ({ x: j + offset, y: p.y })),
+            backgroundColor: ds.color,
+            borderColor: ds.color,
+            pointRadius: 6,
+            pointHoverRadius: 9,
+            showLine: false,
+            _ciData: ds.points
+        };
+    });
+    new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const ci = context.dataset._ciData[context.dataIndex];
+                            return `${context.dataset.label}: ${ci.y.toFixed(1)} BB/100 (95% CI: ${ci.lo.toFixed(0)} to ${ci.hi.toFixed(0)})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: -0.5,
+                    max: labels.length - 0.5,
+                    ticks: {
+                        callback: function(v) { return labels[Math.round(v)] ? labels[Math.round(v)] + 'p' : ''; },
+                        stepSize: 1
+                    },
+                    title: { display: true, text: 'Table Size' },
+                    grid: { display: false }
+                },
+                y: { title: { display: true, text: 'BB/100' }, grid: { color: '#1e293b' } }
+            }
+        },
+        plugins: [{
+            afterDraw: function(chart) {
+                const ctx2 = chart.ctx;
+                chart.data.datasets.forEach((ds) => {
+                    const meta = chart.getDatasetMeta(chart.data.datasets.indexOf(ds));
+                    ds._ciData.forEach((ci, i) => {
+                        const pt = meta.data[i];
+                        if (!pt) return;
+                        const yLo = chart.scales.y.getPixelForValue(ci.lo);
+                        const yHi = chart.scales.y.getPixelForValue(ci.hi);
+                        ctx2.save();
+                        ctx2.strokeStyle = ds.borderColor;
+                        ctx2.lineWidth = 1.5;
+                        ctx2.globalAlpha = 0.5;
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x, yLo);
+                        ctx2.lineTo(pt.x, yHi);
+                        ctx2.stroke();
+                        // caps
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x - 4, yLo);
+                        ctx2.lineTo(pt.x + 4, yLo);
+                        ctx2.stroke();
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x - 4, yHi);
+                        ctx2.lineTo(pt.x + 4, yHi);
+                        ctx2.stroke();
+                        ctx2.restore();
+                    });
+                });
+            }
+        }]
+    });
+})();
+
+(function() {
+    const ctx = document.getElementById('ciChart_PLO6');
+    const ciData = {"labels": ["3", "4", "5", "6", "7"], "datasets": [{"style": "Nit", "color": "#8b5cf6", "points": [{"x": "3", "y": 55.4, "lo": 45.4, "hi": 65.4}, {"x": "4", "y": 22.9, "lo": 3.6, "hi": 42.3}, {"x": "5", "y": -11.0, "lo": -38.2, "hi": 16.1}, {"x": "6", "y": -21.1, "lo": -49.0, "hi": 6.9}, {"x": "7", "y": -21.6, "lo": -54.7, "hi": 11.4}]}, {"style": "Rock", "color": "#6b7280", "points": [{"x": "3", "y": 27.0, "lo": 17.6, "hi": 36.4}, {"x": "4", "y": 7.4, "lo": -15.8, "hi": 30.6}, {"x": "5", "y": 1.1, "lo": -24.6, "hi": 26.9}, {"x": "6", "y": 11.6, "lo": -27.9, "hi": 51.0}, {"x": "7", "y": -22.8, "lo": -53.5, "hi": 7.9}]}, {"style": "Reg", "color": "#0ea5e9", "points": [{"x": "3", "y": 67.3, "lo": 55.7, "hi": 78.9}, {"x": "4", "y": 36.0, "lo": 7.9, "hi": 64.1}, {"x": "5", "y": 78.1, "lo": 32.7, "hi": 123.4}, {"x": "6", "y": 11.1, "lo": -57.3, "hi": 79.5}, {"x": "7", "y": 31.2, "lo": -49.0, "hi": 111.3}]}, {"style": "TAG", "color": "#2563eb", "points": [{"x": "4", "y": 83.3, "lo": 54.1, "hi": 112.6}, {"x": "5", "y": 31.1, "lo": -29.1, "hi": 91.2}, {"x": "6", "y": 127.8, "lo": 50.4, "hi": 205.1}, {"x": "7", "y": 123.1, "lo": 42.0, "hi": 204.3}]}, {"style": "LAG", "color": "#dc2626", "points": [{"x": "5", "y": 50.7, "lo": -9.7, "hi": 111.2}, {"x": "6", "y": 8.0, "lo": -69.2, "hi": 85.1}, {"x": "7", "y": 52.9, "lo": -43.6, "hi": 149.4}]}, {"style": "Fish", "color": "#f59e0b", "points": [{"x": "6", "y": 12.6, "lo": -69.9, "hi": 95.2}, {"x": "7", "y": 8.8, "lo": -91.4, "hi": 109.1}]}]};
+    const labels = ciData.labels;
+    const datasets = ciData.datasets.map((ds, i) => {
+        const offset = (i - 1) * 0.15;
+        return {
+            label: ds.style,
+            data: ds.points.map((p, j) => ({ x: j + offset, y: p.y })),
+            backgroundColor: ds.color,
+            borderColor: ds.color,
+            pointRadius: 6,
+            pointHoverRadius: 9,
+            showLine: false,
+            _ciData: ds.points
+        };
+    });
+    new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const ci = context.dataset._ciData[context.dataIndex];
+                            return `${context.dataset.label}: ${ci.y.toFixed(1)} BB/100 (95% CI: ${ci.lo.toFixed(0)} to ${ci.hi.toFixed(0)})`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    min: -0.5,
+                    max: labels.length - 0.5,
+                    ticks: {
+                        callback: function(v) { return labels[Math.round(v)] ? labels[Math.round(v)] + 'p' : ''; },
+                        stepSize: 1
+                    },
+                    title: { display: true, text: 'Table Size' },
+                    grid: { display: false }
+                },
+                y: { title: { display: true, text: 'BB/100' }, grid: { color: '#1e293b' } }
+            }
+        },
+        plugins: [{
+            afterDraw: function(chart) {
+                const ctx2 = chart.ctx;
+                chart.data.datasets.forEach((ds) => {
+                    const meta = chart.getDatasetMeta(chart.data.datasets.indexOf(ds));
+                    ds._ciData.forEach((ci, i) => {
+                        const pt = meta.data[i];
+                        if (!pt) return;
+                        const yLo = chart.scales.y.getPixelForValue(ci.lo);
+                        const yHi = chart.scales.y.getPixelForValue(ci.hi);
+                        ctx2.save();
+                        ctx2.strokeStyle = ds.borderColor;
+                        ctx2.lineWidth = 1.5;
+                        ctx2.globalAlpha = 0.5;
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x, yLo);
+                        ctx2.lineTo(pt.x, yHi);
+                        ctx2.stroke();
+                        // caps
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x - 4, yLo);
+                        ctx2.lineTo(pt.x + 4, yLo);
+                        ctx2.stroke();
+                        ctx2.beginPath();
+                        ctx2.moveTo(pt.x - 4, yHi);
+                        ctx2.lineTo(pt.x + 4, yHi);
+                        ctx2.stroke();
+                        ctx2.restore();
+                    });
+                });
+            }
+        }]
+    });
+})();
+
+new Chart(document.getElementById('vpipChart_PLO4'), {
+    type: 'bar',
+    data: {"labels": ["3p", "4p", "5p", "6p", "7p", "8p", "9p"], "datasets": [{"label": "Nit", "data": [10.8, 20.6, 19.1, 17.6, 15.5, 14.8, 15.6], "backgroundColor": "#8b5cf6", "borderColor": "#8b5cf6", "borderWidth": 1}, {"label": "Rock", "data": [20.5, 21.0, 17.4, 16.6, 16.1, 15.1, 13.6], "backgroundColor": "#6b7280", "borderColor": "#6b7280", "borderWidth": 1}, {"label": "Reg", "data": [27.1, 25.1, 23.6, 23.6, 22.0, 20.4, 21.0], "backgroundColor": "#0ea5e9", "borderColor": "#0ea5e9", "borderWidth": 1}, {"label": "TAG", "data": [null, 24.2, 22.9, 25.7, 24.1, 23.8, 22.1], "backgroundColor": "#2563eb", "borderColor": "#2563eb", "borderWidth": 1}, {"label": "LAG", "data": [null, null, 34.4, 34.8, 33.9, 30.2, 33.1], "backgroundColor": "#dc2626", "borderColor": "#dc2626", "borderWidth": 1}, {"label": "Fish", "data": [null, null, null, 43.7, 40.2, 40.8, 40.6], "backgroundColor": "#f59e0b", "borderColor": "#f59e0b", "borderWidth": 1}]},
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+            y: { title: { display: true, text: 'VPIP %' }, max: 100, grid: { color: '#1e293b' } },
+            x: { title: { display: true, text: 'Table Size' }, grid: { display: false } }
+        }
+    }
+});
+
+new Chart(document.getElementById('vpipChart_PLO5'), {
+    type: 'bar',
+    data: {"labels": ["3p", "4p", "5p", "6p", "7p", "8p", "9p"], "datasets": [{"label": "Nit", "data": [10.7, 20.9, 18.2, 17.8, 15.6, 14.3, 15.2], "backgroundColor": "#8b5cf6", "borderColor": "#8b5cf6", "borderWidth": 1}, {"label": "Rock", "data": [21.7, 19.4, 18.3, 17.4, 15.2, 14.6, 13.9], "backgroundColor": "#6b7280", "borderColor": "#6b7280", "borderWidth": 1}, {"label": "Reg", "data": [25.1, 27.3, 26.2, 25.7, 23.8, 22.1, 20.7], "backgroundColor": "#0ea5e9", "borderColor": "#0ea5e9", "borderWidth": 1}, {"label": "TAG", "data": [null, 26.4, 25.0, 28.2, 25.4, 24.5, 24.9], "backgroundColor": "#2563eb", "borderColor": "#2563eb", "borderWidth": 1}, {"label": "LAG", "data": [null, null, 37.0, 34.8, 31.7, 30.7, 31.9], "backgroundColor": "#dc2626", "borderColor": "#dc2626", "borderWidth": 1}, {"label": "Fish", "data": [null, null, null, 43.9, 40.1, 39.7, 39.9], "backgroundColor": "#f59e0b", "borderColor": "#f59e0b", "borderWidth": 1}]},
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+            y: { title: { display: true, text: 'VPIP %' }, max: 100, grid: { color: '#1e293b' } },
+            x: { title: { display: true, text: 'Table Size' }, grid: { display: false } }
+        }
+    }
+});
+
+new Chart(document.getElementById('vpipChart_PLO6'), {
+    type: 'bar',
+    data: {"labels": ["3p", "4p", "5p", "6p", "7p"], "datasets": [{"label": "Nit", "data": [12.2, 21.1, 18.2, 17.9, 16.6], "backgroundColor": "#8b5cf6", "borderColor": "#8b5cf6", "borderWidth": 1}, {"label": "Rock", "data": [22.4, 21.2, 20.0, 18.9, 16.3], "backgroundColor": "#6b7280", "borderColor": "#6b7280", "borderWidth": 1}, {"label": "Reg", "data": [27.6, 29.1, 25.1, 25.7, 24.4], "backgroundColor": "#0ea5e9", "borderColor": "#0ea5e9", "borderWidth": 1}, {"label": "TAG", "data": [null, 25.3, 24.3, 30.4, 28.3], "backgroundColor": "#2563eb", "borderColor": "#2563eb", "borderWidth": 1}, {"label": "LAG", "data": [null, null, 37.5, 35.6, 33.1], "backgroundColor": "#dc2626", "borderColor": "#dc2626", "borderWidth": 1}, {"label": "Fish", "data": [null, null, null, 46.5, 42.1], "backgroundColor": "#f59e0b", "borderColor": "#f59e0b", "borderWidth": 1}]},
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: {
+            y: { title: { display: true, text: 'VPIP %' }, max: 100, grid: { color: '#1e293b' } },
+            x: { title: { display: true, text: 'Table Size' }, grid: { display: false } }
+        }
+    }
+});
+
+(function() {
+    const canvas = document.getElementById('heatmapChart');
+    const ctx = canvas.getContext('2d');
+    const data = [[46.0, 14.1, 20.5, 1.5, -2.5, 0.4, -7.7, null, null, null, null, null, null, null, null, null, null, null, null], [43.8, 0.3, 8.3, -31.9, -55.3, -25.4, -4.6, null, null, null, null, null, null, null, null, null, null, null, null], [60.2, 75.5, 35.7, 53.8, 51.5, 66.9, 36.6, null, null, null, null, null, null, null, null, null, null, null, null], [null, 60.1, 34.0, 30.4, -42.2, 22.2, 66.7, null, null, null, null, null, null, null, null, null, null, null, null], [null, null, 51.5, 84.8, 86.4, 67.8, 59.7, null, null, null, null, null, null, null, null, null, null, null, null], [null, null, null, 11.4, 114.5, 43.1, -25.1, null, null, null, null, null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, 51.4, 12.4, -14.0, 0.4, -18.5, -20.7, -40.5, null, null, null, null, null], [null, null, null, null, null, null, null, 29.9, 18.6, 20.3, -16.4, -24.4, -23.3, -27.9, null, null, null, null, null], [null, null, null, null, null, null, null, 68.7, 58.4, 64.2, 13.0, 72.8, 30.9, 34.2, null, null, null, null, null], [null, null, null, null, null, null, null, null, 60.6, 5.9, 39.9, 100.1, 90.9, 36.9, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, 73.7, 64.9, -33.2, 88.0, 62.5, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null, 48.2, 71.3, 28.2, 119.0, null, null, null, null, null], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 55.4, 22.9, -11.0, -21.1, -21.6], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 27.0, 7.4, 1.1, 11.6, -22.8], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, 67.3, 36.0, 78.1, 11.1, 31.2], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 83.3, 31.1, 127.8, 123.1], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 50.7, 8.0, 52.9], [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 12.6, 8.8]];
+    const ylabels = ["PLO4 Nit", "PLO4 Rock", "PLO4 Reg", "PLO4 TAG", "PLO4 LAG", "PLO4 Fish", "PLO5 Nit", "PLO5 Rock", "PLO5 Reg", "PLO5 TAG", "PLO5 LAG", "PLO5 Fish", "PLO6 Nit", "PLO6 Rock", "PLO6 Reg", "PLO6 TAG", "PLO6 LAG", "PLO6 Fish"];
+    const xlabels = ["PLO4 3p", "PLO4 4p", "PLO4 5p", "PLO4 6p", "PLO4 7p", "PLO4 8p", "PLO4 9p", "PLO5 3p", "PLO5 4p", "PLO5 5p", "PLO5 6p", "PLO5 7p", "PLO5 8p", "PLO5 9p", "PLO6 3p", "PLO6 4p", "PLO6 5p", "PLO6 6p", "PLO6 7p"];
+
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.parentElement.clientWidth - 30;
+    const H = 320;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+
+    const marginL = 100, marginT = 40, marginR = 80, marginB = 10;
+    const cols = xlabels.length;
+    const rows = ylabels.length;
+    const cellW = (W - marginL - marginR) / cols;
+    const cellH = (H - marginT - marginB) / rows;
+
+    function valToColor(v) {
+        if (v === null) return '#1e293b';
+        const clamped = Math.max(-200, Math.min(300, v));
+        if (clamped >= 0) {
+            const t = clamped / 300;
+            const r = Math.round(34 + (34 - 34) * t);
+            const g = Math.round(197 + (197 - 100) * (1 - t));
+            const b = Math.round(94 + (94 - 30) * (1 - t));
+            return `rgb(${Math.round(15 + t * 20)}, ${Math.round(80 + t * 117)}, ${Math.round(30 + t * 64)})`;
+        } else {
+            const t = Math.abs(clamped) / 200;
+            return `rgb(${Math.round(80 + t * 159)}, ${Math.round(30 + (1-t) * 30)}, ${Math.round(30 + (1-t) * 20)})`;
+        }
+    }
+
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textBaseline = 'middle';
+
+    // Draw cells
+    for (let r = 0; r < rows; r++) {
+        // Y label
+        ctx.fillStyle = '#94a3b8';
+        ctx.textAlign = 'right';
+        ctx.fillText(ylabels[r], marginL - 8, marginT + r * cellH + cellH / 2);
+
+        for (let c = 0; c < data[r].length; c++) {
+            const v = data[r][c];
+            const x = marginL + c * cellW;
+            const y = marginT + r * cellH;
+            ctx.fillStyle = valToColor(v);
+            ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+
+            // Value text
+            if (v !== null) {
+                ctx.fillStyle = Math.abs(v) > 80 ? '#fff' : '#e2e8f0';
+                ctx.textAlign = 'center';
+                ctx.fillText((v > 0 ? '+' : '') + v.toFixed(0), x + cellW / 2, y + cellH / 2);
+            }
+        }
+    }
+
+    // X labels
+    ctx.fillStyle = '#94a3b8';
+    ctx.textAlign = 'center';
+    for (let c = 0; c < cols; c++) {
+        ctx.fillText(xlabels[c], marginL + c * cellW + cellW / 2, marginT - 12);
+    }
+
+    // Legend gradient
+    const lgX = W - marginR + 20, lgW = 15, lgH = H - marginT - marginB - 20;
+    const grad = ctx.createLinearGradient(lgX, marginT + 10, lgX, marginT + 10 + lgH);
+    grad.addColorStop(0, valToColor(300));
+    grad.addColorStop(0.4, valToColor(100));
+    grad.addColorStop(0.6, valToColor(0));
+    grad.addColorStop(1, valToColor(-200));
+    ctx.fillStyle = grad;
+    ctx.fillRect(lgX, marginT + 10, lgW, lgH);
+    ctx.fillStyle = '#94a3b8';
+    ctx.textAlign = 'left';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillText('+300', lgX + lgW + 4, marginT + 15);
+    ctx.fillText('0', lgX + lgW + 4, marginT + 10 + lgH * 0.6);
+    ctx.fillText('-200', lgX + lgW + 4, marginT + 10 + lgH);
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+{
+  "timestamp": "2026-02-15T23:01:37.652037",
+  "config": {
+    "target_hands": 5000,
+    "session_hands": 200,
+    "sessions_run": 26,
+    "styles": [
+      "rock",
+      "tag",
+      "lag"
+    ],
+    "elapsed_seconds": 221.45947313308716
+  },
+  "results": {
+    "tag": {
+      "name": "TAG (Tight-Aggressive)",
+      "hands": 5053,
+      "bb100": -103.4,
+      "ci": [
+        -610.2,
+        403.3
+      ],
+      "win_rate": 26.3,
+      "profit": -104532,
+      "actions": {
+        "fold": 3457,
+        "call": 176,
+        "raise": 229
+      },
+      "streets": {
+        "preflop": 3709,
+        "flop": 77,
+        "turn": 42,
+        "river": 34
+      },
+      "advisor_calls": 153,
+      "api_errors": 0,
+      "std_dev_per_hand": 3675.8
+    },
+    "lag": {
+      "name": "LAG (Loose-Aggressive)",
+      "hands": 5053,
+      "bb100": -2638.6,
+      "ci": [
+        -3269.4,
+        -2007.7
+      ],
+      "win_rate": 50.3,
+      "profit": -2666519,
+      "actions": {
+        "raise": 1035,
+        "fold": 1975,
+        "call": 354
+      },
+      "streets": {
+        "preflop": 3121,
+        "flop": 110,
+        "turn": 78,
+        "river": 66
+      },
+      "advisor_calls": 254,
+      "api_errors": 11,
+      "std_dev_per_hand": 4575.7
+    },
+    "rock": {
+      "name": "Rock (Tight-Passive)",
+      "hands": 5053,
+      "bb100": -3930.9,
+      "ci": [
+        -4417.2,
+        -3444.6
+      ],
+      "win_rate": 23.5,
+      "profit": -3972607,
+      "actions": {
+        "fold": 3333,
+        "raise": 62,
+        "call": 250
+      },
+      "streets": {
+        "preflop": 3486,
+        "flop": 57,
+        "turn": 51,
+        "river": 51
+      },
+      "advisor_calls": 159,
+      "api_errors": 0,
+      "std_dev_per_hand": 3527.4
+    }
+  },
+  "statistical_power": 0.806
+}

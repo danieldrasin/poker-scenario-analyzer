@@ -1,0 +1,255 @@
+{
+  "timestamp": "2026-02-15T05:41:00.164Z",
+  "duration": 182,
+  "config": {
+    "gameUrl": "https://www.pokernow.com/games/pgl2wy20QIsPBt_NSZ5zQfL4X",
+    "numBots": 2,
+    "targetHands": 10,
+    "styles": [
+      "tag"
+    ],
+    "advisorUrl": "http://localhost:3001/api/advise"
+  },
+  "aggregate": {
+    "totalHands": 10,
+    "totalDefaultFolds": 0,
+    "totalLowConfidence": 0,
+    "totalProfit": -10,
+    "defaultFoldRate": 0,
+    "lowConfidenceRate": 0
+  },
+  "bots": [
+    {
+      "botName": "TestBot1_9459",
+      "style": "tag",
+      "handsPlayed": 5,
+      "startingStack": 1000,
+      "currentStack": 1000,
+      "profit": 0,
+      "bb100": "0.00",
+      "defaultFolds": 0,
+      "lowConfidenceActions": 0,
+      "defaultFoldRate": "0.0%"
+    },
+    {
+      "botName": "TestBot2_9459",
+      "style": "tag",
+      "handsPlayed": 5,
+      "startingStack": 1000,
+      "currentStack": 990,
+      "profit": -10,
+      "bb100": "-10.00",
+      "defaultFolds": 0,
+      "lowConfidenceActions": 0,
+      "defaultFoldRate": "0.0%"
+    }
+  ],
+  "handHistory": [
+    {
+      "bot": "TestBot1_9459",
+      "style": "tag",
+      "stats": {
+        "botName": "TestBot1_9459",
+        "style": "tag",
+        "handsPlayed": 5,
+        "startingStack": 1000,
+        "currentStack": 1000,
+        "profit": 0,
+        "bb100": "0.00",
+        "defaultFolds": 0,
+        "lowConfidenceActions": 0,
+        "defaultFoldRate": "0.0%"
+      },
+      "hands": [
+        {
+          "timestamp": 1771134055441,
+          "handNumber": 1,
+          "street": "preflop",
+          "holeCards": [
+            "Jd",
+            "Jc",
+            "Qc",
+            "7s"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        },
+        {
+          "timestamp": 1771134056453,
+          "handNumber": 2,
+          "street": "preflop",
+          "holeCards": [
+            "Jd",
+            "Jc",
+            "Qc",
+            "7s"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        },
+        {
+          "timestamp": 1771134057463,
+          "handNumber": 3,
+          "street": "preflop",
+          "holeCards": [
+            "Jd",
+            "Jc",
+            "Qc",
+            "7s"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        },
+        {
+          "timestamp": 1771134058475,
+          "handNumber": 4,
+          "street": "preflop",
+          "holeCards": [
+            "Jd",
+            "Jc",
+            "Qc",
+            "7s"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        },
+        {
+          "timestamp": 1771134059487,
+          "handNumber": 5,
+          "street": "preflop",
+          "holeCards": [
+            "Jd",
+            "Jc",
+            "Qc",
+            "7s"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        }
+      ]
+    },
+    {
+      "bot": "TestBot2_9459",
+      "style": "tag",
+      "stats": {
+        "botName": "TestBot2_9459",
+        "style": "tag",
+        "handsPlayed": 5,
+        "startingStack": 1000,
+        "currentStack": 990,
+        "profit": -10,
+        "bb100": "-10.00",
+        "defaultFolds": 0,
+        "lowConfidenceActions": 0,
+        "defaultFoldRate": "0.0%"
+      },
+      "hands": [
+        {
+          "timestamp": 1771134055445,
+          "handNumber": 1,
+          "street": "preflop",
+          "holeCards": [
+            "Ah",
+            "9s",
+            "Ad",
+            "3c"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        },
+        {
+          "timestamp": 1771134056454,
+          "handNumber": 2,
+          "street": "preflop",
+          "holeCards": [
+            "Ah",
+            "9s",
+            "Ad",
+            "3c"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        },
+        {
+          "timestamp": 1771134057464,
+          "handNumber": 3,
+          "street": "preflop",
+          "holeCards": [
+            "Ah",
+            "9s",
+            "Ad",
+            "3c"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        },
+        {
+          "timestamp": 1771134058476,
+          "handNumber": 4,
+          "street": "preflop",
+          "holeCards": [
+            "Ah",
+            "9s",
+            "Ad",
+            "3c"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        },
+        {
+          "timestamp": 1771134059487,
+          "handNumber": 5,
+          "street": "preflop",
+          "holeCards": [
+            "Ah",
+            "9s",
+            "Ad",
+            "3c"
+          ],
+          "board": [],
+          "potSize": 0,
+          "action": "check",
+          "confidence": 0.7,
+          "isDefault": false,
+          "success": true
+        }
+      ]
+    }
+  ]
+}

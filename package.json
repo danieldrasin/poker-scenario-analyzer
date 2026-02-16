@@ -9,23 +9,38 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
+    "test": "npm run test:unit && npm run test --workspaces",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.js",
+    "test:unit:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.js --watch",
+    "test:unit:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.js --coverage",
+    "test:api": "playwright test e2e/api.spec.ts",
     "test:e2e": "playwright test",
     "test:e2e:live": "LIVE_TEST=true playwright test",
+    "test:all": "npm run test:unit && npm run test:e2e",
     "cli": "npm run start --workspace=@poker-sim/cli --",
     "start:web": "npm run start --workspace=@poker-sim/web",
     "dev:web": "npm run dev --workspace=@poker-sim/web",
     "tier2:generate": "node scripts/generate-tier2-data.js --generate",
     "tier2:upload": "node scripts/generate-tier2-data.js --upload",
     "tier2:all": "node scripts/generate-tier2-data.js --all",
-    "tier2:list": "node scripts/generate-tier2-data.js --list"
+    "tier2:list": "node scripts/generate-tier2-data.js --list",
+    "bot": "node bot/index.js",
+    "bot:help": "node bot/index.js --help",
+    "bot:multi": "node bot/MultiBotRunner.js",
+    "bot:test": "node bot/MultiBotRunner.js --help",
+    "bot:validate": "node bot/ValidationTestRunner.js",
+    "bot:join": "node bot/PlaywrightBotJoiner.js",
+    "bot:advisor": "node bot/LocalAdvisorServer.js"
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
+    "@playwright/test": "^1.40.0",
     "@types/node": "^20.10.0",
-    "@playwright/test": "^1.40.0"
+    "jest": "^29.7.0",
+    "typescript": "^5.3.0"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.500.0"
+    "@aws-sdk/client-s3": "^3.500.0",
+    "playwright": "^1.58.2",
+    "puppeteer-core": "^24.37.3"
   }
 }

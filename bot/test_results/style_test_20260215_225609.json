@@ -1,0 +1,109 @@
+{
+  "timestamp": "2026-02-15T22:56:09.504121",
+  "config": {
+    "num_hands": 2000,
+    "styles": [
+      "rock",
+      "tag",
+      "lag"
+    ],
+    "initial_stack": 10000,
+    "elapsed_seconds": 9.216444730758667
+  },
+  "results": {
+    "rock": {
+      "style_name": "Rock (Tight-Passive)",
+      "hands": 207,
+      "wins": 0,
+      "win_rate": "0.0%",
+      "total_profit": -2057861,
+      "bb_per_100": -49706.79,
+      "95_ci_bb100": [
+        -50190.45,
+        -49223.13
+      ],
+      "std_dev": 710.06,
+      "advisor_calls": 4,
+      "api_errors": 0,
+      "actions": {
+        "fold": 1,
+        "call": 4,
+        "raise": 1
+      },
+      "streets_reached": {
+        "preflop": 2,
+        "flop": 1,
+        "turn": 2,
+        "river": 1
+      },
+      "profits_by_street": {
+        "preflop": -2050000,
+        "river": -7861
+      }
+    },
+    "tag": {
+      "style_name": "TAG (Tight-Aggressive)",
+      "hands": 207,
+      "wins": 68,
+      "win_rate": "32.9%",
+      "total_profit": -203916,
+      "bb_per_100": -4925.51,
+      "95_ci_bb100": [
+        -6249.11,
+        -3601.9
+      ],
+      "std_dev": 1943.2,
+      "advisor_calls": 8,
+      "api_errors": 0,
+      "actions": {
+        "fold": 136,
+        "raise": 13,
+        "call": 10
+      },
+      "streets_reached": {
+        "preflop": 151,
+        "flop": 4,
+        "turn": 2,
+        "river": 2
+      },
+      "profits_by_street": {
+        "preflop": -203348,
+        "river": 221,
+        "flop": -789
+      }
+    },
+    "lag": {
+      "style_name": "LAG (Loose-Aggressive)",
+      "hands": 207,
+      "wins": 139,
+      "win_rate": "67.1%",
+      "total_profit": 1307866,
+      "bb_per_100": 31590.97,
+      "95_ci_bb100": [
+        27070.98,
+        36110.95
+      ],
+      "std_dev": 6635.85,
+      "advisor_calls": 12,
+      "api_errors": 0,
+      "actions": {
+        "raise": 45,
+        "fold": 66,
+        "call": 14
+      },
+      "streets_reached": {
+        "preflop": 113,
+        "flop": 5,
+        "turn": 4,
+        "river": 3
+      },
+      "profits_by_street": {
+        "preflop": 1289015,
+        "river": 12118,
+        "flop": 6733
+      }
+    }
+  },
+  "sample_size_recommendation": 6272,
+  "statistical_power": 0.31887755102040816
+}

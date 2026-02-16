@@ -45,6 +45,21 @@ API returns:
 - Correct hand evaluation for all Omaha variants
 - Accurate board texture classification
 
+### Testing Deliverables (Phase 1)
+
+| Deliverable | Description |
+|-------------|-------------|
+| `api/advise.test.js` | Unit tests for input validation, response formatting |
+| `e2e/api.spec.ts` | New file - API-specific test suite |
+| API tests | `/api/advise` endpoint tests in e2e suite |
+
+**Test Cases:**
+- Input validation (missing cards, invalid street, bad card format)
+- Hand evaluation accuracy (all 9 hand types)
+- Board texture classification (wet, dry, paired)
+- Response latency (<50ms target)
+- Error responses (proper status codes, messages)
+
 ---
 
 ## Phase 2: Equity & Pot Odds
@@ -80,6 +95,88 @@ API adds:
 - Equity calculation <100ms
 - Reasonable accuracy vs GTO solver (within 10%)
 - Caching reduces repeat lookups to <10ms
+
+### Testing Deliverables (Phase 2)
+
+| Deliverable | Description |
+|-------------|-------------|
+| `api/lib/RangeEstimator.test.js` | Unit tests for range estimation |
+| `api/lib/EquityCalculator.test.js` | Unit tests for equity calculation |
+| API tests | Equity validation in e2e suite |
+
+**Test Cases - RangeEstimator:**
+- Position-based range selection (EP tight, BTN wide)
+- Action adjustments (3-bet = narrow, limp = wide)
+- Board texture narrowing (flush board removes non-flush combos)
+- Multi-way pot adjustments
+
+**Test Cases - EquityCalculator:**
+- Heuristic equity vs known scenarios (e.g., nut flush vs medium range)
+- Draw equity calculation (flush draw = 9 outs * rule of 4)
+- Nut detection (isNuts flag accuracy)
+- Caching hit/miss behavior
+- Edge cases (0 outs, max outs)
+
+**Golden Tests (Known Scenarios):**
+| Scenario | Expected Equity Range |
+|----------|----------------------|
+| Nut flush vs random range | 75-85% |
+| Overpair vs medium range | 55-65% |
+| Flush draw vs top pair | 35-45% |
+| Set vs two pair range | 70-80% |
+
+---
+
+## Phase 2.5: Test Backfill (NEW)
+
+**Goal:** Write comprehensive tests for Phase 1 and Phase 2 modules that were implemented without tests
+
+**Timeline:** 1-2 days
+**Model:** 🟢 **Sonnet** (test implementation is straightforward)
+
+### Tasks
+
+| Task | Description | Files |
+|------|-------------|-------|
+| 2.5.1 | Create API test suite structure | `e2e/api.spec.ts` (new) |
+| 2.5.2 | Write `/api/advise` endpoint tests | `e2e/api.spec.ts` |
+| 2.5.3 | Write RangeEstimator unit tests | `api/lib/RangeEstimator.test.js` (new) |
+| 2.5.4 | Write EquityCalculator unit tests | `api/lib/EquityCalculator.test.js` (new) |
+| 2.5.5 | Add golden scenario tests (known outcomes) | `e2e/api.spec.ts` |
+| 2.5.6 | Add latency benchmarks | `e2e/api.spec.ts` |
+| 2.5.7 | Set up test runner for unit tests | `package.json` scripts |
+
+### Test Framework Setup
+
+```
+poker-simulator/
+├── api/
+│   ├── advise.js
+│   └── lib/
+│       ├── RangeEstimator.js
+│       ├── RangeEstimator.test.js    # NEW
+│       ├── EquityCalculator.js
+│       └── EquityCalculator.test.js  # NEW
+├── e2e/
+│   ├── app.spec.ts                   # EXISTS - UI tests
+│   └── api.spec.ts                   # NEW - API test suite
+└── package.json                      # Add test:unit script
+```
+
+### Deliverables
+
+- Unit tests with >80% coverage for Phase 1-2 modules
+- API test suite with 20+ test cases
+- Golden scenario tests (5+ known poker scenarios)
+- Latency benchmark tests (p50/p99 assertions)
+- CI-compatible test scripts
+
+### Success Criteria
+
+- All tests pass locally and in CI
+- Unit test coverage >80% for RangeEstimator, EquityCalculator
+- API tests cover all documented response fields
+- Golden tests validate accuracy within ±10%
 
 ---
 
@@ -120,6 +217,35 @@ API adds:
 - Clear, understandable reasoning
 - Sizing within reasonable ranges
 
+### Testing Deliverables (Phase 3)
+
+| Deliverable | Description |
+|-------------|-------------|
+| `api/lib/ActionRecommender.test.js` | Unit tests for decision logic |
+| `api/lib/BetSizer.test.js` | Unit tests for bet sizing |
+| API tests | Recommendation validation in e2e suite |
+
+**Test Cases - ActionRecommender:**
+- Fold threshold (equity < pot odds → fold)
+- Call threshold (equity close to pot odds, implied odds positive)
+- Raise threshold (equity well above pot odds, value hands)
+- Position adjustments (IP more aggressive than OOP)
+- Multi-street planning hints
+
+**Test Cases - BetSizer:**
+- SPR-based sizing (high SPR = smaller bets, low SPR = commit/fold)
+- Pot geometry (bet size relative to pot)
+- Min/max/optimal sizing calculations
+- Protection sizing vs value sizing
+
+**Golden Tests (Decision Scenarios):**
+| Scenario | Expected Action | Notes |
+|----------|-----------------|-------|
+| Nut flush, heads-up, 50% pot bet | Raise | Clear value |
+| Flush draw, pot odds 3:1, 9 outs | Call | Odds justify |
+| Bottom pair, pot odds 4:1, 2 outs | Fold | Not enough equity |
+| Top set, wet board, multi-way | Raise | Protection + value |
+
 ---
 
 ## Phase 4: UI Integration
@@ -146,6 +272,29 @@ API adds:
 - New "Play Advisor" tab in the web app
 - Full input interface for game state
 - Real-time recommendations as inputs change
+
+### Testing Deliverables (Phase 4)
+
+| Deliverable | Description |
+|-------------|-------------|
+| E2E UI tests | Play Advisor tab tests in `e2e/app.spec.ts` |
+| Mobile tests | Responsive layout verification |
+| Accessibility | Keyboard navigation, ARIA labels |
+
+**Test Cases - E2E UI:**
+- Tab navigation to Play Advisor
+- Card selector functionality (click to select/deselect)
+- Board input (flop, turn, river progression)
+- Betting inputs (pot, stack, to-call)
+- Recommendation display (action, sizing, confidence)
+- Reasoning panel expansion
+- "What if?" scenario exploration
+- Error states (incomplete input, API failure)
+
+**Test Cases - Responsive:**
+- Mobile viewport (375px) - all inputs accessible
+- Tablet viewport (768px) - proper layout
+- Desktop viewport (1280px) - full feature display
 
 ---
 
@@ -307,13 +456,73 @@ poker-simulator/
 
 ## Testing Strategy
 
-| Phase | Testing Approach |
-|-------|------------------|
-| Phase 1 | Unit tests for hand eval + board texture |
-| Phase 2 | Compare equity estimates vs known solver outputs |
-| Phase 3 | Manual testing with poker experts |
-| Phase 4 | E2E tests for UI flow |
-| Phase 5 | A/B testing of recommendation accuracy |
+### Testing Principles
+
+1. **Each phase must be tested before moving to the next**
+2. **Unit tests live alongside their modules** (`*.test.js` files)
+3. **API tests extend the existing e2e suite** (Playwright request API)
+4. **E2E UI tests expand as Phase 4 progresses**
+
+---
+
+### Unit Test Requirements by Module
+
+| Module | Test File | Key Tests |
+|--------|-----------|-----------|
+| `api/advise.js` | `api/advise.test.js` | Input validation, hand eval integration, response format |
+| `api/lib/RangeEstimator.js` | `api/lib/RangeEstimator.test.js` | Position ranges, action adjustments, board texture narrowing |
+| `api/lib/EquityCalculator.js` | `api/lib/EquityCalculator.test.js` | Heuristic equity, draw equity, nut detection, caching |
+| `api/lib/ActionRecommender.js` | `api/lib/ActionRecommender.test.js` | Decision tree, fold/call/raise thresholds |
+| `api/lib/BetSizer.js` | `api/lib/BetSizer.test.js` | SPR-based sizing, pot geometry |
+
+### API Test Suite (`e2e/api.spec.ts`)
+
+| Category | Tests |
+|----------|-------|
+| **Input Validation** | Missing fields, invalid card formats, out-of-range values |
+| **Response Structure** | All required fields present, correct types |
+| **Hand Evaluation** | Correct hand identification across all Omaha variants |
+| **Board Texture** | Flush-heavy, straight-heavy, paired boards |
+| **Equity Calculation** | Known scenarios vs expected ranges (±10% tolerance) |
+| **Latency** | p50 < 50ms, p99 < 200ms |
+| **Error Handling** | Graceful failures, meaningful error messages |
+
+### E2E Test Extensions (`e2e/app.spec.ts`)
+
+| Phase | Tests to Add |
+|-------|--------------|
+| Phase 1 | API advise endpoint basic tests |
+| Phase 2 | Equity response validation |
+| Phase 3 | Action recommendation tests |
+| Phase 4 | UI Play Advisor tab, card selection, results display |
+
+---
+
+### Phase-by-Phase Testing Requirements
+
+**Phase 1: Foundation MVP**
+- [ ] Unit tests: `advise.test.js` (input parsing, hand eval, board texture)
+- [ ] API tests: Add `/api/advise` tests to e2e suite
+- [ ] Integration: Verify hand evaluator produces correct output
+
+**Phase 2: Equity & Pot Odds**
+- [ ] Unit tests: `RangeEstimator.test.js`, `EquityCalculator.test.js`
+- [ ] API tests: Equity response validation, known scenarios
+- [ ] Benchmarks: Latency under 100ms with caching
+
+**Phase 3: Action Recommendations**
+- [ ] Unit tests: `ActionRecommender.test.js`, `BetSizer.test.js`
+- [ ] API tests: Recommendation accuracy, sizing validation
+- [ ] Golden tests: Known scenarios with expected outcomes
+
+**Phase 4: UI Integration**
+- [ ] E2E UI tests: Tab navigation, card input, results display
+- [ ] Accessibility: Keyboard navigation, screen reader compatibility
+- [ ] Mobile: Touch interactions, responsive layout
+
+**Phase 5: Refinement**
+- [ ] Analytics: Track recommendation accuracy over time
+- [ ] A/B framework: Compare heuristic versions
 
 ---
 
@@ -331,5 +540,52 @@ poker-simulator/
 ## Next Steps
 
 1. ✅ Complete design documentation (this file + PLAY_ADVISOR_DESIGN.md)
-2. ⏳ **Start Phase 1** with Sonnet when ready
-3. Review Phase 1 results before proceeding to Phase 2
+2. ✅ **Phase 1 Complete** (February 2026)
+   - API endpoint: `POST /api/advise`
+   - HandEvaluator integration ✓
+   - FlopTexture analyzer integration ✓
+   - Threat probability lookup from Tier 1 data ✓
+   - Basic outs counter ✓
+   - Pot odds calculator ✓
+   - Response latency: <50ms target achieved (~1-5ms actual)
+3. ✅ **Phase 2 Complete** (February 2026)
+   - RangeEstimator: Position-based opponent range estimation ✓
+   - EquityCalculator: Heuristic equity with draw equity ✓
+   - Caching layer for repeat scenarios ✓
+   - Latency: <100ms target achieved (~1-40ms actual)
+4. ✅ **Phase 2.5 Complete** (February 2026)
+   - Unit tests: RangeEstimator.test.js (33 tests) ✓
+   - Unit tests: EquityCalculator.test.js (55 tests) ✓
+   - API test suite: e2e/api.spec.ts (60+ test cases) ✓
+   - Golden scenario tests included ✓
+   - Latency benchmarks included ✓
+   - Jest configuration with ESM support ✓
+5. ✅ **Phase 3 Complete** (February 2026)
+   - Design docs: ActionRecommender.design.md, BetSizer.design.md ✓
+   - ActionRecommender module: Decision tree, reasoning, alternatives, warnings ✓
+   - BetSizer module: SPR-based sizing with 5 zones ✓
+   - Unit tests: ActionRecommender.test.js (38 tests) ✓
+   - Unit tests: BetSizer.test.js (44 tests) ✓
+   - Golden scenarios: Nut flush raise, flush draw call, weak fold ✓
+   - API integration: Full recommendation with sizing in /api/advise ✓
+   - Total tests: 170 passing ✓
+6. ✅ **Phase 4 Complete** (February 2026)
+   - Play Advisor tab added to web UI ✓
+   - Card selector component (52 cards, mode switching) ✓
+   - Board card input with street detection ✓
+   - Betting inputs (pot, to call, stack) ✓
+   - Situation inputs (game variant, position, players) ✓
+   - Villain action tracking ✓
+   - Auto-analyze on card selection ✓
+   - Recommendation display with reasoning cards ✓
+   - Mobile-responsive layout ✓
+   - E2E tests: play-advisor.spec.ts (40+ test cases) ✓
+7. ✅ **Phase 5 Complete** (February 2026)
+   - Feedback mechanism: 👍/👎 buttons added to UI ✓
+   - FeedbackStore module: File-based storage with analytics ✓
+   - Feedback API: POST/GET /api/feedback endpoints ✓
+   - Recommendation logging: All recommendations logged for analysis ✓
+   - Analytics dashboard: Collapsible section with approval rate, action breakdown ✓
+   - Negative feedback patterns: Pattern detection for tuning ✓
+   - Unit tests: FeedbackStore.test.js (30 tests) ✓
+   - Total tests: 200 passing ✓

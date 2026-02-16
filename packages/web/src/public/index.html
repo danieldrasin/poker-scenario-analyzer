@@ -27,6 +27,7 @@
       <!-- Tab Navigation -->
       <nav class="main-tabs">
         <button class="tab-btn active" data-tab="scenario">Scenario Builder</button>
+        <button class="tab-btn" data-tab="advisor">Play Advisor</button>
         <button class="tab-btn" data-tab="matrix">Probability Matrix</button>
         <button class="tab-btn" data-tab="saved">Saved Analysis</button>
       </nav>
@@ -318,6 +319,159 @@
         </div>
       </section>
 
+      <!-- Play Advisor Tab -->
+      <section id="advisor-tab" class="tab-content">
+        <!-- Onboarding intro card -->
+        <div class="intro-card" id="advisor-intro" data-storage-key="advisor-intro-collapsed">
+          <div class="intro-card-header" onclick="toggleIntroCard('advisor-intro')">
+            <span class="intro-card-icon">💡</span>
+            <span class="intro-card-title">Get real-time action recommendations</span>
+            <span class="intro-card-toggle">▼</span>
+          </div>
+          <div class="intro-card-body">
+            <p>Enter your hole cards, the board, and betting situation to get instant recommendations on whether to fold, call, or raise — with specific bet sizing and reasoning.</p>
+            <p class="intro-card-hint">🎯 <strong>Tip:</strong> Click cards to select them, then toggle between hole and board cards</p>
+            <button class="intro-card-dismiss" onclick="collapseIntroCard('advisor-intro')">Got it</button>
+          </div>
+        </div>
+
+        <div class="advisor-layout">
+          <!-- Input Panel -->
+          <div class="advisor-input-panel">
+            <h3>🃏 Card Selection</h3>
+
+            <!-- Card Selection Mode -->
+            <div class="card-mode-selector">
+              <label>
+                <input type="radio" name="card-mode" value="hole" checked>
+                Hole Cards
+              </label>
+              <label>
+                <input type="radio" name="card-mode" value="board">
+                Board Cards
+              </label>
+            </div>
+
+            <!-- Card Selector Grid -->
+            <div id="card-selector-grid"></div>
+
+            <!-- Selected Cards Display -->
+            <div class="selected-cards-section">
+              <div class="selected-cards-row">
+                <span class="selected-cards-label">Hole:</span>
+                <div id="selected-hole-cards" class="selected-cards-display"></div>
+                <button id="clear-hole-cards" class="clear-btn">Clear</button>
+              </div>
+              <div class="selected-cards-row">
+                <span class="selected-cards-label">Board:</span>
+                <div id="selected-board-cards" class="selected-cards-display"></div>
+                <button id="clear-board-cards" class="clear-btn">Clear</button>
+              </div>
+            </div>
+
+            <!-- Street Indicator -->
+            <div class="street-indicator" id="street-indicator">PREFLOP</div>
+
+            <!-- Situation Inputs -->
+            <div class="situation-inputs">
+              <div class="situation-select">
+                <label>Game</label>
+                <select id="advisor-game-select">
+                  <option value="omaha4" selected>Omaha 4-Card</option>
+                  <option value="omaha5">Omaha 5-Card</option>
+                  <option value="omaha6">Omaha 6-Card</option>
+                </select>
+              </div>
+              <div class="situation-select">
+                <label>Style</label>
+                <select id="advisor-style-select">
+                  <option value="nit">Nit (Ultra-Tight)</option>
+                  <option value="rock">Rock (Tight-Passive)</option>
+                  <option value="reg" selected>Reg (Solid Regular)</option>
+                  <option value="tag">TAG (Tight-Aggressive)</option>
+                  <option value="lag">LAG (Loose-Aggressive)</option>
+                  <option value="fish">Fish (Loose-Passive)</option>
+                </select>
+              </div>
+              <div class="situation-select">
+                <label>Position</label>
+                <select id="advisor-position-select">
+                  <option value="UTG">UTG</option>
+                  <option value="MP">MP</option>
+                  <option value="CO">CO</option>
+                  <option value="BTN" selected>BTN</option>
+                  <option value="SB">SB</option>
+                  <option value="BB">BB</option>
+                </select>
+              </div>
+              <div class="situation-select">
+                <label>Players</label>
+                <select id="advisor-players-select">
+                  <option value="2">2 (Heads-up)</option>
+                  <option value="3" selected>3 (3-way)</option>
+                  <option value="4">4 (4-way)</option>
+                  <option value="5">5 (5-way)</option>
+                  <option value="6">6 (Multi-way)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Betting Inputs -->
+            <div class="betting-inputs">
+              <div class="betting-input">
+                <label>Pot Size ($)</label>
+                <input type="number" id="advisor-pot-size" value="100" min="0" step="10">
+              </div>
+              <div class="betting-input">
+                <label>To Call ($)</label>
+                <input type="number" id="advisor-to-call" value="0" min="0" step="10">
+              </div>
+              <div class="betting-input">
+                <label>Stack ($)</label>
+                <input type="number" id="advisor-stack-size" value="1000" min="0" step="50">
+              </div>
+            </div>
+
+            <!-- Villain Actions -->
+            <div class="villain-actions-section">
+              <h4>Villain Actions (optional)</h4>
+              <div class="villain-action-buttons">
+                <button class="villain-action-btn" data-action="check">Check</button>
+                <button class="villain-action-btn" data-action="call">Call</button>
+                <button class="villain-action-btn" data-action="bet">Bet</button>
+                <button class="villain-action-btn" data-action="raise">Raise</button>
+                <button id="clear-villain-actions" class="clear-btn">Clear</button>
+              </div>
+              <div id="villain-actions-display"></div>
+            </div>
+
+            <!-- Analyze Button -->
+            <button id="analyze-btn" disabled>Analyze</button>
+          </div>
+
+          <!-- Results Panel -->
+          <div class="advisor-results-panel">
+            <div id="advisor-results">
+              <div class="advisor-placeholder">Select your hole cards and at least 3 board cards to get recommendations</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics Section (Collapsible) -->
+        <div class="analytics-section">
+          <div class="analytics-header" id="analytics-toggle">
+            <span class="analytics-icon">📊</span>
+            <span class="analytics-title">Feedback Analytics</span>
+            <span class="analytics-toggle-icon">▼</span>
+          </div>
+          <div class="analytics-body" id="analytics-body" style="display: none;">
+            <div id="analytics-content">
+              <p class="loading">Loading analytics...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Matrix Tab -->
       <section id="matrix-tab" class="tab-content">
         <!-- Onboarding intro card -->
@@ -518,5 +672,6 @@
   <script src="poker-stats.js"></script>
   <script src="data-manager.js"></script>
   <script src="app.js"></script>
+  <script src="play-advisor.js"></script>
 </body>
 </html>

@@ -1,0 +1,66 @@
+{
+  "session_id": "20260215_124350",
+  "variant": "omaha4",
+  "num_hands": 300,
+  "num_players": 6,
+  "duration_seconds": 13.589144,
+  "strategies": [
+    "TAG",
+    "LAG",
+    "GTO",
+    "FISH",
+    "NIT",
+    "MANIAC"
+  ],
+  "results": [
+    {
+      "rank": 1,
+      "name": "LAG_2",
+      "strategy": "LAG",
+      "stack": 54330,
+      "profit": 44330,
+      "bb100": 738.8333333333334
+    },
+    {
+      "rank": 2,
+      "name": "NIT_5",
+      "strategy": "NIT",
+      "stack": 5670,
+      "profit": -4330,
+      "bb100": -72.16666666666667
+    },
+    {
+      "rank": 3,
+      "name": "TAG_1",
+      "strategy": "TAG",
+      "stack": 0,
+      "profit": -10000,
+      "bb100": -166.66666666666666
+    },
+    {
+      "rank": 4,
+      "name": "GTO_3",
+      "strategy": "GTO",
+      "stack": 0,
+      "profit": -10000,
+      "bb100": -166.66666666666666
+    },
+    {
+      "rank": 5,
+      "name": "FISH_4",
+      "strategy": "FISH",
+      "stack": 0,
+      "profit": -10000,
+      "bb100": -166.66666666666666
+    },
+    {
+      "rank": 6,
+      "name": "MANIAC_6",
+      "strategy": "MANIAC",
+      "stack": 0,
+      "profit": -10000,
+      "bb100": -166.66666666666666
+    }
+  ],
+  "timestamp": "2026-02-15T12:44:04.598545"
+}

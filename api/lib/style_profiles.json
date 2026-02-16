@@ -1,0 +1,129 @@
+{
+  "_comment": "Generated from StyleProfiles.js — single source of truth for all style definitions. Used by both the JS application and Python test runner.",
+  "styles": {
+    "nit": {
+      "name": "Nit (Ultra-Tight)",
+      "vpip_target": 0.20,
+      "pfr_ratio": 0.70,
+      "thresholds": { "omaha4": 55.0, "omaha5": 65.5, "omaha6": 73.0 },
+      "cbet": 0.50,
+      "fold_cbet": 0.55,
+      "postflop_agg": 0.35,
+      "barrel_turn": 0.40,
+      "barrel_river": 0.30,
+      "raise_sizing": 0.50,
+      "equity_adjustments": {
+        "fold_margin_delta": 5,
+        "raise_margin_delta": 5,
+        "bluff_frequency": 0.05,
+        "aggression_mult": 0.70
+      },
+      "sizing_mult": 0.85
+    },
+    "rock": {
+      "name": "Rock (Tight-Passive)",
+      "vpip_target": 0.20,
+      "pfr_ratio": 0.45,
+      "thresholds": { "omaha4": 55.0, "omaha5": 65.5, "omaha6": 73.0 },
+      "cbet": 0.45,
+      "fold_cbet": 0.55,
+      "postflop_agg": 0.15,
+      "barrel_turn": 0.35,
+      "barrel_river": 0.25,
+      "raise_sizing": 0.50,
+      "equity_adjustments": {
+        "fold_margin_delta": 5,
+        "raise_margin_delta": 5,
+        "bluff_frequency": 0.03,
+        "aggression_mult": 0.50
+      },
+      "sizing_mult": 0.85
+    },
+    "reg": {
+      "name": "Reg (Solid Regular)",
+      "vpip_target": 0.25,
+      "pfr_ratio": 0.75,
+      "thresholds": { "omaha4": 53.6, "omaha5": 63.9, "omaha6": 71.3 },
+      "cbet": 0.58,
+      "fold_cbet": 0.42,
+      "postflop_agg": 0.30,
+      "barrel_turn": 0.50,
+      "barrel_river": 0.40,
+      "raise_sizing": 0.75,
+      "equity_adjustments": {
+        "fold_margin_delta": 0,
+        "raise_margin_delta": 0,
+        "bluff_frequency": 0.10,
+        "aggression_mult": 1.00
+      },
+      "sizing_mult": 1.00
+    },
+    "tag": {
+      "name": "TAG (Tight-Aggressive)",
+      "vpip_target": 0.28,
+      "pfr_ratio": 0.72,
+      "thresholds": { "omaha4": 52.0, "omaha5": 62.0, "omaha6": 69.5 },
+      "cbet": 0.62,
+      "fold_cbet": 0.38,
+      "postflop_agg": 0.35,
+      "barrel_turn": 0.55,
+      "barrel_river": 0.42,
+      "raise_sizing": 0.75,
+      "equity_adjustments": {
+        "fold_margin_delta": -2,
+        "raise_margin_delta": -2,
+        "bluff_frequency": 0.12,
+        "aggression_mult": 1.10
+      },
+      "sizing_mult": 1.05
+    },
+    "lag": {
+      "name": "LAG (Loose-Aggressive)",
+      "vpip_target": 0.35,
+      "pfr_ratio": 0.65,
+      "thresholds": { "omaha4": 50.5, "omaha5": 61.0, "omaha6": 68.5 },
+      "cbet": 0.65,
+      "fold_cbet": 0.30,
+      "postflop_agg": 0.40,
+      "barrel_turn": 0.60,
+      "barrel_river": 0.50,
+      "raise_sizing": 1.00,
+      "equity_adjustments": {
+        "fold_margin_delta": -5,
+        "raise_margin_delta": -5,
+        "bluff_frequency": 0.20,
+        "aggression_mult": 1.25
+      },
+      "sizing_mult": 1.15
+    },
+    "fish": {
+      "name": "Fish (Loose-Passive)",
+      "vpip_target": 0.50,
+      "pfr_ratio": 0.25,
+      "thresholds": { "omaha4": 46.5, "omaha5": 56.7, "omaha6": 64.3 },
+      "cbet": 0.40,
+      "fold_cbet": 0.25,
+      "postflop_agg": 0.10,
+      "barrel_turn": 0.30,
+      "barrel_river": 0.20,
+      "raise_sizing": 0.50,
+      "equity_adjustments": {
+        "fold_margin_delta": -8,
+        "raise_margin_delta": 5,
+        "bluff_frequency": 0.03,
+        "aggression_mult": 0.40
+      },
+      "sizing_mult": 0.90
+    }
+  },
+  "position_adjustments": {
+    "BTN": 12,
+    "CO": 6,
+    "HJ": 2,
+    "MP": -3,
+    "EP": -8,
+    "UTG": -12,
+    "SB": -5,
+    "BB": 0
+  }
+}
