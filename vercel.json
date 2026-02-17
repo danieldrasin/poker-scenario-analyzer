@@ -4,6 +4,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "packages/web/src/public",
   "framework": null,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 10
+    }
+  },
   "headers": [
     {
       "source": "/data/(.*)",

@@ -1,0 +1,16 @@
+bot/
+e2e/
+*.test.js
+*.test.ts
+*.spec.ts
+jest.config.js
+playwright.config.ts
+playwright-report/
+test-results/
+data/feedback/
+deploy-and-test.sh
+POKERNOW_BOT_PLAN.md
+PLAY_ADVISOR_PLAN.md
+SESSION_HANDOFF.md
+CLAUDE.md
+.env
