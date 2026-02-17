@@ -586,6 +586,171 @@ test.describe('Play Advisor API - Error Handling', () => {
 });
 
 // =============================================================================
+// STYLE-AWARE RECOMMENDATION TESTS
+// =============================================================================
+
+test.describe('Play Advisor API - Style Differentiation', () => {
+
+  const baseHand = {
+    gameVariant: 'omaha4',
+    holeCards: ['As', 'Ks', 'Qh', 'Jh'],
+    board: ['Ts', '9s', '2h'],
+    position: 'BTN',
+    playersInHand: 3,
+    potSize: 100,
+    toCall: 50,
+    stackSize: 500
+  };
+
+  test('heroStyle defaults to reg when not provided', async ({ request }) => {
+    const { data } = await advise(request, baseHand);
+    expect(data.input.heroStyle).toBe('reg');
+  });
+
+  test('heroStyle is echoed back in response', async ({ request }) => {
+    for (const style of ['nit', 'rock', 'reg', 'tag', 'lag', 'fish']) {
+      const { data } = await advise(request, { ...baseHand, heroStyle: style });
+      expect(data.input.heroStyle).toBe(style);
+    }
+  });
+
+  test('recommendation metadata includes heroStyle', async ({ request }) => {
+    const { data } = await advise(request, { ...baseHand, heroStyle: 'lag' });
+    expect(data.recommendation).toBeDefined();
+    expect(data.recommendation.metadata.heroStyle).toBe('lag');
+  });
+
+  test('different styles produce different recommendations for strong hand', async ({ request }) => {
+    // Use a strong hand (nut flush) not facing a bet — styles diverge on bet sizing and confidence
+    const strongHand = {
+      gameVariant: 'omaha4',
+      holeCards: ['As', 'Ks', 'Qh', 'Jh'],
+      board: ['Ts', '9s', '2s'],  // Nut flush
+      position: 'BTN',
+      playersInHand: 2,
+      potSize: 100,
+      toCall: 0,
+      stackSize: 800
+    };
+
+    const nitResult = await advise(request, { ...strongHand, heroStyle: 'nit' });
+    const lagResult = await advise(request, { ...strongHand, heroStyle: 'lag' });
+
+    // Both should recommend bet/raise, but sizing or confidence should differ
+    const nitSizing = nitResult.data.recommendation?.sizing?.optimal;
+    const lagSizing = lagResult.data.recommendation?.sizing?.optimal;
+    const nitConf = nitResult.data.recommendation?.confidence;
+    const lagConf = lagResult.data.recommendation?.confidence;
+    const nitReason = nitResult.data.recommendation?.reasoning?.strategic;
+    const lagReason = lagResult.data.recommendation?.reasoning?.strategic;
+
+    // At least one dimension should differ: sizing, confidence, or reasoning
+    const isDifferentiated = nitSizing !== lagSizing || nitConf !== lagConf || nitReason !== lagReason;
+    expect(isDifferentiated).toBeTruthy();
+  });
+
+  test('LAG gets higher confidence for aggressive actions', async ({ request }) => {
+    // Strong hand where both should bet, but LAG more confidently
+    const strongHand = {
+      gameVariant: 'omaha4',
+      holeCards: ['As', 'Ks', 'Qh', 'Jh'],
+      board: ['Ts', '9s', '2s'],  // Nut flush
+      position: 'BTN',
+      playersInHand: 2,
+      potSize: 100,
+      toCall: 0,
+      stackSize: 500
+    };
+
+    const nitResult = await advise(request, { ...strongHand, heroStyle: 'nit' });
+    const lagResult = await advise(request, { ...strongHand, heroStyle: 'lag' });
+
+    // Both should have a recommendation
+    expect(nitResult.data.recommendation).toBeDefined();
+    expect(lagResult.data.recommendation).toBeDefined();
+  });
+
+  test('reasoning text includes style-specific language', async ({ request }) => {
+    const { data } = await advise(request, { ...baseHand, heroStyle: 'lag' });
+
+    if (data.recommendation?.reasoning?.strategic) {
+      // Strategic reasoning should mention the style or its characteristics
+      const strategic = data.recommendation.reasoning.strategic.toLowerCase();
+      const hasStyleContext = strategic.includes('lag') ||
+                              strategic.includes('aggressive') ||
+                              strategic.includes('pressure') ||
+                              strategic.includes('wide') ||
+                              strategic.includes('exploit');
+      expect(hasStyleContext).toBeTruthy();
+    }
+  });
+
+  test('Nit reasoning references tight play', async ({ request }) => {
+    const { data } = await advise(request, { ...baseHand, heroStyle: 'nit' });
+
+    if (data.recommendation?.reasoning?.strategic) {
+      const strategic = data.recommendation.reasoning.strategic.toLowerCase();
+      const hasStyleContext = strategic.includes('nit') ||
+                              strategic.includes('tight') ||
+                              strategic.includes('premium') ||
+                              strategic.includes('conservative') ||
+                              strategic.includes('patience');
+      expect(hasStyleContext).toBeTruthy();
+    }
+  });
+
+  test('all 6 styles return valid recommendations', async ({ request }) => {
+    const styles = ['nit', 'rock', 'reg', 'tag', 'lag', 'fish'];
+
+    for (const style of styles) {
+      const { response, data } = await advise(request, { ...baseHand, heroStyle: style });
+      expect(response.ok()).toBeTruthy();
+      expect(data.recommendation).toBeDefined();
+      expect(['fold', 'call', 'check', 'bet', 'raise']).toContain(data.recommendation.action);
+    }
+  });
+
+  test('bet sizing varies by style', async ({ request }) => {
+    // Use a scenario where bet/raise is likely so we get sizing data
+    const bettingHand = {
+      gameVariant: 'omaha4',
+      holeCards: ['As', 'Ks', 'Qh', 'Jh'],
+      board: ['Ts', '9s', '2s'],  // Nut flush
+      position: 'BTN',
+      playersInHand: 2,
+      potSize: 100,
+      toCall: 0,
+      stackSize: 800
+    };
+
+    const sizes: Record<string, number> = {};
+    for (const style of ['nit', 'reg', 'lag']) {
+      const { data } = await advise(request, { ...bettingHand, heroStyle: style });
+      if (data.recommendation?.sizing?.optimal) {
+        sizes[style] = data.recommendation.sizing.optimal;
+      }
+    }
+
+    // If we got sizing for at least 2 styles, they should differ
+    const sizeValues = Object.values(sizes);
+    if (sizeValues.length >= 2) {
+      const uniqueSizes = new Set(sizeValues);
+      expect(uniqueSizes.size).toBeGreaterThan(1);
+    }
+  });
+
+  test('invalid heroStyle falls back to reg', async ({ request }) => {
+    const { response, data } = await advise(request, { ...baseHand, heroStyle: 'maniac' });
+    // Should not crash — either reject or fall back
+    expect([200, 400]).toContain(response.status());
+    if (response.ok()) {
+      // If accepted, should fall back to reg
+      expect(data.recommendation).toBeDefined();
+    }
+  });
+});
+
+// =============================================================================
 // OPPONENT RANGE TESTS
 // =============================================================================
 

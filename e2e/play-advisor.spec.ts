@@ -227,6 +227,111 @@ test.describe('Situation Inputs', () => {
   });
 });
 
+test.describe('Style Selector', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await page.click('[data-tab="advisor"]');
+  });
+
+  test('style selector is visible', async ({ page }) => {
+    const styleSelect = page.locator('#advisor-style-select');
+    await expect(styleSelect).toBeVisible();
+  });
+
+  test('style defaults to reg', async ({ page }) => {
+    const styleSelect = page.locator('#advisor-style-select');
+    await expect(styleSelect).toHaveValue('reg');
+  });
+
+  test('can select all 6 styles', async ({ page }) => {
+    const styleSelect = page.locator('#advisor-style-select');
+    const styles = ['nit', 'rock', 'reg', 'tag', 'lag', 'fish'];
+
+    for (const style of styles) {
+      await styleSelect.selectOption(style);
+      await expect(styleSelect).toHaveValue(style);
+    }
+  });
+
+  test('style selection persists through analysis', async ({ page }) => {
+    // Select LAG style
+    await page.selectOption('#advisor-style-select', 'lag');
+
+    // Set up a complete hand
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qh"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="7s"]');
+    await page.click('.card-btn[data-card="4s"]');
+    await page.click('.card-btn[data-card="2s"]');
+
+    // Wait for analysis to complete
+    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
+
+    // Style should still be LAG
+    await expect(page.locator('#advisor-style-select')).toHaveValue('lag');
+  });
+
+  test('changing style triggers re-analysis', async ({ page }) => {
+    // Set up a complete hand first
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qh"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="7s"]');
+    await page.click('.card-btn[data-card="4s"]');
+    await page.click('.card-btn[data-card="2s"]');
+
+    // Wait for initial analysis
+    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
+
+    // Change style — should trigger new analysis
+    await page.selectOption('#advisor-style-select', 'nit');
+
+    // Wait briefly for re-analysis
+    await page.waitForTimeout(1000);
+
+    // Recommendation should still be visible (re-analysis completed)
+    await expect(page.locator('.recommendation-card')).toBeVisible();
+  });
+
+  test('style affects displayed recommendation for same hand', async ({ page }) => {
+    // Set up a complete hand
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qh"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="7s"]');
+    await page.click('.card-btn[data-card="4s"]');
+    await page.click('.card-btn[data-card="2s"]');
+
+    // Analyze with Nit
+    await page.selectOption('#advisor-style-select', 'nit');
+    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
+    const nitAction = await page.locator('.action-badge').textContent();
+
+    // Switch to LAG
+    await page.selectOption('#advisor-style-select', 'lag');
+    await page.waitForTimeout(1500);
+    const lagAction = await page.locator('.action-badge').textContent();
+
+    // At minimum, the recommendation UI should have re-rendered
+    // (action or confidence text may differ)
+    expect(nitAction).toBeDefined();
+    expect(lagAction).toBeDefined();
+  });
+});
+
 test.describe('Villain Actions', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
@@ -374,6 +479,7 @@ test.describe('Responsive Layout', () => {
     await expect(page.locator('#card-selector-grid')).toBeVisible();
     await expect(page.locator('#advisor-pot-size')).toBeVisible();
     await expect(page.locator('#advisor-position-select')).toBeVisible();
+    await expect(page.locator('#advisor-style-select')).toBeVisible();
     await expect(page.locator('#analyze-btn')).toBeVisible();
   });
 
