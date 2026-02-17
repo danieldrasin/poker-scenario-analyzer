@@ -1,9 +1,11 @@
 // Play Advisor UI Module
 // Real-time hand analysis with action recommendations
+// Dual-mode: Live Table (speed) and Study (depth)
 
 const PlayAdvisor = (function() {
   // ============ STATE ============
   const state = {
+    mode: 'live', // 'live' or 'study'
     gameVariant: 'omaha4',
     heroStyle: 'reg',
     holeCards: [],
@@ -15,7 +17,10 @@ const PlayAdvisor = (function() {
     stackSize: 1000,
     villainActions: [],
     lastResponse: null,
-    isLoading: false
+    isLoading: false,
+    // Live mode specific
+    liveCardTarget: 'hole', // 'hole' or 'board'
+    liveNextSlot: 0 // next empty slot index
   };
 
   // Style options matching StyleProfiles.js
@@ -146,6 +151,255 @@ const PlayAdvisor = (function() {
     autoAnalyze();
   }
 
+  // ============ MODE SWITCHING ============
+  function switchMode(mode) {
+    state.mode = mode;
+
+    // Update mode buttons
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    // Show/hide mode containers
+    document.getElementById('live-mode')?.classList.toggle('active', mode === 'live');
+    document.getElementById('study-mode')?.classList.toggle('active', mode === 'study');
+
+    // Sync state between modes
+    syncModeState(mode);
+    updateUI();
+  }
+
+  function syncModeState(targetMode) {
+    if (targetMode === 'live') {
+      // Push state into live controls
+      const liveGame = document.getElementById('live-game-select');
+      const livePos = document.getElementById('live-position-select');
+      const livePlayers = document.getElementById('live-players-select');
+      const liveStyle = document.getElementById('live-style-select');
+      const livePot = document.getElementById('live-pot');
+      const liveCall = document.getElementById('live-call');
+      const liveStack = document.getElementById('live-stack');
+
+      if (liveGame) liveGame.value = state.gameVariant;
+      if (livePos) livePos.value = state.position;
+      if (livePlayers) livePlayers.value = String(state.playersInHand);
+      if (liveStyle) liveStyle.value = state.heroStyle;
+      if (livePot) livePot.value = state.potSize;
+      if (liveCall) liveCall.value = state.toCall;
+      if (liveStack) liveStack.value = state.stackSize;
+
+      renderLiveCardPicker();
+      renderLiveCardSlots();
+      updateLiveResult();
+    } else {
+      // Push state into study controls
+      const studyGame = document.getElementById('advisor-game-select');
+      const studyStyle = document.getElementById('advisor-style-select');
+      const studyPos = document.getElementById('advisor-position-select');
+      const studyPlayers = document.getElementById('advisor-players-select');
+      const studyPot = document.getElementById('advisor-pot-size');
+      const studyCall = document.getElementById('advisor-to-call');
+      const studyStack = document.getElementById('advisor-stack-size');
+
+      if (studyGame) studyGame.value = state.gameVariant;
+      if (studyStyle) studyStyle.value = state.heroStyle;
+      if (studyPos) studyPos.value = state.position;
+      if (studyPlayers) studyPlayers.value = String(state.playersInHand);
+      if (studyPot) studyPot.value = state.potSize;
+      if (studyCall) studyCall.value = state.toCall;
+      if (studyStack) studyStack.value = state.stackSize;
+    }
+  }
+
+  // ============ LIVE MODE RENDERING ============
+  function renderLiveCardPicker() {
+    const container = document.getElementById('live-card-picker');
+    if (!container) return;
+
+    // Render 4 rows (one per suit) × 13 columns (one per rank)
+    let html = '';
+    for (const suit of SUITS) {
+      for (const rank of RANKS) {
+        const card = rank + suit;
+        const used = isCardSelected(card);
+        const symbol = SUIT_SYMBOLS[suit];
+        const color = SUIT_COLORS[suit];
+        html += `<button class="live-pick-btn ${used ? 'used' : ''}" data-card="${card}" style="color: ${color}">${rank}${symbol}</button>`;
+      }
+    }
+    container.innerHTML = html;
+  }
+
+  function renderLiveCardSlots() {
+    const holeContainer = document.getElementById('live-hole-cards');
+    const boardContainer = document.getElementById('live-board-cards');
+    if (!holeContainer || !boardContainer) return;
+
+    const maxHole = getMaxHoleCards();
+
+    // Build hole slots
+    let holeHtml = '';
+    for (let i = 0; i < maxHole; i++) {
+      if (state.holeCards[i]) {
+        const card = state.holeCards[i];
+        const suit = card[1];
+        const rank = card[0];
+        const symbol = SUIT_SYMBOLS[suit];
+        const color = SUIT_COLORS[suit];
+        holeHtml += `<div class="live-card-slot filled" data-slot="hole-${i}" style="color: ${color}">${rank}${symbol}</div>`;
+      } else {
+        const isTarget = state.liveCardTarget === 'hole' && i === state.holeCards.length;
+        holeHtml += `<div class="live-card-slot empty ${isTarget ? 'active-target' : ''}" data-slot="hole-${i}">?</div>`;
+      }
+    }
+    holeContainer.innerHTML = holeHtml;
+
+    // Build board slots
+    let boardHtml = '';
+    for (let i = 0; i < 5; i++) {
+      if (state.boardCards[i]) {
+        const card = state.boardCards[i];
+        const suit = card[1];
+        const rank = card[0];
+        const symbol = SUIT_SYMBOLS[suit];
+        const color = SUIT_COLORS[suit];
+        boardHtml += `<div class="live-card-slot board-slot filled" data-slot="board-${i}" style="color: ${color}">${rank}${symbol}</div>`;
+      } else {
+        const isTarget = state.liveCardTarget === 'board' && i === state.boardCards.length;
+        boardHtml += `<div class="live-card-slot board-slot empty ${isTarget ? 'active-target' : ''}" data-slot="board-${i}">?</div>`;
+      }
+    }
+    boardContainer.innerHTML = boardHtml;
+
+    // Auto-switch target when hole cards are full
+    if (state.liveCardTarget === 'hole' && state.holeCards.length >= maxHole) {
+      state.liveCardTarget = 'board';
+    }
+  }
+
+  function livePickCard(card) {
+    if (isCardSelected(card)) return;
+
+    if (state.liveCardTarget === 'hole') {
+      const max = getMaxHoleCards();
+      if (state.holeCards.length < max) {
+        state.holeCards.push(card);
+        // Auto-switch to board when hole is full
+        if (state.holeCards.length >= max) {
+          state.liveCardTarget = 'board';
+        }
+      }
+    } else {
+      if (state.boardCards.length < 5) {
+        state.boardCards.push(card);
+      }
+    }
+
+    renderLiveCardPicker();
+    renderLiveCardSlots();
+    autoAnalyze();
+
+    // Update study mode UI as well (shared state)
+    if (state.mode === 'live') {
+      renderCardSelector();
+      renderSelectedCards();
+      updateAnalyzeButton();
+    }
+  }
+
+  function liveClearHole() {
+    state.holeCards = [];
+    state.liveCardTarget = 'hole';
+    state.lastResponse = null;
+    renderLiveCardPicker();
+    renderLiveCardSlots();
+    updateLiveResult();
+    // Sync study mode
+    renderCardSelector();
+    renderSelectedCards();
+    clearResults();
+  }
+
+  function liveClearBoard() {
+    state.boardCards = [];
+    state.lastResponse = null;
+    renderLiveCardPicker();
+    renderLiveCardSlots();
+    updateLiveResult();
+    // Sync study mode
+    renderCardSelector();
+    renderSelectedCards();
+    clearResults();
+  }
+
+  function liveNewHand() {
+    state.holeCards = [];
+    state.boardCards = [];
+    state.villainActions = [];
+    state.lastResponse = null;
+    state.liveCardTarget = 'hole';
+    renderLiveCardPicker();
+    renderLiveCardSlots();
+    updateLiveResult();
+    // Sync study mode
+    renderCardSelector();
+    renderSelectedCards();
+    updateVillainActionsDisplay();
+    clearResults();
+  }
+
+  function updateLiveResult() {
+    const container = document.getElementById('live-result');
+    if (!container) return;
+
+    if (!state.lastResponse) {
+      const holeNeeded = getMaxHoleCards() - state.holeCards.length;
+      const boardNeeded = Math.max(0, 3 - state.boardCards.length);
+      let msg = 'Enter your cards to get a recommendation';
+      if (state.holeCards.length > 0 && holeNeeded > 0) {
+        msg = `Need ${holeNeeded} more hole card${holeNeeded > 1 ? 's' : ''}`;
+      } else if (state.holeCards.length >= getMaxHoleCards() && boardNeeded > 0) {
+        msg = `Need ${boardNeeded} more board card${boardNeeded > 1 ? 's' : ''}`;
+      }
+      container.innerHTML = `<div class="live-result-placeholder">${msg}</div>`;
+      return;
+    }
+
+    const data = state.lastResponse;
+    const rec = data.recommendation || {};
+    const analysis = data.analysis || {};
+    const action = (rec.action || 'check').toLowerCase();
+
+    let html = '';
+
+    // Hand name
+    if (analysis.currentHand) {
+      html += `<div class="live-result-hand">${analysis.currentHand.handStrength || analysis.currentHand.madeHand}${analysis.currentHand.isNuts ? ' 🔥' : ''}</div>`;
+    }
+
+    // BIG action badge
+    html += `<div class="live-result-action ${action}">${action.toUpperCase()}</div>`;
+
+    // Sizing
+    if (rec.sizing && action !== 'fold' && action !== 'check') {
+      html += `<div class="live-result-sizing">$${rec.sizing.optimal} (${rec.sizing.percentPot})</div>`;
+    }
+
+    // One-line reason
+    if (rec.reasoning && rec.reasoning.primary) {
+      html += `<div class="live-result-reason">${rec.reasoning.primary}</div>`;
+    }
+
+    // Equity pill
+    if (analysis.equity) {
+      const eq = parseFloat(analysis.equity.estimated) || 0;
+      const eqColor = eq >= 60 ? 'var(--success)' : eq >= 40 ? 'var(--warning)' : 'var(--danger)';
+      html += `<div class="live-result-equity"><span style="color:${eqColor}">Equity: ${analysis.equity.estimated}</span></div>`;
+    }
+
+    container.innerHTML = html;
+  }
+
   // ============ API CALL ============
   let analyzeTimeout = null;
 
@@ -205,6 +459,7 @@ const PlayAdvisor = (function() {
       if (response.ok) {
         state.lastResponse = data;
         displayResults(data);
+        updateLiveResult();
       } else {
         showError(data.error || 'Analysis failed');
       }
@@ -607,6 +862,69 @@ const PlayAdvisor = (function() {
 
   // ============ EVENT BINDING ============
   function bindEvents() {
+    // ---- MODE TOGGLE ----
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+    });
+
+    // ---- LIVE MODE EVENTS ----
+    // Live card picker
+    const livePicker = document.getElementById('live-card-picker');
+    if (livePicker) {
+      livePicker.addEventListener('click', (e) => {
+        const btn = e.target.closest('.live-pick-btn');
+        if (btn && !btn.classList.contains('used')) {
+          livePickCard(btn.dataset.card);
+        }
+      });
+    }
+
+    // Live card slot clicks (to set target)
+    document.getElementById('live-hole-cards')?.addEventListener('click', () => {
+      state.liveCardTarget = 'hole';
+      renderLiveCardSlots();
+    });
+    document.getElementById('live-board-cards')?.addEventListener('click', () => {
+      state.liveCardTarget = 'board';
+      renderLiveCardSlots();
+    });
+
+    // Live clear buttons
+    document.getElementById('live-clear-hole')?.addEventListener('click', liveClearHole);
+    document.getElementById('live-clear-board')?.addEventListener('click', liveClearBoard);
+    document.getElementById('live-new-hand')?.addEventListener('click', liveNewHand);
+
+    // Live settings
+    document.getElementById('live-game-select')?.addEventListener('change', (e) => {
+      updateGameVariant(e.target.value);
+      renderLiveCardSlots();
+      renderLiveCardPicker();
+    });
+    document.getElementById('live-position-select')?.addEventListener('change', (e) => updatePosition(e.target.value));
+    document.getElementById('live-players-select')?.addEventListener('change', (e) => updatePlayersInHand(e.target.value));
+    document.getElementById('live-style-select')?.addEventListener('change', (e) => updateHeroStyle(e.target.value));
+
+    // Live spinner buttons
+    document.querySelectorAll('.spin-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.target);
+        if (!target) return;
+        const delta = parseInt(btn.dataset.delta) || 0;
+        const newVal = Math.max(0, (parseInt(target.value) || 0) + delta);
+        target.value = newVal;
+        // Update state based on which field
+        if (btn.dataset.target === 'live-pot') updatePotSize(newVal);
+        else if (btn.dataset.target === 'live-call') updateToCall(newVal);
+        else if (btn.dataset.target === 'live-stack') updateStackSize(newVal);
+      });
+    });
+
+    // Live spinner input changes
+    document.getElementById('live-pot')?.addEventListener('input', (e) => updatePotSize(e.target.value));
+    document.getElementById('live-call')?.addEventListener('input', (e) => updateToCall(e.target.value));
+    document.getElementById('live-stack')?.addEventListener('input', (e) => updateStackSize(e.target.value));
+
+    // ---- STUDY MODE EVENTS ----
     // Card selector - use event delegation
     const selectorGrid = document.getElementById('card-selector-grid');
     if (selectorGrid) {
@@ -622,15 +940,32 @@ const PlayAdvisor = (function() {
         } else {
           toggleBoardCard(card);
         }
+        // Sync live mode
+        renderLiveCardPicker();
+        renderLiveCardSlots();
       });
     }
 
     // Clear buttons
-    document.getElementById('clear-hole-cards')?.addEventListener('click', clearHoleCards);
-    document.getElementById('clear-board-cards')?.addEventListener('click', clearBoardCards);
+    document.getElementById('clear-hole-cards')?.addEventListener('click', () => {
+      clearHoleCards();
+      renderLiveCardPicker();
+      renderLiveCardSlots();
+      updateLiveResult();
+    });
+    document.getElementById('clear-board-cards')?.addEventListener('click', () => {
+      clearBoardCards();
+      renderLiveCardPicker();
+      renderLiveCardSlots();
+      updateLiveResult();
+    });
 
-    // Input fields
-    document.getElementById('advisor-game-select')?.addEventListener('change', (e) => updateGameVariant(e.target.value));
+    // Input fields (study mode)
+    document.getElementById('advisor-game-select')?.addEventListener('change', (e) => {
+      updateGameVariant(e.target.value);
+      renderLiveCardSlots();
+      renderLiveCardPicker();
+    });
     document.getElementById('advisor-style-select')?.addEventListener('change', (e) => updateHeroStyle(e.target.value));
     document.getElementById('advisor-position-select')?.addEventListener('change', (e) => updatePosition(e.target.value));
     document.getElementById('advisor-players-select')?.addEventListener('change', (e) => updatePlayersInHand(e.target.value));
@@ -657,6 +992,54 @@ const PlayAdvisor = (function() {
         }
       });
     }
+
+    // ---- KEYBOARD SHORTCUTS (Live mode) ----
+    document.addEventListener('keydown', (e) => {
+      // Only handle shortcuts when advisor tab is active and live mode is on
+      const advisorTab = document.getElementById('advisor-tab');
+      if (!advisorTab?.classList.contains('active')) return;
+      if (state.mode !== 'live') return;
+      // Don't capture when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+      // N = new hand
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        liveNewHand();
+        return;
+      }
+      // H = switch target to hole
+      if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        state.liveCardTarget = 'hole';
+        renderLiveCardSlots();
+        return;
+      }
+      // B = switch target to board
+      if (e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        state.liveCardTarget = 'board';
+        renderLiveCardSlots();
+        return;
+      }
+      // Backspace = remove last card from current target
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (state.liveCardTarget === 'hole' && state.holeCards.length > 0) {
+          state.holeCards.pop();
+        } else if (state.liveCardTarget === 'board' && state.boardCards.length > 0) {
+          state.boardCards.pop();
+        }
+        state.lastResponse = null;
+        renderLiveCardPicker();
+        renderLiveCardSlots();
+        updateLiveResult();
+        renderCardSelector();
+        renderSelectedCards();
+        autoAnalyze();
+        return;
+      }
+    });
   }
 
   // ============ ANALYTICS ============
@@ -768,10 +1151,15 @@ const PlayAdvisor = (function() {
     updateUI();
     clearResults();
 
+    // Initialize live mode
+    renderLiveCardPicker();
+    renderLiveCardSlots();
+    updateLiveResult();
+
     // Analytics toggle
     document.getElementById('analytics-toggle')?.addEventListener('click', toggleAnalytics);
 
-    console.log('Play Advisor initialized');
+    console.log('Play Advisor initialized (dual-mode: Live Table + Study)');
   }
 
   // Public API
@@ -780,7 +1168,9 @@ const PlayAdvisor = (function() {
     analyze,
     state,
     clearResults,
-    loadAnalytics
+    loadAnalytics,
+    switchMode,
+    liveNewHand
   };
 })();
 

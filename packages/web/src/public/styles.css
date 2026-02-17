@@ -2536,6 +2536,438 @@ footer {
 /* PLAY ADVISOR STYLES                          */
 /* ============================================ */
 
+/* Mode Toggle */
+.advisor-mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--card-bg);
+  padding: 4px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  color: var(--text);
+  background: var(--bg);
+}
+
+.mode-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+.mode-icon {
+  font-size: 1.1rem;
+}
+
+/* Advisor Mode Containers */
+.advisor-mode {
+  display: none;
+}
+
+.advisor-mode.active {
+  display: block;
+}
+
+/* ============================================ */
+/* LIVE TABLE MODE                              */
+/* ============================================ */
+
+.live-settings-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.live-select {
+  flex: 1;
+  padding: 10px 8px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.live-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Live Card Area */
+.live-cards-area {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  background: var(--card-bg);
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.live-card-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.live-card-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+.live-card-slots {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.live-card-slot {
+  flex: 1;
+  aspect-ratio: 2.5/3.5;
+  max-height: 52px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.live-card-slot.empty {
+  color: var(--text-muted);
+  background: var(--bg);
+  font-size: 0.9rem;
+}
+
+.live-card-slot.active-target {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.live-card-slot.board-slot {
+  border-style: dashed;
+}
+
+.live-card-slot.filled {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.live-card-slot.board-slot.filled {
+  border-color: var(--success);
+  background: var(--success-light);
+  border-style: solid;
+}
+
+.live-clear-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--bg);
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.live-clear-btn:hover {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+/* Live Card Picker */
+.live-card-picker {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 3px;
+  margin-bottom: 12px;
+  background: var(--card-bg);
+  padding: 10px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.live-pick-btn {
+  aspect-ratio: 1;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  transition: all 0.1s;
+  padding: 2px;
+  line-height: 1;
+}
+
+.live-pick-btn:hover:not(.used) {
+  transform: scale(1.15);
+  box-shadow: var(--shadow);
+  z-index: 2;
+}
+
+.live-pick-btn.used {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+/* Live Betting Bar */
+.live-betting-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.live-bet-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.live-bet-field label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.live-spinner {
+  display: flex;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+.live-spinner input {
+  flex: 1;
+  border: none;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 8px 2px;
+  width: 40px;
+  min-width: 0;
+  -moz-appearance: textfield;
+}
+
+.live-spinner input::-webkit-outer-spin-button,
+.live-spinner input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.live-spinner input:focus {
+  outline: none;
+}
+
+.spin-btn {
+  width: 36px;
+  border: none;
+  background: var(--bg);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.spin-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.spin-btn:active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Live Result — the big action display */
+.live-result {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.live-result-placeholder {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.live-result-action {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  padding: 8px 32px;
+  border-radius: var(--radius);
+  color: white;
+  margin-bottom: 8px;
+}
+
+.live-result-action.fold { background: var(--danger); }
+.live-result-action.call { background: var(--warning); color: #1e293b; }
+.live-result-action.check { background: var(--secondary); }
+.live-result-action.bet { background: var(--success); }
+.live-result-action.raise { background: var(--primary); }
+
+.live-result-sizing {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.live-result-reason {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  max-width: 400px;
+}
+
+.live-result-equity {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: var(--bg);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.live-result-hand {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+/* New Hand Button */
+.live-new-hand-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--bg-dark);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.live-new-hand-btn:hover {
+  background: #475569;
+  transform: translateY(-1px);
+}
+
+/* Live mode mobile */
+@media (max-width: 600px) {
+  .live-settings-bar {
+    flex-wrap: wrap;
+  }
+
+  .live-select {
+    min-width: calc(50% - 4px);
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .live-cards-area {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .live-card-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .live-card-picker {
+    grid-template-columns: repeat(13, 1fr);
+    gap: 2px;
+    padding: 6px;
+  }
+
+  .live-pick-btn {
+    font-size: 0.6rem;
+  }
+
+  .live-betting-bar {
+    flex-wrap: wrap;
+  }
+
+  .live-bet-field {
+    min-width: calc(33% - 6px);
+  }
+
+  .live-result-action {
+    font-size: 2rem;
+  }
+
+  .mode-btn {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ============================================ */
+/* STUDY MODE (original advisor layout)         */
+/* ============================================ */
+
 /* Play Advisor Tab Container */
 #advisor-tab {
   display: flex;

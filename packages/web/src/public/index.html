@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Poker Scenario Analyzer</title>
-  <link rel="stylesheet" href="styles.css?v=20260217">
+  <link rel="stylesheet" href="styles.css?v=20260217b">
 </head>
 <body>
   <div class="app">
@@ -321,155 +321,277 @@
 
       <!-- Play Advisor Tab -->
       <section id="advisor-tab" class="tab-content">
-        <!-- Onboarding intro card -->
-        <div class="intro-card" id="advisor-intro" data-storage-key="advisor-intro-collapsed">
-          <div class="intro-card-header" onclick="toggleIntroCard('advisor-intro')">
-            <span class="intro-card-icon">💡</span>
-            <span class="intro-card-title">Get real-time action recommendations</span>
-            <span class="intro-card-toggle">▼</span>
-          </div>
-          <div class="intro-card-body">
-            <p>Enter your hole cards, the board, and betting situation to get instant recommendations on whether to fold, call, or raise — with specific bet sizing and reasoning.</p>
-            <p class="intro-card-hint">🎯 <strong>Tip:</strong> Click cards to select them, then toggle between hole and board cards</p>
-            <button class="intro-card-dismiss" onclick="collapseIntroCard('advisor-intro')">Got it</button>
-          </div>
+        <!-- Mode Toggle -->
+        <div class="advisor-mode-toggle">
+          <button class="mode-btn active" data-mode="live" id="mode-live-btn">
+            <span class="mode-icon">⚡</span>
+            <span class="mode-label">Live Table</span>
+          </button>
+          <button class="mode-btn" data-mode="study" id="mode-study-btn">
+            <span class="mode-icon">📖</span>
+            <span class="mode-label">Study</span>
+          </button>
         </div>
 
-        <div class="advisor-layout">
-          <!-- Input Panel -->
-          <div class="advisor-input-panel">
-            <h3>🃏 Card Selection</h3>
-
-            <!-- Card Selection Mode -->
-            <div class="card-mode-selector">
-              <label>
-                <input type="radio" name="card-mode" value="hole" checked>
-                Hole Cards
-              </label>
-              <label>
-                <input type="radio" name="card-mode" value="board">
-                Board Cards
-              </label>
-            </div>
-
-            <!-- Card Selector Grid -->
-            <div id="card-selector-grid"></div>
-
-            <!-- Selected Cards Display -->
-            <div class="selected-cards-section">
-              <div class="selected-cards-row">
-                <span class="selected-cards-label">Hole:</span>
-                <div id="selected-hole-cards" class="selected-cards-display"></div>
-                <button id="clear-hole-cards" class="clear-btn">Clear</button>
-              </div>
-              <div class="selected-cards-row">
-                <span class="selected-cards-label">Board:</span>
-                <div id="selected-board-cards" class="selected-cards-display"></div>
-                <button id="clear-board-cards" class="clear-btn">Clear</button>
-              </div>
-            </div>
-
-            <!-- Street Indicator -->
-            <div class="street-indicator" id="street-indicator">PREFLOP</div>
-
-            <!-- Situation Inputs -->
-            <div class="situation-inputs">
-              <div class="situation-select">
-                <label>Game</label>
-                <select id="advisor-game-select">
-                  <option value="omaha4" selected>Omaha 4-Card</option>
-                  <option value="omaha5">Omaha 5-Card</option>
-                  <option value="omaha6">Omaha 6-Card</option>
-                </select>
-              </div>
-              <div class="situation-select">
-                <label>Style</label>
-                <select id="advisor-style-select">
-                  <option value="nit">Nit (Ultra-Tight)</option>
-                  <option value="rock">Rock (Tight-Passive)</option>
-                  <option value="reg" selected>Reg (Solid Regular)</option>
-                  <option value="tag">TAG (Tight-Aggressive)</option>
-                  <option value="lag">LAG (Loose-Aggressive)</option>
-                  <option value="fish">Fish (Loose-Passive)</option>
-                </select>
-              </div>
-              <div class="situation-select">
-                <label>Position</label>
-                <select id="advisor-position-select">
-                  <option value="UTG">UTG</option>
-                  <option value="MP">MP</option>
-                  <option value="CO">CO</option>
-                  <option value="BTN" selected>BTN</option>
-                  <option value="SB">SB</option>
-                  <option value="BB">BB</option>
-                </select>
-              </div>
-              <div class="situation-select">
-                <label>Players</label>
-                <select id="advisor-players-select">
-                  <option value="2">2 (Heads-up)</option>
-                  <option value="3" selected>3 (3-way)</option>
-                  <option value="4">4 (4-way)</option>
-                  <option value="5">5 (5-way)</option>
-                  <option value="6">6 (Multi-way)</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Betting Inputs -->
-            <div class="betting-inputs">
-              <div class="betting-input">
-                <label>Pot Size ($)</label>
-                <input type="number" id="advisor-pot-size" value="100" min="0" step="10">
-              </div>
-              <div class="betting-input">
-                <label>To Call ($)</label>
-                <input type="number" id="advisor-to-call" value="0" min="0" step="10">
-              </div>
-              <div class="betting-input">
-                <label>Stack ($)</label>
-                <input type="number" id="advisor-stack-size" value="1000" min="0" step="50">
-              </div>
-            </div>
-
-            <!-- Villain Actions -->
-            <div class="villain-actions-section">
-              <h4>Villain Actions (optional)</h4>
-              <div class="villain-action-buttons">
-                <button class="villain-action-btn" data-action="check">Check</button>
-                <button class="villain-action-btn" data-action="call">Call</button>
-                <button class="villain-action-btn" data-action="bet">Bet</button>
-                <button class="villain-action-btn" data-action="raise">Raise</button>
-                <button id="clear-villain-actions" class="clear-btn">Clear</button>
-              </div>
-              <div id="villain-actions-display"></div>
-            </div>
-
-            <!-- Analyze Button -->
-            <button id="advisor-analyze-btn" class="primary-btn" disabled>
-              <span class="btn-icon">💡</span>
-              <span class="btn-text">Analyze Hand</span>
-            </button>
+        <!-- ============================================ -->
+        <!-- LIVE TABLE MODE                              -->
+        <!-- Speed-optimized: fast entry, big action, go  -->
+        <!-- ============================================ -->
+        <div id="live-mode" class="advisor-mode active">
+          <!-- Compact top bar: game/position/players -->
+          <div class="live-settings-bar">
+            <select id="live-game-select" class="live-select" title="Game">
+              <option value="omaha4" selected>PLO4</option>
+              <option value="omaha5">PLO5</option>
+              <option value="omaha6">PLO6</option>
+            </select>
+            <select id="live-position-select" class="live-select" title="Position">
+              <option value="UTG">UTG</option>
+              <option value="MP">MP</option>
+              <option value="CO">CO</option>
+              <option value="BTN" selected>BTN</option>
+              <option value="SB">SB</option>
+              <option value="BB">BB</option>
+            </select>
+            <select id="live-players-select" class="live-select" title="Players">
+              <option value="2">2p</option>
+              <option value="3" selected>3p</option>
+              <option value="4">4p</option>
+              <option value="5">5p</option>
+              <option value="6">6p</option>
+            </select>
+            <select id="live-style-select" class="live-select" title="Style">
+              <option value="nit">Nit</option>
+              <option value="rock">Rock</option>
+              <option value="reg" selected>Reg</option>
+              <option value="tag">TAG</option>
+              <option value="lag">LAG</option>
+              <option value="fish">Fish</option>
+            </select>
           </div>
 
-          <!-- Results Panel -->
-          <div class="advisor-results-panel">
-            <div id="advisor-results">
-              <div class="advisor-placeholder">Select your hole cards and at least 3 board cards to get recommendations</div>
+          <!-- Card Entry Area -->
+          <div class="live-cards-area">
+            <div class="live-card-section">
+              <div class="live-card-label">HOLE</div>
+              <div id="live-hole-cards" class="live-card-slots">
+                <div class="live-card-slot empty" data-slot="hole-0">?</div>
+                <div class="live-card-slot empty" data-slot="hole-1">?</div>
+                <div class="live-card-slot empty" data-slot="hole-2">?</div>
+                <div class="live-card-slot empty" data-slot="hole-3">?</div>
+              </div>
+              <button id="live-clear-hole" class="live-clear-btn" title="Clear hole cards">✕</button>
+            </div>
+            <div class="live-card-section">
+              <div class="live-card-label">BOARD</div>
+              <div id="live-board-cards" class="live-card-slots">
+                <div class="live-card-slot board-slot empty" data-slot="board-0">?</div>
+                <div class="live-card-slot board-slot empty" data-slot="board-1">?</div>
+                <div class="live-card-slot board-slot empty" data-slot="board-2">?</div>
+                <div class="live-card-slot board-slot empty" data-slot="board-3">?</div>
+                <div class="live-card-slot board-slot empty" data-slot="board-4">?</div>
+              </div>
+              <button id="live-clear-board" class="live-clear-btn" title="Clear board cards">✕</button>
             </div>
           </div>
+
+          <!-- Card Picker (compact grid) -->
+          <div id="live-card-picker" class="live-card-picker"></div>
+
+          <!-- Pot / Call / Stack — inline spinners -->
+          <div class="live-betting-bar">
+            <div class="live-bet-field">
+              <label>Pot</label>
+              <div class="live-spinner">
+                <button class="spin-btn" data-target="live-pot" data-delta="-10">−</button>
+                <input type="number" id="live-pot" value="100" min="0" step="10">
+                <button class="spin-btn" data-target="live-pot" data-delta="10">+</button>
+              </div>
+            </div>
+            <div class="live-bet-field">
+              <label>Call</label>
+              <div class="live-spinner">
+                <button class="spin-btn" data-target="live-call" data-delta="-10">−</button>
+                <input type="number" id="live-call" value="0" min="0" step="10">
+                <button class="spin-btn" data-target="live-call" data-delta="10">+</button>
+              </div>
+            </div>
+            <div class="live-bet-field">
+              <label>Stack</label>
+              <div class="live-spinner">
+                <button class="spin-btn" data-target="live-stack" data-delta="-50">−</button>
+                <input type="number" id="live-stack" value="1000" min="0" step="50">
+                <button class="spin-btn" data-target="live-stack" data-delta="50">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- BIG Action Result -->
+          <div id="live-result" class="live-result">
+            <div class="live-result-placeholder">Enter your cards to get a recommendation</div>
+          </div>
+
+          <!-- New Hand button -->
+          <button id="live-new-hand" class="live-new-hand-btn">
+            <span>🔄</span> New Hand
+          </button>
         </div>
 
-        <!-- Analytics Section (Collapsible) -->
-        <div class="analytics-section">
-          <div class="analytics-header" id="analytics-toggle">
-            <span class="analytics-icon">📊</span>
-            <span class="analytics-title">Feedback Analytics</span>
-            <span class="analytics-toggle-icon">▼</span>
+        <!-- ============================================ -->
+        <!-- STUDY MODE                                   -->
+        <!-- Detailed, explorable, no time pressure       -->
+        <!-- ============================================ -->
+        <div id="study-mode" class="advisor-mode">
+          <!-- Onboarding intro card -->
+          <div class="intro-card" id="advisor-intro" data-storage-key="advisor-intro-collapsed">
+            <div class="intro-card-header" onclick="toggleIntroCard('advisor-intro')">
+              <span class="intro-card-icon">📖</span>
+              <span class="intro-card-title">Study mode — explore hands in depth</span>
+              <span class="intro-card-toggle">▼</span>
+            </div>
+            <div class="intro-card-body">
+              <p>Take your time. Enter hole cards, board, and betting details to get detailed analysis with equity breakdowns, reasoning, board texture, and alternatives.</p>
+              <p class="intro-card-hint">🎯 <strong>Tip:</strong> Click cards to select them, then toggle between hole and board cards</p>
+              <button class="intro-card-dismiss" onclick="collapseIntroCard('advisor-intro')">Got it</button>
+            </div>
           </div>
-          <div class="analytics-body" id="analytics-body" style="display: none;">
-            <div id="analytics-content">
-              <p class="loading">Loading analytics...</p>
+
+          <div class="advisor-layout">
+            <!-- Input Panel -->
+            <div class="advisor-input-panel">
+              <h3>🃏 Card Selection</h3>
+
+              <!-- Card Selection Mode -->
+              <div class="card-mode-selector">
+                <label>
+                  <input type="radio" name="card-mode" value="hole" checked>
+                  Hole Cards
+                </label>
+                <label>
+                  <input type="radio" name="card-mode" value="board">
+                  Board Cards
+                </label>
+              </div>
+
+              <!-- Card Selector Grid -->
+              <div id="card-selector-grid"></div>
+
+              <!-- Selected Cards Display -->
+              <div class="selected-cards-section">
+                <div class="selected-cards-row">
+                  <span class="selected-cards-label">Hole:</span>
+                  <div id="selected-hole-cards" class="selected-cards-display"></div>
+                  <button id="clear-hole-cards" class="clear-btn">Clear</button>
+                </div>
+                <div class="selected-cards-row">
+                  <span class="selected-cards-label">Board:</span>
+                  <div id="selected-board-cards" class="selected-cards-display"></div>
+                  <button id="clear-board-cards" class="clear-btn">Clear</button>
+                </div>
+              </div>
+
+              <!-- Street Indicator -->
+              <div class="street-indicator" id="street-indicator">PREFLOP</div>
+
+              <!-- Situation Inputs -->
+              <div class="situation-inputs">
+                <div class="situation-select">
+                  <label>Game</label>
+                  <select id="advisor-game-select">
+                    <option value="omaha4" selected>Omaha 4-Card</option>
+                    <option value="omaha5">Omaha 5-Card</option>
+                    <option value="omaha6">Omaha 6-Card</option>
+                  </select>
+                </div>
+                <div class="situation-select">
+                  <label>Style</label>
+                  <select id="advisor-style-select">
+                    <option value="nit">Nit (Ultra-Tight)</option>
+                    <option value="rock">Rock (Tight-Passive)</option>
+                    <option value="reg" selected>Reg (Solid Regular)</option>
+                    <option value="tag">TAG (Tight-Aggressive)</option>
+                    <option value="lag">LAG (Loose-Aggressive)</option>
+                    <option value="fish">Fish (Loose-Passive)</option>
+                  </select>
+                </div>
+                <div class="situation-select">
+                  <label>Position</label>
+                  <select id="advisor-position-select">
+                    <option value="UTG">UTG</option>
+                    <option value="MP">MP</option>
+                    <option value="CO">CO</option>
+                    <option value="BTN" selected>BTN</option>
+                    <option value="SB">SB</option>
+                    <option value="BB">BB</option>
+                  </select>
+                </div>
+                <div class="situation-select">
+                  <label>Players</label>
+                  <select id="advisor-players-select">
+                    <option value="2">2 (Heads-up)</option>
+                    <option value="3" selected>3 (3-way)</option>
+                    <option value="4">4 (4-way)</option>
+                    <option value="5">5 (5-way)</option>
+                    <option value="6">6 (Multi-way)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Betting Inputs -->
+              <div class="betting-inputs">
+                <div class="betting-input">
+                  <label>Pot Size ($)</label>
+                  <input type="number" id="advisor-pot-size" value="100" min="0" step="10">
+                </div>
+                <div class="betting-input">
+                  <label>To Call ($)</label>
+                  <input type="number" id="advisor-to-call" value="0" min="0" step="10">
+                </div>
+                <div class="betting-input">
+                  <label>Stack ($)</label>
+                  <input type="number" id="advisor-stack-size" value="1000" min="0" step="50">
+                </div>
+              </div>
+
+              <!-- Villain Actions -->
+              <div class="villain-actions-section">
+                <h4>Villain Actions (optional)</h4>
+                <div class="villain-action-buttons">
+                  <button class="villain-action-btn" data-action="check">Check</button>
+                  <button class="villain-action-btn" data-action="call">Call</button>
+                  <button class="villain-action-btn" data-action="bet">Bet</button>
+                  <button class="villain-action-btn" data-action="raise">Raise</button>
+                  <button id="clear-villain-actions" class="clear-btn">Clear</button>
+                </div>
+                <div id="villain-actions-display"></div>
+              </div>
+
+              <!-- Analyze Button -->
+              <button id="advisor-analyze-btn" class="primary-btn" disabled>
+                <span class="btn-icon">💡</span>
+                <span class="btn-text">Analyze Hand</span>
+              </button>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="advisor-results-panel">
+              <div id="advisor-results">
+                <div class="advisor-placeholder">Select your hole cards and at least 3 board cards to get recommendations</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analytics Section (Collapsible) -->
+          <div class="analytics-section">
+            <div class="analytics-header" id="analytics-toggle">
+              <span class="analytics-icon">📊</span>
+              <span class="analytics-title">Feedback Analytics</span>
+              <span class="analytics-toggle-icon">▼</span>
+            </div>
+            <div class="analytics-body" id="analytics-body" style="display: none;">
+              <div id="analytics-content">
+                <p class="loading">Loading analytics...</p>
+              </div>
             </div>
           </div>
         </div>
@@ -685,9 +807,9 @@
     <button class="primary-btn small" id="open-settings-from-prompt">Configure AI</button>
   </div>
 
-  <script src="poker-stats.js?v=20260217"></script>
-  <script src="data-manager.js?v=20260217"></script>
-  <script src="app.js?v=20260217"></script>
-  <script src="play-advisor.js?v=20260217"></script>
+  <script src="poker-stats.js?v=20260217b"></script>
+  <script src="data-manager.js?v=20260217b"></script>
+  <script src="app.js?v=20260217b"></script>
+  <script src="play-advisor.js?v=20260217b"></script>
 </body>
 </html>
