@@ -14,15 +14,15 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 // Import Phase 2 modules
-import { estimateOpponentRange, describeRange, assessRangeConfidence } from './lib/RangeEstimator.js';
-import { calculateEquity, isLikelyNuts } from './lib/EquityCalculator.js';
+import { estimateOpponentRange, describeRange, assessRangeConfidence } from '../lib/RangeEstimator.js';
+import { calculateEquity, isLikelyNuts } from '../lib/EquityCalculator.js';
 
 // Import Phase 3 modules
-import { recommendAction } from './lib/ActionRecommender.js';
-import { getSizingRecommendation } from './lib/BetSizer.js';
+import { recommendAction } from '../lib/ActionRecommender.js';
+import { getSizingRecommendation } from '../lib/BetSizer.js';
 
 // Import Phase 5 modules
-import { logRecommendation } from './lib/FeedbackStore.js';
+import { logRecommendation } from '../lib/FeedbackStore.js';
 
 // Import core poker modules
 // Note: These are CommonJS modules compiled from TypeScript

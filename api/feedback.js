@@ -17,7 +17,7 @@ import {
   queryFeedback,
   getNegativeFeedbackPatterns,
   getAnalytics
-} from './lib/FeedbackStore.js';
+} from '../lib/FeedbackStore.js';
 
 export default async function handler(req, res) {
   // CORS headers
