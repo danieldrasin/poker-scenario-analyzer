@@ -70,7 +70,8 @@ test.describe('Poker Scenario Analyzer', () => {
   });
 
   test('can switch to Hand Journal tab', async ({ page }) => {
-    await page.click('text=Hand Journal');
+    await page.click('[data-tab="saved"]');
+    await expect(page.locator('#saved-tab')).toHaveClass(/active/);
     await expect(page.locator('#saved-tab')).toBeVisible();
   });
 
