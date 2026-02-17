@@ -121,6 +121,8 @@ test.describe('Tab Navigation & Isolation', () => {
 
   test('hand journal tab shows coming soon', async ({ page }) => {
     await page.click('[data-tab="saved"]');
+    // Wait for the tab content to become active/visible
+    await expect(page.locator('#saved-tab')).toHaveClass(/active/, { timeout: 5000 });
     await expect(page.locator('.saved-coming-soon')).toBeVisible();
     await expect(page.locator('.coming-soon-subtitle')).toContainText('Coming Soon');
   });
@@ -133,6 +135,11 @@ test.describe('Tab Navigation & Isolation', () => {
 test.describe('Scenario Builder - Complete Workflow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(getBaseUrl());
+    // Ensure scenario tab is active and JS is initialized
+    await page.click('[data-tab="scenario"]');
+    await expect(page.locator('#scenario-tab')).toHaveClass(/active/);
+    // Wait for strategy insight to be populated (indicates JS init complete)
+    await expect(page.locator('#insight-context')).not.toBeEmpty();
   });
 
   test('preset → analyze → results appear', async ({ page }) => {
@@ -176,19 +183,18 @@ test.describe('Scenario Builder - Complete Workflow', () => {
   });
 
   test('strategy insight updates when style changes', async ({ page }) => {
-    // Ensure we're on the scenario tab
-    await page.click('[data-tab="scenario"]');
-
     const insightContext = page.locator('#insight-context');
     const initialText = await insightContext.textContent();
+    expect(initialText).toContain('TAG'); // Default style is TAG
 
-    // Change style to LAG (use scenario tab's style-select)
-    await page.selectOption('#scenario-tab #style-select', 'lag');
-    await page.waitForTimeout(300);
+    // Change style to LAG
+    await page.selectOption('#style-select', 'lag');
+    // Trigger change event explicitly for reliability
+    await page.locator('#style-select').dispatchEvent('change');
+    await page.waitForTimeout(500);
 
     // Recommendation context should reference new style
     await expect(insightContext).toContainText('LAG');
-    expect(await insightContext.textContent()).not.toBe(initialText);
   });
 });
 
