@@ -21,7 +21,7 @@ test.describe('Poker Scenario Analyzer', () => {
     // Use specific tab button selectors to avoid matching other text
     await expect(page.locator('.tab-btn:has-text("Scenario Builder")')).toBeVisible();
     await expect(page.locator('.tab-btn:has-text("Probability Matrix")')).toBeVisible();
-    await expect(page.locator('.tab-btn:has-text("Saved Analysis")')).toBeVisible();
+    await expect(page.locator('.tab-btn:has-text("Hand Journal")')).toBeVisible();
   });
 
   test('game selector has Omaha variants', async ({ page }) => {
@@ -69,8 +69,8 @@ test.describe('Poker Scenario Analyzer', () => {
     await expect(page.locator('#matrix-tab')).toBeVisible();
   });
 
-  test('can switch to Saved Analysis tab', async ({ page }) => {
-    await page.click('text=Saved Analysis');
+  test('can switch to Hand Journal tab', async ({ page }) => {
+    await page.click('text=Hand Journal');
     await expect(page.locator('#saved-tab')).toBeVisible();
   });
 
@@ -123,7 +123,7 @@ test.describe('Responsive Layout', () => {
     await page.goto('/');
 
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('.tab-btn')).toHaveCount(3);
+    await expect(page.locator('.tab-btn')).toHaveCount(4);
   });
 
 });
@@ -148,8 +148,8 @@ test.describe('Simulation Features', () => {
   test('Analyze Scenario button triggers analysis', async ({ page }) => {
     await page.goto('/');
 
-    // Find and click analyze button
-    const analyzeBtn = page.locator('#analyze-btn');
+    // Find and click analyze button (scope to scenario tab to avoid duplicate ID issue)
+    const analyzeBtn = page.locator('#scenario-tab #analyze-btn');
     await expect(analyzeBtn).toBeVisible();
     await expect(analyzeBtn).toContainText('Analyze');
 
@@ -449,35 +449,29 @@ test.describe('Hand Presets', () => {
 
 });
 
-test.describe('Saved Analysis', () => {
+test.describe('Hand Journal', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     // Wait for tab buttons to be ready
-    await expect(page.locator('.tab-btn:has-text("Saved Analysis")')).toBeVisible({ timeout: 5000 });
-    // Switch to Saved Analysis tab
-    await page.click('.tab-btn:has-text("Saved Analysis")');
+    await expect(page.locator('.tab-btn:has-text("Hand Journal")')).toBeVisible({ timeout: 5000 });
+    // Switch to Hand Journal tab
+    await page.click('.tab-btn:has-text("Hand Journal")');
     // Wait for the button to become active (indicates JS handler ran)
-    await expect(page.locator('.tab-btn:has-text("Saved Analysis")')).toHaveClass(/active/, { timeout: 5000 });
+    await expect(page.locator('.tab-btn:has-text("Hand Journal")')).toHaveClass(/active/, { timeout: 5000 });
     // Then wait for tab content to become visible
     await expect(page.locator('#saved-tab')).toBeVisible({ timeout: 10000 });
   });
 
-  test('saved analysis tab displays', async ({ page }) => {
+  test('hand journal tab displays', async ({ page }) => {
     // Tab should be visible (already switched in beforeEach)
     await expect(page.locator('#saved-tab')).toBeVisible({ timeout: 5000 });
   });
 
-  test('empty state shows message when no saved analyses', async ({ page }) => {
-    // Check for empty state message or list
-    const emptyMessage = page.locator('text=/no saved|empty|nothing saved/i');
-    const savedList = page.locator('.saved-list, .saved-analyses, #saved-list');
-
-    // Either empty message or empty list should be visible
-    const hasEmpty = await emptyMessage.isVisible({ timeout: 2000 }).catch(() => false);
-    const hasList = await savedList.isVisible({ timeout: 2000 }).catch(() => false);
-
-    expect(hasEmpty || hasList).toBeTruthy();
+  test('shows coming soon placeholder', async ({ page }) => {
+    // Hand Journal should show a coming soon message
+    await expect(page.locator('.saved-coming-soon')).toBeVisible();
+    await expect(page.locator('.coming-soon-subtitle')).toContainText('Coming Soon');
   });
 
 });
