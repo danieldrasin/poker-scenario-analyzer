@@ -104,8 +104,9 @@ test.describe('Tab Navigation & Isolation', () => {
   });
 
   test('play advisor state preserved across tab switches', async ({ page }) => {
-    // Set up cards in advisor
+    // Set up cards in advisor (switch to study mode for card selector grid)
     await page.click('[data-tab="advisor"]');
+    await page.click('[data-mode="study"]');
     await page.check('input[name="card-mode"][value="hole"]');
     await page.click('.card-btn[data-card="As"]');
     await page.click('.card-btn[data-card="Ks"]');
@@ -114,7 +115,7 @@ test.describe('Tab Navigation & Isolation', () => {
     await page.click('[data-tab="scenario"]');
     await page.click('[data-tab="advisor"]');
 
-    // Cards should still be selected
+    // Cards should still be selected (study mode should still be active)
     await expect(page.locator('.card-btn[data-card="As"]')).toHaveClass(/selected/);
     await expect(page.locator('.card-btn[data-card="Ks"]')).toHaveClass(/selected/);
   });
@@ -206,6 +207,9 @@ test.describe('Play Advisor - Complete Workflow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
+    // Switch to Study mode where the full card selector grid lives
+    await page.click('[data-mode="study"]');
+    await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
 
   test('full happy path: select cards → auto-analyze → see recommendation', async ({ page }) => {
@@ -390,6 +394,8 @@ test.describe('Card Selector', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
+    await page.click('[data-mode="study"]');
+    await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
 
   test('card selector grid renders 52 cards', async ({ page }) => {
@@ -466,6 +472,8 @@ test.describe('Situation & Betting Inputs', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
+    await page.click('[data-mode="study"]');
+    await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
 
   test('all dropdowns have correct defaults', async ({ page }) => {
@@ -500,6 +508,8 @@ test.describe('Advisor Analyze Button State', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
+    await page.click('[data-mode="study"]');
+    await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
 
   test('disabled with no cards selected', async ({ page }) => {
@@ -559,6 +569,8 @@ test.describe('Analysis Results Details', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
+    await page.click('[data-mode="study"]');
+    await expect(page.locator('#study-mode')).toHaveClass(/active/);
 
     // Set up nut flush scenario
     await page.check('input[name="card-mode"][value="hole"]');
@@ -613,6 +625,8 @@ test.describe('Style Differentiation in UI', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
+    await page.click('[data-mode="study"]');
+    await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
 
   test('style selector visible with all 6 options', async ({ page }) => {
@@ -660,36 +674,50 @@ test.describe('Style Differentiation in UI', () => {
 // =============================================================================
 
 test.describe('Responsive Layout', () => {
-  test('mobile viewport: all advisor inputs visible', async ({ page }) => {
+  test('mobile viewport: live mode inputs visible', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
 
+    // Live mode is default — check live mode elements
+    await expect(page.locator('#live-card-picker')).toBeVisible();
+    await expect(page.locator('#live-pot')).toBeVisible();
+    await expect(page.locator('#live-position-select')).toBeVisible();
+    await expect(page.locator('#live-style-select')).toBeVisible();
+    await expect(page.locator('.live-new-hand-btn')).toBeVisible();
+  });
+
+  test('mobile viewport: study mode inputs visible', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+    await page.click('[data-mode="study"]');
+
     await expect(page.locator('#card-selector-grid')).toBeVisible();
     await expect(page.locator('#advisor-pot-size')).toBeVisible();
-    await expect(page.locator('#advisor-position-select')).toBeVisible();
     await expect(page.locator('#advisor-style-select')).toBeVisible();
     await expect(page.locator('#advisor-analyze-btn')).toBeVisible();
   });
 
-  test('tablet viewport: advisor layout visible', async ({ page }) => {
+  test('tablet viewport: study mode layout visible', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
+    await page.click('[data-mode="study"]');
 
     await expect(page.locator('.advisor-layout')).toBeVisible();
     await expect(page.locator('.advisor-input-panel')).toBeVisible();
     await expect(page.locator('.advisor-results-panel')).toBeVisible();
   });
 
-  test('desktop viewport: full width layout', async ({ page }) => {
+  test('desktop viewport: mode toggle visible', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
 
-    const layout = page.locator('.advisor-layout');
-    const box = await layout.boundingBox();
-    expect(box?.width).toBeGreaterThan(900);
+    await expect(page.locator('.advisor-mode-toggle')).toBeVisible();
+    await expect(page.locator('[data-mode="live"]')).toBeVisible();
+    await expect(page.locator('[data-mode="study"]')).toBeVisible();
   });
 });
 
@@ -702,7 +730,8 @@ test.describe('Error States', () => {
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
 
-    await expect(page.locator('.advisor-placeholder')).toBeVisible();
-    await expect(page.locator('.advisor-placeholder')).toContainText('Select');
+    // Live mode shows placeholder in live-result
+    await expect(page.locator('.live-result-placeholder')).toBeVisible();
+    await expect(page.locator('.live-result-placeholder')).toContainText('Enter your cards');
   });
 });
