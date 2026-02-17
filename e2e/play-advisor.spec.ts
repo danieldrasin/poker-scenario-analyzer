@@ -1,416 +1,237 @@
 /**
  * Play Advisor UI E2E Tests
- * Tests for Phase 4: UI Integration
+ * Comprehensive suite covering:
+ * - DOM integrity (no duplicate IDs, correct element targeting)
+ * - Tab navigation and component isolation
+ * - Complete user workflows (input → action → output)
+ * - Card selection and situation inputs
+ * - Style differentiation in UI
+ * - Responsive layout
+ * - Error states
  */
 
 import { test, expect } from '@playwright/test';
 
-test.describe('Play Advisor Tab', () => {
+const getBaseUrl = () => process.env.TEST_URL || 'http://localhost:3000';
+
+// =============================================================================
+// DOM INTEGRITY TESTS
+// =============================================================================
+
+test.describe('DOM Integrity', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto(getBaseUrl());
   });
 
-  test('tab navigation to Play Advisor', async ({ page }) => {
-    // Click the Play Advisor tab
-    await page.click('[data-tab="advisor"]');
-
-    // Verify the tab is active
-    const tabBtn = page.locator('[data-tab="advisor"]');
-    await expect(tabBtn).toHaveClass(/active/);
-
-    // Verify the tab content is visible
-    const tabContent = page.locator('#advisor-tab');
-    await expect(tabContent).toHaveClass(/active/);
-    await expect(tabContent).toBeVisible();
+  test('no duplicate element IDs in document', async ({ page }) => {
+    const duplicates = await page.evaluate(() => {
+      const ids = Array.from(document.querySelectorAll('[id]')).map(el => el.id);
+      const seen = new Set<string>();
+      const dupes: string[] = [];
+      for (const id of ids) {
+        if (seen.has(id)) dupes.push(id);
+        seen.add(id);
+      }
+      return dupes;
+    });
+    expect(duplicates).toEqual([]);
   });
 
-  test('intro card can be collapsed', async ({ page }) => {
-    await page.click('[data-tab="advisor"]');
+  test('scenario builder analyze button has unique ID', async ({ page }) => {
+    const count = await page.locator('#analyze-btn').count();
+    expect(count).toBe(1);
+  });
 
-    // Find the intro card
-    const introCard = page.locator('#advisor-intro');
-    await expect(introCard).toBeVisible();
+  test('play advisor analyze button has unique ID', async ({ page }) => {
+    const count = await page.locator('#advisor-analyze-btn').count();
+    expect(count).toBe(1);
+  });
 
-    // Collapse it
-    await page.click('#advisor-intro .intro-card-dismiss');
-    await expect(introCard).toHaveClass(/collapsed/);
+  test('scenario builder analyze button is inside scenario tab', async ({ page }) => {
+    const btn = page.locator('#scenario-tab #analyze-btn');
+    await expect(btn).toHaveCount(1);
+  });
+
+  test('play advisor analyze button is inside advisor tab', async ({ page }) => {
+    const btn = page.locator('#advisor-tab #advisor-analyze-btn');
+    await expect(btn).toHaveCount(1);
   });
 });
 
-test.describe('Card Selector', () => {
+// =============================================================================
+// TAB NAVIGATION & ISOLATION TESTS
+// =============================================================================
+
+test.describe('Tab Navigation & Isolation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-tab="advisor"]');
+    await page.goto(getBaseUrl());
   });
 
-  test('card selector grid is rendered', async ({ page }) => {
-    const grid = page.locator('#card-selector-grid');
-    await expect(grid).toBeVisible();
-
-    // Should have 52 card buttons (13 ranks × 4 suits)
-    const cardBtns = grid.locator('.card-btn');
-    await expect(cardBtns).toHaveCount(52);
-  });
-
-  test('can select hole cards', async ({ page }) => {
-    // Ensure hole card mode is selected
-    await page.check('input[name="card-mode"][value="hole"]');
-
-    // Click on As (Ace of spades)
-    await page.click('.card-btn[data-card="As"]');
-
-    // Card should be marked as selected/hole
-    const asBtn = page.locator('.card-btn[data-card="As"]');
-    await expect(asBtn).toHaveClass(/selected/);
-    await expect(asBtn).toHaveClass(/hole/);
-
-    // Selected cards display should show the card
-    const selectedDisplay = page.locator('#selected-hole-cards');
-    await expect(selectedDisplay).toContainText('A♠');
-  });
-
-  test('can select board cards', async ({ page }) => {
-    // Switch to board card mode
-    await page.check('input[name="card-mode"][value="board"]');
-
-    // Click on Ts, 9s, 2h (flop)
-    await page.click('.card-btn[data-card="Ts"]');
-    await page.click('.card-btn[data-card="9s"]');
-    await page.click('.card-btn[data-card="2h"]');
-
-    // Cards should be marked as selected/board
-    await expect(page.locator('.card-btn[data-card="Ts"]')).toHaveClass(/board/);
-    await expect(page.locator('.card-btn[data-card="9s"]')).toHaveClass(/board/);
-    await expect(page.locator('.card-btn[data-card="2h"]')).toHaveClass(/board/);
-
-    // Street indicator should show FLOP
-    await expect(page.locator('#street-indicator')).toContainText('FLOP');
-  });
-
-  test('cannot select same card for hole and board', async ({ page }) => {
-    // Select As as hole card
-    await page.check('input[name="card-mode"][value="hole"]');
-    await page.click('.card-btn[data-card="As"]');
-
-    // Try to select As as board card
-    await page.check('input[name="card-mode"][value="board"]');
-    await page.click('.card-btn[data-card="As"]');
-
-    // As should still be hole card, not board
-    const asBtn = page.locator('.card-btn[data-card="As"]');
-    await expect(asBtn).toHaveClass(/hole/);
-    await expect(asBtn).not.toHaveClass(/board/);
-  });
-
-  test('clear hole cards button works', async ({ page }) => {
-    // Select some hole cards
-    await page.check('input[name="card-mode"][value="hole"]');
-    await page.click('.card-btn[data-card="As"]');
-    await page.click('.card-btn[data-card="Ks"]');
-
-    // Click clear
-    await page.click('#clear-hole-cards');
-
-    // Cards should be deselected
-    await expect(page.locator('.card-btn[data-card="As"]')).not.toHaveClass(/selected/);
-    await expect(page.locator('.card-btn[data-card="Ks"]')).not.toHaveClass(/selected/);
-  });
-
-  test('clear board cards button works', async ({ page }) => {
-    // Select some board cards
-    await page.check('input[name="card-mode"][value="board"]');
-    await page.click('.card-btn[data-card="Ts"]');
-    await page.click('.card-btn[data-card="9s"]');
-
-    // Click clear
-    await page.click('#clear-board-cards');
-
-    // Cards should be deselected
-    await expect(page.locator('.card-btn[data-card="Ts"]')).not.toHaveClass(/selected/);
-    await expect(page.locator('.card-btn[data-card="9s"]')).not.toHaveClass(/selected/);
-  });
-
-  test('max hole cards enforced based on game variant', async ({ page }) => {
-    // Default is omaha4 (4 hole cards)
-    await page.check('input[name="card-mode"][value="hole"]');
-
-    // Select 4 cards
-    await page.click('.card-btn[data-card="As"]');
-    await page.click('.card-btn[data-card="Ks"]');
-    await page.click('.card-btn[data-card="Qs"]');
-    await page.click('.card-btn[data-card="Js"]');
-
-    // Try to select 5th card
-    await page.click('.card-btn[data-card="Ts"]');
-
-    // 5th card should NOT be selected
-    await expect(page.locator('.card-btn[data-card="Ts"]')).not.toHaveClass(/selected/);
-  });
-
-  test('omaha5 allows 5 hole cards', async ({ page }) => {
-    // Switch to omaha5
-    await page.selectOption('#advisor-game-select', 'omaha5');
-
-    await page.check('input[name="card-mode"][value="hole"]');
-
-    // Select 5 cards
-    await page.click('.card-btn[data-card="As"]');
-    await page.click('.card-btn[data-card="Ks"]');
-    await page.click('.card-btn[data-card="Qs"]');
-    await page.click('.card-btn[data-card="Js"]');
-    await page.click('.card-btn[data-card="Ts"]');
-
-    // 5th card should be selected
-    await expect(page.locator('.card-btn[data-card="Ts"]')).toHaveClass(/selected/);
-  });
-});
-
-test.describe('Betting Inputs', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-tab="advisor"]');
-  });
-
-  test('pot size input works', async ({ page }) => {
-    const potInput = page.locator('#advisor-pot-size');
-    await expect(potInput).toHaveValue('100');
-
-    await potInput.fill('250');
-    await expect(potInput).toHaveValue('250');
-  });
-
-  test('to call input works', async ({ page }) => {
-    const toCallInput = page.locator('#advisor-to-call');
-    await expect(toCallInput).toHaveValue('0');
-
-    await toCallInput.fill('50');
-    await expect(toCallInput).toHaveValue('50');
-  });
-
-  test('stack size input works', async ({ page }) => {
-    const stackInput = page.locator('#advisor-stack-size');
-    await expect(stackInput).toHaveValue('1000');
-
-    await stackInput.fill('500');
-    await expect(stackInput).toHaveValue('500');
-  });
-});
-
-test.describe('Situation Inputs', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-tab="advisor"]');
-  });
-
-  test('game variant selector works', async ({ page }) => {
-    const gameSelect = page.locator('#advisor-game-select');
-    await expect(gameSelect).toHaveValue('omaha4');
-
-    await gameSelect.selectOption('omaha5');
-    await expect(gameSelect).toHaveValue('omaha5');
-  });
-
-  test('position selector works', async ({ page }) => {
-    const posSelect = page.locator('#advisor-position-select');
-    await expect(posSelect).toHaveValue('BTN');
-
-    await posSelect.selectOption('UTG');
-    await expect(posSelect).toHaveValue('UTG');
-  });
-
-  test('players selector works', async ({ page }) => {
-    const playersSelect = page.locator('#advisor-players-select');
-    await expect(playersSelect).toHaveValue('3');
-
-    await playersSelect.selectOption('2');
-    await expect(playersSelect).toHaveValue('2');
-  });
-});
-
-test.describe('Style Selector', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-tab="advisor"]');
-  });
-
-  test('style selector is visible', async ({ page }) => {
-    const styleSelect = page.locator('#advisor-style-select');
-    await expect(styleSelect).toBeVisible();
-  });
-
-  test('style defaults to reg', async ({ page }) => {
-    const styleSelect = page.locator('#advisor-style-select');
-    await expect(styleSelect).toHaveValue('reg');
-  });
-
-  test('can select all 6 styles', async ({ page }) => {
-    const styleSelect = page.locator('#advisor-style-select');
-    const styles = ['nit', 'rock', 'reg', 'tag', 'lag', 'fish'];
-
-    for (const style of styles) {
-      await styleSelect.selectOption(style);
-      await expect(styleSelect).toHaveValue(style);
+  test('all four tabs load without errors', async ({ page }) => {
+    const tabs = ['scenario', 'advisor', 'matrix', 'saved'];
+    for (const tab of tabs) {
+      await page.click(`[data-tab="${tab}"]`);
+      const content = page.locator(`#${tab}-tab`);
+      await expect(content).toHaveClass(/active/);
+      await expect(content).toBeVisible();
     }
   });
 
-  test('style selection persists through analysis', async ({ page }) => {
-    // Select LAG style
-    await page.selectOption('#advisor-style-select', 'lag');
+  test('scenario builder analyze button is NOT disabled after visiting advisor tab', async ({ page }) => {
+    // Visit advisor tab (where PlayAdvisor.init runs)
+    await page.click('[data-tab="advisor"]');
+    await page.waitForTimeout(500);
 
-    // Set up a complete hand
-    await page.check('input[name="card-mode"][value="hole"]');
-    await page.click('.card-btn[data-card="As"]');
-    await page.click('.card-btn[data-card="Ks"]');
-    await page.click('.card-btn[data-card="Qh"]');
-    await page.click('.card-btn[data-card="Jh"]');
+    // Switch back to scenario builder
+    await page.click('[data-tab="scenario"]');
 
-    await page.check('input[name="card-mode"][value="board"]');
-    await page.click('.card-btn[data-card="7s"]');
-    await page.click('.card-btn[data-card="4s"]');
-    await page.click('.card-btn[data-card="2s"]');
-
-    // Wait for analysis to complete
-    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
-
-    // Style should still be LAG
-    await expect(page.locator('#advisor-style-select')).toHaveValue('lag');
+    // Scenario Builder's analyze button should be enabled (not disabled by PlayAdvisor)
+    const scenarioBtn = page.locator('#scenario-tab #analyze-btn');
+    await expect(scenarioBtn).toBeEnabled();
   });
 
-  test('changing style triggers re-analysis', async ({ page }) => {
-    // Set up a complete hand first
-    await page.check('input[name="card-mode"][value="hole"]');
-    await page.click('.card-btn[data-card="As"]');
-    await page.click('.card-btn[data-card="Ks"]');
-    await page.click('.card-btn[data-card="Qh"]');
-    await page.click('.card-btn[data-card="Jh"]');
+  test('scenario builder button text preserved after advisor tab visit', async ({ page }) => {
+    // Visit advisor tab
+    await page.click('[data-tab="advisor"]');
+    await page.waitForTimeout(300);
 
-    await page.check('input[name="card-mode"][value="board"]');
-    await page.click('.card-btn[data-card="7s"]');
-    await page.click('.card-btn[data-card="4s"]');
-    await page.click('.card-btn[data-card="2s"]');
+    // Switch back
+    await page.click('[data-tab="scenario"]');
 
-    // Wait for initial analysis
-    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
-
-    // Change style — should trigger new analysis
-    await page.selectOption('#advisor-style-select', 'nit');
-
-    // Wait briefly for re-analysis
-    await page.waitForTimeout(1000);
-
-    // Recommendation should still be visible (re-analysis completed)
-    await expect(page.locator('.recommendation-card')).toBeVisible();
+    // Button should still have its original structure with icon
+    const btnText = page.locator('#analyze-btn .btn-text');
+    await expect(btnText).toContainText('Analyze Scenario');
   });
 
-  test('style affects displayed recommendation for same hand', async ({ page }) => {
-    // Set up a complete hand
+  test('play advisor state preserved across tab switches', async ({ page }) => {
+    // Set up cards in advisor
+    await page.click('[data-tab="advisor"]');
     await page.check('input[name="card-mode"][value="hole"]');
     await page.click('.card-btn[data-card="As"]');
     await page.click('.card-btn[data-card="Ks"]');
-    await page.click('.card-btn[data-card="Qh"]');
-    await page.click('.card-btn[data-card="Jh"]');
 
-    await page.check('input[name="card-mode"][value="board"]');
-    await page.click('.card-btn[data-card="7s"]');
-    await page.click('.card-btn[data-card="4s"]');
-    await page.click('.card-btn[data-card="2s"]');
+    // Switch away and back
+    await page.click('[data-tab="scenario"]');
+    await page.click('[data-tab="advisor"]');
 
-    // Analyze with Nit
-    await page.selectOption('#advisor-style-select', 'nit');
-    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
-    const nitAction = await page.locator('.action-badge').textContent();
+    // Cards should still be selected
+    await expect(page.locator('.card-btn[data-card="As"]')).toHaveClass(/selected/);
+    await expect(page.locator('.card-btn[data-card="Ks"]')).toHaveClass(/selected/);
+  });
 
-    // Switch to LAG
-    await page.selectOption('#advisor-style-select', 'lag');
-    await page.waitForTimeout(1500);
-    const lagAction = await page.locator('.action-badge').textContent();
-
-    // At minimum, the recommendation UI should have re-rendered
-    // (action or confidence text may differ)
-    expect(nitAction).toBeDefined();
-    expect(lagAction).toBeDefined();
+  test('hand journal tab shows coming soon', async ({ page }) => {
+    await page.click('[data-tab="saved"]');
+    await expect(page.locator('.saved-coming-soon')).toBeVisible();
+    await expect(page.locator('.coming-soon-subtitle')).toContainText('Coming Soon');
   });
 });
 
-test.describe('Villain Actions', () => {
+// =============================================================================
+// SCENARIO BUILDER COMPLETE WORKFLOW TESTS
+// =============================================================================
+
+test.describe('Scenario Builder - Complete Workflow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-tab="advisor"]');
+    await page.goto(getBaseUrl());
   });
 
-  test('can add villain actions', async ({ page }) => {
-    await page.click('.villain-action-btn[data-action="raise"]');
+  test('preset → analyze → results appear', async ({ page }) => {
+    // Ensure we're on the scenario tab
+    await page.click('[data-tab="scenario"]');
 
-    const display = page.locator('#villain-actions-display');
-    await expect(display).toContainText('raise');
-  });
+    // Click a preset
+    await page.click('.preset-chip[data-query="pair:AA:ds"]');
 
-  test('multiple actions show in sequence', async ({ page }) => {
-    await page.click('.villain-action-btn[data-action="bet"]');
-    await page.click('.villain-action-btn[data-action="call"]');
+    // Click analyze — scope to scenario tab to avoid ambiguity
+    const analyzeBtn = page.locator('#scenario-tab #analyze-btn');
+    await expect(analyzeBtn).toBeEnabled();
+    await analyzeBtn.click();
 
-    const display = page.locator('#villain-actions-display');
-    await expect(display).toContainText('bet');
-    await expect(display).toContainText('call');
-  });
-
-  test('clear villain actions button works', async ({ page }) => {
-    await page.click('.villain-action-btn[data-action="raise"]');
-    await page.click('#clear-villain-actions');
-
-    const display = page.locator('#villain-actions-display');
-    await expect(display).toContainText('No actions yet');
-  });
-});
-
-test.describe('Analyze Button', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-tab="advisor"]');
-  });
-
-  test('analyze button is disabled without cards', async ({ page }) => {
-    const analyzeBtn = page.locator('#analyze-btn');
+    // Button should show loading state
     await expect(analyzeBtn).toBeDisabled();
+
+    // Results section should appear (needs network for TieredDataService — R2 or live sim)
+    // Use longer timeout since this fetches real data
+    await page.waitForSelector('#results-section', { state: 'visible', timeout: 30000 });
+
+    // Win rate should be populated
+    const winRate = page.locator('#stat-winrate');
+    await expect(winRate).not.toHaveText('--');
   });
 
-  test('analyze button is disabled with only hole cards', async ({ page }) => {
+  test('changing opponents updates strategy insight', async ({ page }) => {
+    // Get initial insight text
+    const insightContext = page.locator('#insight-context');
+    const initialText = await insightContext.textContent();
+
+    // Change opponent count to 3 (which means 4-handed table: 3 opponents + hero)
+    await page.click('.opp-btn[data-count="3"]');
+
+    // Insight should update to reflect new table size
+    await page.waitForTimeout(300);
+    const updatedText = await insightContext.textContent();
+    // Format is "STYLE @ POSITION (N-handed table)" where N = opponents + 1
+    expect(updatedText).toContain('4-handed');
+    expect(updatedText).not.toBe(initialText);
+  });
+
+  test('strategy insight updates when style changes', async ({ page }) => {
+    // Ensure we're on the scenario tab
+    await page.click('[data-tab="scenario"]');
+
+    const insightContext = page.locator('#insight-context');
+    const initialText = await insightContext.textContent();
+
+    // Change style to LAG (use scenario tab's style-select)
+    await page.selectOption('#scenario-tab #style-select', 'lag');
+    await page.waitForTimeout(300);
+
+    // Recommendation context should reference new style
+    await expect(insightContext).toContainText('LAG');
+    expect(await insightContext.textContent()).not.toBe(initialText);
+  });
+});
+
+// =============================================================================
+// PLAY ADVISOR COMPLETE WORKFLOW TESTS
+// =============================================================================
+
+test.describe('Play Advisor - Complete Workflow', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+  });
+
+  test('full happy path: select cards → auto-analyze → see recommendation', async ({ page }) => {
     // Select 4 hole cards
     await page.check('input[name="card-mode"][value="hole"]');
     await page.click('.card-btn[data-card="As"]');
     await page.click('.card-btn[data-card="Ks"]');
-    await page.click('.card-btn[data-card="Qs"]');
-    await page.click('.card-btn[data-card="Jh"]');
-
-    const analyzeBtn = page.locator('#analyze-btn');
-    await expect(analyzeBtn).toBeDisabled();
-  });
-
-  test('analyze button is enabled with complete input', async ({ page }) => {
-    // Select 4 hole cards
-    await page.check('input[name="card-mode"][value="hole"]');
-    await page.click('.card-btn[data-card="As"]');
-    await page.click('.card-btn[data-card="Ks"]');
-    await page.click('.card-btn[data-card="Qs"]');
+    await page.click('.card-btn[data-card="Qh"]');
     await page.click('.card-btn[data-card="Jh"]');
 
     // Select 3 board cards
     await page.check('input[name="card-mode"][value="board"]');
     await page.click('.card-btn[data-card="Ts"]');
     await page.click('.card-btn[data-card="9s"]');
-    await page.click('.card-btn[data-card="2h"]');
+    await page.click('.card-btn[data-card="2s"]');
 
-    const analyzeBtn = page.locator('#analyze-btn');
-    await expect(analyzeBtn).toBeEnabled();
+    // Auto-analyze should fire — wait for recommendation card
+    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
+
+    // Verify all result sections appear
+    await expect(page.locator('.hand-strength-card')).toBeVisible();
+    await expect(page.locator('.equity-card')).toBeVisible();
+    await expect(page.locator('.recommendation-card')).toBeVisible();
+    await expect(page.locator('.reasoning-card')).toBeVisible();
+
+    // Action badge should contain a valid action
+    const actionText = await page.locator('.action-badge').textContent();
+    expect(['FOLD', 'CALL', 'CHECK', 'BET', 'RAISE']).toContain(actionText?.trim().toUpperCase());
   });
-});
 
-test.describe('Analysis Results', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.click('[data-tab="advisor"]');
-
-    // Select a complete hand setup
+  test('manual analyze button works when clicked', async ({ page }) => {
+    // Select complete hand
     await page.check('input[name="card-mode"][value="hole"]');
     await page.click('.card-btn[data-card="As"]');
     await page.click('.card-btn[data-card="Ks"]');
@@ -418,74 +239,436 @@ test.describe('Analysis Results', () => {
     await page.click('.card-btn[data-card="Jh"]');
 
     await page.check('input[name="card-mode"][value="board"]');
-    await page.click('.card-btn[data-card="7s"]');
-    await page.click('.card-btn[data-card="4s"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('.card-btn[data-card="9s"]');
     await page.click('.card-btn[data-card="2s"]');
-  });
 
-  test('displays hand strength after analysis', async ({ page }) => {
-    // Wait for auto-analyze or click analyze
-    await page.waitForSelector('.hand-strength-card', { timeout: 5000 });
-
-    const handCard = page.locator('.hand-strength-card');
-    await expect(handCard).toBeVisible();
-    await expect(handCard).toContainText('Flush');
-  });
-
-  test('displays equity after analysis', async ({ page }) => {
-    await page.waitForSelector('.equity-card', { timeout: 5000 });
-
-    const equityCard = page.locator('.equity-card');
-    await expect(equityCard).toBeVisible();
-    await expect(equityCard).toContainText('%');
-  });
-
-  test('displays recommendation after analysis', async ({ page }) => {
+    // Wait for auto-analyze to complete first
     await page.waitForSelector('.recommendation-card', { timeout: 5000 });
 
-    const recCard = page.locator('.recommendation-card');
-    await expect(recCard).toBeVisible();
+    // Now click the manual button — it should re-analyze
+    const advisorBtn = page.locator('#advisor-analyze-btn');
+    await expect(advisorBtn).toBeEnabled();
+    await advisorBtn.click();
 
-    // Should show an action
-    const actionBadge = recCard.locator('.action-badge');
-    await expect(actionBadge).toBeVisible();
-    const actionText = await actionBadge.textContent();
-    expect(['FOLD', 'CALL', 'CHECK', 'BET', 'RAISE']).toContain(actionText?.toUpperCase());
+    // Results should still be visible after manual trigger
+    await page.waitForTimeout(1000);
+    await expect(page.locator('.recommendation-card')).toBeVisible();
   });
 
-  test('displays reasoning after analysis', async ({ page }) => {
+  test('changing style updates recommendation with different reasoning', async ({ page }) => {
+    // Set up complete hand
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qh"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('.card-btn[data-card="9s"]');
+    await page.click('.card-btn[data-card="2s"]');
+
+    // Wait for analysis with default style (reg)
     await page.waitForSelector('.reasoning-card', { timeout: 5000 });
+    const regReasoning = await page.locator('.reasoning-strategic').textContent();
 
-    const reasonCard = page.locator('.reasoning-card');
-    await expect(reasonCard).toBeVisible();
-    await expect(reasonCard.locator('.reasoning-primary')).not.toBeEmpty();
+    // Switch to LAG
+    await page.selectOption('#advisor-style-select', 'lag');
+    await page.waitForTimeout(1500);
+    const lagReasoning = await page.locator('.reasoning-strategic').textContent();
+
+    // Switch to Nit
+    await page.selectOption('#advisor-style-select', 'nit');
+    await page.waitForTimeout(1500);
+    const nitReasoning = await page.locator('.reasoning-strategic').textContent();
+
+    // At least one pair should have different reasoning
+    const allSame = regReasoning === lagReasoning && lagReasoning === nitReasoning;
+    expect(allSame).toBeFalsy();
   });
 
-  test('displays latency info', async ({ page }) => {
-    await page.waitForSelector('.latency-info', { timeout: 5000 });
+  test('changing pot/call updates sizing recommendation', async ({ page }) => {
+    // Set up complete hand
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qh"]');
+    await page.click('.card-btn[data-card="Jh"]');
 
-    const latencyInfo = page.locator('.latency-info');
-    await expect(latencyInfo).toContainText('ms');
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('.card-btn[data-card="9s"]');
+    await page.click('.card-btn[data-card="2s"]');
+
+    // Wait for initial analysis
+    await page.waitForSelector('.sizing-card', { timeout: 5000 });
+    const initialSizing = await page.locator('.sizing-card').textContent();
+
+    // Change pot size to something much larger
+    await page.fill('#advisor-pot-size', '500');
+    await page.waitForTimeout(1500);
+
+    const updatedSizing = await page.locator('.sizing-card').textContent();
+    expect(updatedSizing).not.toBe(initialSizing);
+  });
+
+  test('clearing cards clears results', async ({ page }) => {
+    // Set up and get results
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qh"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('.card-btn[data-card="9s"]');
+    await page.click('.card-btn[data-card="2s"]');
+
+    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
+
+    // Clear hole cards
+    await page.click('#clear-hole-cards');
+
+    // Results should clear — placeholder should return
+    await page.waitForSelector('.advisor-placeholder', { timeout: 3000 });
+    await expect(page.locator('.recommendation-card')).toHaveCount(0);
+  });
+
+  test('omaha5 workflow: 5 hole cards + 3 board cards → analysis', async ({ page }) => {
+    // Switch to omaha5
+    await page.selectOption('#advisor-game-select', 'omaha5');
+
+    // Select 5 hole cards
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qs"]');
+    await page.click('.card-btn[data-card="Jh"]');
+    await page.click('.card-btn[data-card="Th"]');
+
+    // Select 3 board cards
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="9s"]');
+    await page.click('.card-btn[data-card="8s"]');
+    await page.click('.card-btn[data-card="2d"]');
+
+    // Should auto-analyze and show results
+    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
+    await expect(page.locator('.action-badge')).toBeVisible();
+  });
+
+  test('4 hole cards + 0 board cards → no analysis, button disabled', async ({ page }) => {
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qh"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    // Button should be disabled
+    const advisorBtn = page.locator('#advisor-analyze-btn');
+    await expect(advisorBtn).toBeDisabled();
+
+    // No recommendation should appear
+    await page.waitForTimeout(1000);
+    await expect(page.locator('.recommendation-card')).toHaveCount(0);
   });
 });
 
-test.describe('Responsive Layout', () => {
-  test('mobile viewport shows all inputs', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 }); // iPhone SE
-    await page.goto('/');
+// =============================================================================
+// CARD SELECTOR TESTS
+// =============================================================================
+
+test.describe('Card Selector', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+  });
+
+  test('card selector grid renders 52 cards', async ({ page }) => {
+    const grid = page.locator('#card-selector-grid');
+    await expect(grid).toBeVisible();
+    const cardBtns = grid.locator('.card-btn');
+    await expect(cardBtns).toHaveCount(52);
+  });
+
+  test('can select and deselect hole cards', async ({ page }) => {
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await expect(page.locator('.card-btn[data-card="As"]')).toHaveClass(/selected/);
+    await expect(page.locator('#selected-hole-cards')).toContainText('A');
+
+    // Click again to deselect
+    await page.click('.card-btn[data-card="As"]');
+    await expect(page.locator('.card-btn[data-card="As"]')).not.toHaveClass(/selected/);
+  });
+
+  test('can select board cards and street updates', async ({ page }) => {
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('.card-btn[data-card="9s"]');
+    await page.click('.card-btn[data-card="2h"]');
+
+    await expect(page.locator('#street-indicator')).toContainText('FLOP');
+
+    // Add turn card
+    await page.click('.card-btn[data-card="5d"]');
+    await expect(page.locator('#street-indicator')).toContainText('TURN');
+  });
+
+  test('cannot select same card for hole and board', async ({ page }) => {
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="As"]');
+
+    await expect(page.locator('.card-btn[data-card="As"]')).toHaveClass(/hole/);
+    await expect(page.locator('.card-btn[data-card="As"]')).not.toHaveClass(/board/);
+  });
+
+  test('max hole cards enforced for omaha4', async ({ page }) => {
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qs"]');
+    await page.click('.card-btn[data-card="Js"]');
+    await page.click('.card-btn[data-card="Ts"]'); // 5th — should be rejected
+    await expect(page.locator('.card-btn[data-card="Ts"]')).not.toHaveClass(/selected/);
+  });
+
+  test('clear buttons work', async ({ page }) => {
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('#clear-hole-cards');
+    await expect(page.locator('.card-btn[data-card="As"]')).not.toHaveClass(/selected/);
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('#clear-board-cards');
+    await expect(page.locator('.card-btn[data-card="Ts"]')).not.toHaveClass(/selected/);
+  });
+});
+
+// =============================================================================
+// SITUATION & BETTING INPUT TESTS
+// =============================================================================
+
+test.describe('Situation & Betting Inputs', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+  });
+
+  test('all dropdowns have correct defaults', async ({ page }) => {
+    await expect(page.locator('#advisor-game-select')).toHaveValue('omaha4');
+    await expect(page.locator('#advisor-style-select')).toHaveValue('reg');
+    await expect(page.locator('#advisor-position-select')).toHaveValue('BTN');
+    await expect(page.locator('#advisor-players-select')).toHaveValue('3');
+  });
+
+  test('betting inputs have correct defaults', async ({ page }) => {
+    await expect(page.locator('#advisor-pot-size')).toHaveValue('100');
+    await expect(page.locator('#advisor-to-call')).toHaveValue('0');
+    await expect(page.locator('#advisor-stack-size')).toHaveValue('1000');
+  });
+
+  test('villain actions can be added and cleared', async ({ page }) => {
+    await page.click('.villain-action-btn[data-action="raise"]');
+    await page.click('.villain-action-btn[data-action="call"]');
+    await expect(page.locator('#villain-actions-display')).toContainText('raise');
+    await expect(page.locator('#villain-actions-display')).toContainText('call');
+
+    await page.click('#clear-villain-actions');
+    await expect(page.locator('#villain-actions-display')).toContainText('No actions');
+  });
+});
+
+// =============================================================================
+// ANALYZE BUTTON STATE TESTS
+// =============================================================================
+
+test.describe('Advisor Analyze Button State', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+  });
+
+  test('disabled with no cards selected', async ({ page }) => {
+    await expect(page.locator('#advisor-analyze-btn')).toBeDisabled();
+  });
+
+  test('disabled with only hole cards', async ({ page }) => {
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qs"]');
+    await page.click('.card-btn[data-card="Jh"]');
+    await expect(page.locator('#advisor-analyze-btn')).toBeDisabled();
+  });
+
+  test('enabled with complete hand (4 hole + 3 board)', async ({ page }) => {
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qs"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('.card-btn[data-card="9s"]');
+    await page.click('.card-btn[data-card="2h"]');
+
+    await expect(page.locator('#advisor-analyze-btn')).toBeEnabled();
+  });
+
+  test('becomes disabled again after clearing cards', async ({ page }) => {
+    // Set up complete hand
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qs"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('.card-btn[data-card="9s"]');
+    await page.click('.card-btn[data-card="2h"]');
+
+    await expect(page.locator('#advisor-analyze-btn')).toBeEnabled();
+
+    // Clear hole cards
+    await page.click('#clear-hole-cards');
+    await expect(page.locator('#advisor-analyze-btn')).toBeDisabled();
+  });
+});
+
+// =============================================================================
+// ANALYSIS RESULTS DETAIL TESTS
+// =============================================================================
+
+test.describe('Analysis Results Details', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
 
-    // All key elements should be visible
+    // Set up nut flush scenario
+    await page.check('input[name="card-mode"][value="hole"]');
+    await page.click('.card-btn[data-card="As"]');
+    await page.click('.card-btn[data-card="Ks"]');
+    await page.click('.card-btn[data-card="Qh"]');
+    await page.click('.card-btn[data-card="Jh"]');
+
+    await page.check('input[name="card-mode"][value="board"]');
+    await page.click('.card-btn[data-card="Ts"]');
+    await page.click('.card-btn[data-card="9s"]');
+    await page.click('.card-btn[data-card="2s"]');
+  });
+
+  test('hand strength shows flush', async ({ page }) => {
+    await page.waitForSelector('.hand-strength-card', { timeout: 5000 });
+    await expect(page.locator('.hand-strength-card')).toContainText('Flush');
+  });
+
+  test('equity shows percentage', async ({ page }) => {
+    await page.waitForSelector('.equity-card', { timeout: 5000 });
+    await expect(page.locator('.equity-card')).toContainText('%');
+  });
+
+  test('recommendation shows valid action', async ({ page }) => {
+    await page.waitForSelector('.recommendation-card', { timeout: 5000 });
+    const actionText = await page.locator('.action-badge').textContent();
+    expect(['FOLD', 'CALL', 'CHECK', 'BET', 'RAISE']).toContain(actionText?.trim().toUpperCase());
+  });
+
+  test('reasoning section is populated', async ({ page }) => {
+    await page.waitForSelector('.reasoning-card', { timeout: 5000 });
+    await expect(page.locator('.reasoning-primary')).not.toBeEmpty();
+  });
+
+  test('latency info is shown', async ({ page }) => {
+    await page.waitForSelector('.latency-info', { timeout: 5000 });
+    await expect(page.locator('.latency-info')).toContainText('ms');
+  });
+
+  test('nut flush shows nuts badge', async ({ page }) => {
+    await page.waitForSelector('.hand-strength-card', { timeout: 5000 });
+    await expect(page.locator('.nuts-badge')).toBeVisible();
+  });
+});
+
+// =============================================================================
+// STYLE DIFFERENTIATION UI TESTS
+// =============================================================================
+
+test.describe('Style Differentiation in UI', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+  });
+
+  test('style selector visible with all 6 options', async ({ page }) => {
+    const styleSelect = page.locator('#advisor-style-select');
+    await expect(styleSelect).toBeVisible();
+
+    const options = await styleSelect.locator('option').allTextContents();
+    expect(options.length).toBe(6);
+  });
+
+  test('defaults to reg', async ({ page }) => {
+    await expect(page.locator('#advisor-style-select')).toHaveValue('reg');
+  });
+
+  test('all 6 styles produce results for same hand', async ({ page }) => {
+    const styles = ['nit', 'rock', 'reg', 'tag', 'lag', 'fish'];
+
+    for (const style of styles) {
+      // Clear and re-setup for clean state
+      await page.click('#clear-hole-cards');
+      await page.click('#clear-board-cards');
+
+      await page.selectOption('#advisor-style-select', style);
+
+      await page.check('input[name="card-mode"][value="hole"]');
+      await page.click('.card-btn[data-card="As"]');
+      await page.click('.card-btn[data-card="Ks"]');
+      await page.click('.card-btn[data-card="Qh"]');
+      await page.click('.card-btn[data-card="Jh"]');
+
+      await page.check('input[name="card-mode"][value="board"]');
+      await page.click('.card-btn[data-card="Ts"]');
+      await page.click('.card-btn[data-card="9s"]');
+      await page.click('.card-btn[data-card="2s"]');
+
+      await page.waitForSelector('.recommendation-card', { timeout: 5000 });
+      const action = await page.locator('.action-badge').textContent();
+      expect(action?.trim().length).toBeGreaterThan(0);
+    }
+  });
+});
+
+// =============================================================================
+// RESPONSIVE LAYOUT TESTS
+// =============================================================================
+
+test.describe('Responsive Layout', () => {
+  test('mobile viewport: all advisor inputs visible', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+
     await expect(page.locator('#card-selector-grid')).toBeVisible();
     await expect(page.locator('#advisor-pot-size')).toBeVisible();
     await expect(page.locator('#advisor-position-select')).toBeVisible();
     await expect(page.locator('#advisor-style-select')).toBeVisible();
-    await expect(page.locator('#analyze-btn')).toBeVisible();
+    await expect(page.locator('#advisor-analyze-btn')).toBeVisible();
   });
 
-  test('tablet viewport shows proper layout', async ({ page }) => {
-    await page.setViewportSize({ width: 768, height: 1024 }); // iPad
-    await page.goto('/');
+  test('tablet viewport: advisor layout visible', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
 
     await expect(page.locator('.advisor-layout')).toBeVisible();
@@ -493,26 +676,27 @@ test.describe('Responsive Layout', () => {
     await expect(page.locator('.advisor-results-panel')).toBeVisible();
   });
 
-  test('desktop viewport shows full layout', async ({ page }) => {
+  test('desktop viewport: full width layout', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/');
+    await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
 
-    await expect(page.locator('.advisor-layout')).toBeVisible();
-    // On desktop, both panels should be side by side
     const layout = page.locator('.advisor-layout');
     const box = await layout.boundingBox();
     expect(box?.width).toBeGreaterThan(900);
   });
 });
 
+// =============================================================================
+// ERROR STATE TESTS
+// =============================================================================
+
 test.describe('Error States', () => {
-  test('shows placeholder when no cards selected', async ({ page }) => {
-    await page.goto('/');
+  test('placeholder shown when no cards selected', async ({ page }) => {
+    await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
 
-    const placeholder = page.locator('.advisor-placeholder');
-    await expect(placeholder).toBeVisible();
-    await expect(placeholder).toContainText('Select');
+    await expect(page.locator('.advisor-placeholder')).toBeVisible();
+    await expect(page.locator('.advisor-placeholder')).toContainText('Select');
   });
 });

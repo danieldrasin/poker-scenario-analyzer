@@ -534,11 +534,15 @@ const PlayAdvisor = (function() {
   }
 
   function updateAnalyzeButton() {
-    const btn = document.getElementById('analyze-btn');
+    const btn = document.getElementById('advisor-analyze-btn');
     if (btn) {
       const canRun = canAnalyze();
       btn.disabled = !canRun || state.isLoading;
-      btn.textContent = state.isLoading ? 'Analyzing...' : 'Analyze';
+      // Update button text via inner span to preserve icon structure
+      const textSpan = btn.querySelector('.btn-text');
+      if (textSpan) {
+        textSpan.textContent = state.isLoading ? 'Analyzing...' : 'Analyze Hand';
+      }
     }
   }
 
@@ -641,7 +645,7 @@ const PlayAdvisor = (function() {
     document.getElementById('clear-villain-actions')?.addEventListener('click', clearVillainActions);
 
     // Manual analyze button
-    document.getElementById('analyze-btn')?.addEventListener('click', analyze);
+    document.getElementById('advisor-analyze-btn')?.addEventListener('click', analyze);
 
     // Feedback buttons - use event delegation since they're dynamically created
     const resultsContainer = document.getElementById('advisor-results');

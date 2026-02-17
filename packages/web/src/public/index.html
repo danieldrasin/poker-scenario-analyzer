@@ -29,7 +29,7 @@
         <button class="tab-btn active" data-tab="scenario">Scenario Builder</button>
         <button class="tab-btn" data-tab="advisor">Play Advisor</button>
         <button class="tab-btn" data-tab="matrix">Probability Matrix</button>
-        <button class="tab-btn" data-tab="saved">Saved Analysis</button>
+        <button class="tab-btn" data-tab="saved">Hand Journal</button>
       </nav>
 
       <!-- Scenario Builder Tab -->
@@ -446,7 +446,10 @@
             </div>
 
             <!-- Analyze Button -->
-            <button id="analyze-btn" disabled>Analyze</button>
+            <button id="advisor-analyze-btn" class="primary-btn" disabled>
+              <span class="btn-icon">💡</span>
+              <span class="btn-text">Analyze Hand</span>
+            </button>
           </div>
 
           <!-- Results Panel -->
@@ -532,12 +535,25 @@
 
       <!-- Saved Tab -->
       <section id="saved-tab" class="tab-content">
-        <div class="saved-header">
-          <h3>Saved Simulations</h3>
-          <button id="refresh-saved" class="icon-btn" title="Refresh">🔄</button>
-        </div>
-        <div id="saved-list" class="saved-list">
-          <p class="loading">Loading...</p>
+        <div class="saved-coming-soon">
+          <div class="coming-soon-icon">📓</div>
+          <h3>Hand Journal</h3>
+          <p class="coming-soon-subtitle">Coming Soon</p>
+          <p class="coming-soon-description">Save and review hands from the Play Advisor, annotate your decisions, and build a personal study library. Track your reasoning over time to spot patterns and improve.</p>
+          <div class="coming-soon-features">
+            <div class="coming-soon-feature">
+              <span>🃏</span> Save any Play Advisor analysis with one click
+            </div>
+            <div class="coming-soon-feature">
+              <span>📝</span> Add notes explaining your actual decision vs the recommendation
+            </div>
+            <div class="coming-soon-feature">
+              <span>🔄</span> Replay hands with different styles and parameters
+            </div>
+            <div class="coming-soon-feature">
+              <span>📊</span> Strategy lab — test tweaks against simulated data
+            </div>
+          </div>
         </div>
       </section>
     </main>
