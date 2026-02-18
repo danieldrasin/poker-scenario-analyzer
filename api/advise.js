@@ -517,11 +517,68 @@ export default async function handler(req, res) {
     // Determine if facing a bet
     const facingBet = toCall > 0;
 
-    // Get equity value for decision
-    const equityValue = equityResult?.equity || 50;
+    // Get equity value for decision — with multiway discount
+    let equityValue = equityResult?.equity || 50;
 
     // Check if we have the nuts
     const isNutsHand = equityResult?.isNuts || handDescription.isNuts;
+
+    // === MULTIWAY EQUITY DISCOUNT ===
+    // Heuristic equity is calculated vs ONE opponent. In multiway pots,
+    // the chance that at least one of N-1 opponents beats you is much higher.
+    // Apply discount: multiway_equity ≈ headsup_equity ^ (1 + discount_per_player * extra_players)
+    // The discount is stronger for non-nut hands and weaker for the nuts.
+    if (playersInHand > 2) {
+      const extraPlayers = playersInHand - 2; // How many beyond heads-up
+      const headsUpFraction = equityValue / 100;
+
+      // Variant-aware: more hole cards = more opponent combinations = bigger discount
+      const variantCards = parseInt(gameVariant.replace('omaha', '')) || 4;
+      const variantMultiplier = 1 + (variantCards - 4) * 0.15; // PLO4=1.0, PLO5=1.15, PLO6=1.30
+
+      // Non-nut hands get a steeper discount (especially non-nut flushes/straights)
+      let nutPenalty = 1.0;
+      if (!isNutsHand) {
+        if (handRank.type === 5) {
+          // Flush: penalize based on how far from nut flush
+          // Ace-high=14 is nuts, King=13 is ok, anything lower gets progressively worse
+          const flushRank = handRank.primaryRanks?.[0] || 7;
+          if (flushRank <= 10) nutPenalty = 1.6;       // T-high or worse flush — very vulnerable
+          else if (flushRank <= 12) nutPenalty = 1.3;   // Q-high flush — somewhat vulnerable
+          else nutPenalty = 1.1;                         // K-high flush — slightly vulnerable
+        } else if (handRank.type === 4) {
+          // Non-nut straight
+          nutPenalty = 1.3;
+        } else if (handRank.type <= 3) {
+          // Sets, two pair, pairs — already handled by base equity being lower
+          nutPenalty = 1.1;
+        }
+      }
+
+      // Apply discount: each extra player reduces equity
+      // exponent controls how steep the drop-off is
+      const exponent = 1 + extraPlayers * 0.18 * variantMultiplier * nutPenalty;
+      const multiwayFraction = Math.pow(headsUpFraction, exponent);
+      equityValue = Math.round(multiwayFraction * 1000) / 10; // Back to percentage with 1 decimal
+
+      // Also use probability matrix data if available for a reality check
+      if (bundledData && !isNutsHand) {
+        const distribution = getThreatProbability(bundledData, handRank.type, playersInHand);
+        if (distribution) {
+          // Sum probability of opponent having same or better hand type
+          let dominatedProb = 0;
+          for (let oppType = handRank.type; oppType <= 9; oppType++) {
+            dominatedProb += (distribution[oppType] || 0);
+          }
+          // If matrix says >50% chance someone has our hand type or better,
+          // and we're not the nuts, cap equity to reflect that
+          if (dominatedProb > 50 && equityValue > 40) {
+            const matrixCap = Math.max(20, 100 - dominatedProb);
+            equityValue = Math.min(equityValue, matrixCap);
+          }
+        }
+      }
+    }
 
     try {
       // Call action recommender
@@ -585,7 +642,10 @@ export default async function handler(req, res) {
           }
         } : null,
         equity: equityResult ? {
-          estimated: `${equityResult.equity}%`,
+          estimated: `${equityValue}%`,
+          headsUp: playersInHand > 2 ? `${equityResult.equity}%` : undefined,
+          multiwayAdjusted: playersInHand > 2 ? true : undefined,
+          playersInHand: playersInHand,
           vsRange: equityResult.vsRange || 'unknown range',
           confidence: equityResult.confidence || 'medium',
           breakdown: equityResult.breakdown,

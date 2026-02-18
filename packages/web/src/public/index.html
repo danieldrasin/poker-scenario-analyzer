@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Poker Scenario Analyzer</title>
-  <link rel="stylesheet" href="styles.css?v=20260217d">
+  <link rel="stylesheet" href="styles.css?v=20260218a">
 </head>
 <body>
   <div class="app">
@@ -340,34 +340,49 @@
         <div id="live-mode" class="advisor-mode active">
           <!-- Compact top bar: game/position/players -->
           <div class="live-settings-bar">
-            <select id="live-game-select" class="live-select" title="Game">
-              <option value="omaha4" selected>PLO4</option>
-              <option value="omaha5">PLO5</option>
-              <option value="omaha6">PLO6</option>
-            </select>
-            <select id="live-position-select" class="live-select" title="Position">
-              <option value="UTG">UTG</option>
-              <option value="MP">MP</option>
-              <option value="CO">CO</option>
-              <option value="BTN" selected>BTN</option>
-              <option value="SB">SB</option>
-              <option value="BB">BB</option>
-            </select>
-            <select id="live-players-select" class="live-select" title="Players">
-              <option value="2">2p</option>
-              <option value="3" selected>3p</option>
-              <option value="4">4p</option>
-              <option value="5">5p</option>
-              <option value="6">6p</option>
-            </select>
-            <select id="live-style-select" class="live-select" title="Style">
-              <option value="nit">Nit</option>
-              <option value="rock">Rock</option>
-              <option value="reg" selected>Reg</option>
-              <option value="tag">TAG</option>
-              <option value="lag">LAG</option>
-              <option value="fish">Fish</option>
-            </select>
+            <div class="live-field">
+              <label class="live-label">Game</label>
+              <select id="live-game-select" class="live-select">
+                <option value="omaha4" selected>PLO4</option>
+                <option value="omaha5">PLO5</option>
+                <option value="omaha6">PLO6</option>
+              </select>
+            </div>
+            <div class="live-field">
+              <label class="live-label">Position</label>
+              <select id="live-position-select" class="live-select">
+                <option value="UTG">UTG</option>
+                <option value="MP">MP</option>
+                <option value="CO">CO</option>
+                <option value="BTN" selected>BTN</option>
+                <option value="SB">SB</option>
+                <option value="BB">BB</option>
+              </select>
+            </div>
+            <div class="live-field">
+              <label class="live-label">Players</label>
+              <select id="live-players-select" class="live-select">
+                <option value="2">2p</option>
+                <option value="3" selected>3p</option>
+                <option value="4">4p</option>
+                <option value="5">5p</option>
+                <option value="6">6p</option>
+                <option value="7">7p</option>
+                <option value="8">8p</option>
+                <option value="9">9p</option>
+              </select>
+            </div>
+            <div class="live-field">
+              <label class="live-label">Villain</label>
+              <select id="live-style-select" class="live-select">
+                <option value="nit">Nit</option>
+                <option value="rock">Rock</option>
+                <option value="reg" selected>Reg</option>
+                <option value="tag">TAG</option>
+                <option value="lag">LAG</option>
+                <option value="fish">Fish</option>
+              </select>
+            </div>
           </div>
 
           <!-- Card Entry Area -->
@@ -532,7 +547,10 @@
                     <option value="3" selected>3 (3-way)</option>
                     <option value="4">4 (4-way)</option>
                     <option value="5">5 (5-way)</option>
-                    <option value="6">6 (Multi-way)</option>
+                    <option value="6">6 (6-way)</option>
+                    <option value="7">7 (7-way)</option>
+                    <option value="8">8 (8-way)</option>
+                    <option value="9">9 (Full ring)</option>
                   </select>
                 </div>
               </div>
@@ -807,9 +825,9 @@
     <button class="primary-btn small" id="open-settings-from-prompt">Configure AI</button>
   </div>
 
-  <script src="poker-stats.js?v=20260217d"></script>
-  <script src="data-manager.js?v=20260217d"></script>
-  <script src="app.js?v=20260217d"></script>
-  <script src="play-advisor.js?v=20260217d"></script>
+  <script src="poker-stats.js?v=20260218a"></script>
+  <script src="data-manager.js?v=20260218a"></script>
+  <script src="app.js?v=20260218a"></script>
+  <script src="play-advisor.js?v=20260218a"></script>
 </body>
 </html>
