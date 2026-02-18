@@ -10,9 +10,22 @@
  * - Error states
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 const getBaseUrl = () => process.env.TEST_URL || 'http://localhost:3000';
+
+/** Navigate to base URL and wait for JS to be fully initialized */
+async function gotoReady(page: Page) {
+  await page.goto(getBaseUrl(), { waitUntil: 'networkidle' });
+  // Wait for tab buttons to be interactive (JS initialized)
+  await expect(page.locator('[data-tab="scenario"]')).toBeVisible();
+}
+
+/** Click a tab and wait for it to become active */
+async function switchTab(page: Page, tabName: string) {
+  await page.click(`[data-tab="${tabName}"]`);
+  await expect(page.locator(`#${tabName}-tab`)).toHaveClass(/active/, { timeout: 5000 });
+}
 
 // =============================================================================
 // DOM INTEGRITY TESTS
@@ -20,7 +33,7 @@ const getBaseUrl = () => process.env.TEST_URL || 'http://localhost:3000';
 
 test.describe('DOM Integrity', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
+    await gotoReady(page);
   });
 
   test('no duplicate element IDs in document', async ({ page }) => {
@@ -64,26 +77,24 @@ test.describe('DOM Integrity', () => {
 
 test.describe('Tab Navigation & Isolation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
+    await gotoReady(page);
   });
 
   test('all four tabs load without errors', async ({ page }) => {
     const tabs = ['scenario', 'advisor', 'matrix', 'saved'];
     for (const tab of tabs) {
-      await page.click(`[data-tab="${tab}"]`);
-      const content = page.locator(`#${tab}-tab`);
-      await expect(content).toHaveClass(/active/);
-      await expect(content).toBeVisible();
+      await switchTab(page, tab);
+      await expect(page.locator(`#${tab}-tab`)).toBeVisible();
     }
   });
 
   test('scenario builder analyze button is NOT disabled after visiting advisor tab', async ({ page }) => {
     // Visit advisor tab (where PlayAdvisor.init runs)
-    await page.click('[data-tab="advisor"]');
+    await switchTab(page, 'advisor');
     await page.waitForTimeout(500);
 
     // Switch back to scenario builder
-    await page.click('[data-tab="scenario"]');
+    await switchTab(page, 'scenario');
 
     // Scenario Builder's analyze button should be enabled (not disabled by PlayAdvisor)
     const scenarioBtn = page.locator('#scenario-tab #analyze-btn');
@@ -92,11 +103,11 @@ test.describe('Tab Navigation & Isolation', () => {
 
   test('scenario builder button text preserved after advisor tab visit', async ({ page }) => {
     // Visit advisor tab
-    await page.click('[data-tab="advisor"]');
+    await switchTab(page, 'advisor');
     await page.waitForTimeout(300);
 
     // Switch back
-    await page.click('[data-tab="scenario"]');
+    await switchTab(page, 'scenario');
 
     // Button should still have its original structure with icon
     const btnText = page.locator('#analyze-btn .btn-text');
@@ -105,15 +116,15 @@ test.describe('Tab Navigation & Isolation', () => {
 
   test('play advisor state preserved across tab switches', async ({ page }) => {
     // Set up cards in advisor (switch to study mode for card selector grid)
-    await page.click('[data-tab="advisor"]');
+    await switchTab(page, 'advisor');
     await page.click('[data-mode="study"]');
     await page.check('input[name="card-mode"][value="hole"]');
     await page.click('.card-btn[data-card="As"]');
     await page.click('.card-btn[data-card="Ks"]');
 
     // Switch away and back
-    await page.click('[data-tab="scenario"]');
-    await page.click('[data-tab="advisor"]');
+    await switchTab(page, 'scenario');
+    await switchTab(page, 'advisor');
 
     // Cards should still be selected (study mode should still be active)
     await expect(page.locator('.card-btn[data-card="As"]')).toHaveClass(/selected/);
@@ -121,9 +132,7 @@ test.describe('Tab Navigation & Isolation', () => {
   });
 
   test('hand journal tab shows coming soon', async ({ page }) => {
-    await page.click('[data-tab="saved"]');
-    // Wait for the tab content to become active/visible
-    await expect(page.locator('#saved-tab')).toHaveClass(/active/, { timeout: 5000 });
+    await switchTab(page, 'saved');
     await expect(page.locator('.saved-coming-soon')).toBeVisible();
     await expect(page.locator('.coming-soon-subtitle')).toContainText('Coming Soon');
   });
@@ -135,9 +144,9 @@ test.describe('Tab Navigation & Isolation', () => {
 
 test.describe('Scenario Builder - Complete Workflow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
+    await gotoReady(page);
     // Ensure scenario tab is active and JS is initialized
-    await page.click('[data-tab="scenario"]');
+    await switchTab(page, 'scenario');
     await expect(page.locator('#scenario-tab')).toHaveClass(/active/);
     // Wait for strategy insight to be populated (indicates JS init complete)
     await expect(page.locator('#insight-context')).not.toBeEmpty();
@@ -145,7 +154,7 @@ test.describe('Scenario Builder - Complete Workflow', () => {
 
   test('preset → analyze → results appear', async ({ page }) => {
     // Ensure we're on the scenario tab
-    await page.click('[data-tab="scenario"]');
+    await switchTab(page, 'scenario');
 
     // Click a preset
     await page.click('.preset-chip[data-query="pair:AA:ds"]');
@@ -205,8 +214,8 @@ test.describe('Scenario Builder - Complete Workflow', () => {
 
 test.describe('Play Advisor - Complete Workflow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     // Switch to Study mode where the full card selector grid lives
     await page.click('[data-mode="study"]');
     await expect(page.locator('#study-mode')).toHaveClass(/active/);
@@ -392,8 +401,8 @@ test.describe('Play Advisor - Complete Workflow', () => {
 
 test.describe('Card Selector', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     await page.click('[data-mode="study"]');
     await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
@@ -470,8 +479,8 @@ test.describe('Card Selector', () => {
 
 test.describe('Situation & Betting Inputs', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     await page.click('[data-mode="study"]');
     await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
@@ -506,8 +515,8 @@ test.describe('Situation & Betting Inputs', () => {
 
 test.describe('Advisor Analyze Button State', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     await page.click('[data-mode="study"]');
     await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
@@ -567,8 +576,8 @@ test.describe('Advisor Analyze Button State', () => {
 
 test.describe('Analysis Results Details', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     await page.click('[data-mode="study"]');
     await expect(page.locator('#study-mode')).toHaveClass(/active/);
 
@@ -623,8 +632,8 @@ test.describe('Analysis Results Details', () => {
 
 test.describe('Style Differentiation in UI', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     await page.click('[data-mode="study"]');
     await expect(page.locator('#study-mode')).toHaveClass(/active/);
   });
@@ -676,8 +685,8 @@ test.describe('Style Differentiation in UI', () => {
 test.describe('Responsive Layout', () => {
   test('mobile viewport: live mode inputs visible', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
 
     // Live mode is default — check live mode elements
     await expect(page.locator('#live-card-picker')).toBeVisible();
@@ -689,8 +698,8 @@ test.describe('Responsive Layout', () => {
 
   test('mobile viewport: study mode inputs visible', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     await page.click('[data-mode="study"]');
 
     await expect(page.locator('#card-selector-grid')).toBeVisible();
@@ -701,8 +710,8 @@ test.describe('Responsive Layout', () => {
 
   test('tablet viewport: study mode layout visible', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     await page.click('[data-mode="study"]');
 
     await expect(page.locator('.advisor-layout')).toBeVisible();
@@ -712,8 +721,8 @@ test.describe('Responsive Layout', () => {
 
   test('desktop viewport: mode toggle visible', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
 
     await expect(page.locator('.advisor-mode-toggle')).toBeVisible();
     await expect(page.locator('[data-mode="live"]')).toBeVisible();
@@ -727,8 +736,8 @@ test.describe('Responsive Layout', () => {
 
 test.describe('Error States', () => {
   test('placeholder shown when no cards selected', async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
 
     // Live mode shows placeholder in live-result
     await expect(page.locator('.live-result-placeholder')).toBeVisible();
@@ -744,7 +753,7 @@ test.describe('Error States', () => {
 
 test.describe('Visual Isolation — only one tab content visible at a time', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
+    await gotoReady(page);
   });
 
   test('on load, only scenario tab content is visible', async ({ page }) => {
@@ -757,7 +766,7 @@ test.describe('Visual Isolation — only one tab content visible at a time', () 
   });
 
   test('clicking Play Advisor hides Scenario Builder content', async ({ page }) => {
-    await page.click('[data-tab="advisor"]');
+    await switchTab(page, 'advisor');
     await expect(page.locator('#advisor-tab')).toBeVisible();
     await expect(page.locator('#scenario-tab')).not.toBeVisible();
     await expect(page.locator('#matrix-tab')).not.toBeVisible();
@@ -765,7 +774,7 @@ test.describe('Visual Isolation — only one tab content visible at a time', () 
   });
 
   test('clicking Matrix hides all other tab contents', async ({ page }) => {
-    await page.click('[data-tab="matrix"]');
+    await switchTab(page, 'matrix');
     await expect(page.locator('#matrix-tab')).toBeVisible();
     await expect(page.locator('#scenario-tab')).not.toBeVisible();
     await expect(page.locator('#advisor-tab')).not.toBeVisible();
@@ -773,7 +782,7 @@ test.describe('Visual Isolation — only one tab content visible at a time', () 
   });
 
   test('clicking Hand Journal hides all other tab contents', async ({ page }) => {
-    await page.click('[data-tab="saved"]');
+    await switchTab(page, 'saved');
     await expect(page.locator('#saved-tab')).toBeVisible();
     await expect(page.locator('#scenario-tab')).not.toBeVisible();
     await expect(page.locator('#advisor-tab')).not.toBeVisible();
@@ -783,7 +792,7 @@ test.describe('Visual Isolation — only one tab content visible at a time', () 
   test('cycling through all tabs shows exactly one content at a time', async ({ page }) => {
     const tabs = ['scenario', 'advisor', 'matrix', 'saved'];
     for (const activeTab of tabs) {
-      await page.click(`[data-tab="${activeTab}"]`);
+      await switchTab(page, activeTab);
       for (const tab of tabs) {
         if (tab === activeTab) {
           await expect(page.locator(`#${tab}-tab`)).toBeVisible();
@@ -797,9 +806,8 @@ test.describe('Visual Isolation — only one tab content visible at a time', () 
 
 test.describe('Dual-Mode Toggle — Live Table vs Study', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
-    await expect(page.locator('#advisor-tab')).toHaveClass(/active/);
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     await expect(page.locator('.advisor-mode-toggle')).toBeVisible();
   });
 
@@ -851,8 +859,8 @@ test.describe('Dual-Mode Toggle — Live Table vs Study', () => {
 
 test.describe('Live Mode — user workflow', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(getBaseUrl());
-    await page.click('[data-tab="advisor"]');
+    await gotoReady(page);
+    await switchTab(page, 'advisor');
     // Live mode is default
   });
 
