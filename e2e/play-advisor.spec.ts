@@ -735,3 +735,159 @@ test.describe('Error States', () => {
     await expect(page.locator('.live-result-placeholder')).toContainText('Enter your cards');
   });
 });
+
+// =============================================================================
+// REAL USER WORKFLOW TESTS
+// Tests that verify what a user actually SEES, not just DOM state.
+// These catch visual/layout bugs that element-existence tests miss.
+// =============================================================================
+
+test.describe('Visual Isolation — only one tab content visible at a time', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
+  });
+
+  test('on load, only scenario tab content is visible', async ({ page }) => {
+    // Scenario tab should be visible
+    await expect(page.locator('#scenario-tab')).toBeVisible();
+    // All other tab contents should be hidden (display:none → not visible)
+    await expect(page.locator('#advisor-tab')).not.toBeVisible();
+    await expect(page.locator('#matrix-tab')).not.toBeVisible();
+    await expect(page.locator('#saved-tab')).not.toBeVisible();
+  });
+
+  test('clicking Play Advisor hides Scenario Builder content', async ({ page }) => {
+    await page.click('[data-tab="advisor"]');
+    await expect(page.locator('#advisor-tab')).toBeVisible();
+    await expect(page.locator('#scenario-tab')).not.toBeVisible();
+    await expect(page.locator('#matrix-tab')).not.toBeVisible();
+    await expect(page.locator('#saved-tab')).not.toBeVisible();
+  });
+
+  test('clicking Matrix hides all other tab contents', async ({ page }) => {
+    await page.click('[data-tab="matrix"]');
+    await expect(page.locator('#matrix-tab')).toBeVisible();
+    await expect(page.locator('#scenario-tab')).not.toBeVisible();
+    await expect(page.locator('#advisor-tab')).not.toBeVisible();
+    await expect(page.locator('#saved-tab')).not.toBeVisible();
+  });
+
+  test('clicking Hand Journal hides all other tab contents', async ({ page }) => {
+    await page.click('[data-tab="saved"]');
+    await expect(page.locator('#saved-tab')).toBeVisible();
+    await expect(page.locator('#scenario-tab')).not.toBeVisible();
+    await expect(page.locator('#advisor-tab')).not.toBeVisible();
+    await expect(page.locator('#matrix-tab')).not.toBeVisible();
+  });
+
+  test('cycling through all tabs shows exactly one content at a time', async ({ page }) => {
+    const tabs = ['scenario', 'advisor', 'matrix', 'saved'];
+    for (const activeTab of tabs) {
+      await page.click(`[data-tab="${activeTab}"]`);
+      for (const tab of tabs) {
+        if (tab === activeTab) {
+          await expect(page.locator(`#${tab}-tab`)).toBeVisible();
+        } else {
+          await expect(page.locator(`#${tab}-tab`)).not.toBeVisible();
+        }
+      }
+    }
+  });
+});
+
+test.describe('Dual-Mode Toggle — Live Table vs Study', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+  });
+
+  test('mode toggle is visible with both options', async ({ page }) => {
+    await expect(page.locator('.advisor-mode-toggle')).toBeVisible();
+    await expect(page.locator('[data-mode="live"]')).toBeVisible();
+    await expect(page.locator('[data-mode="study"]')).toBeVisible();
+  });
+
+  test('live mode is active by default', async ({ page }) => {
+    await expect(page.locator('[data-mode="live"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-mode="study"]')).not.toHaveClass(/active/);
+    await expect(page.locator('#live-mode')).toBeVisible();
+    await expect(page.locator('#study-mode')).not.toBeVisible();
+  });
+
+  test('clicking Study shows study mode and hides live mode', async ({ page }) => {
+    await page.click('[data-mode="study"]');
+    await expect(page.locator('#study-mode')).toBeVisible();
+    await expect(page.locator('#live-mode')).not.toBeVisible();
+    await expect(page.locator('[data-mode="study"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-mode="live"]')).not.toHaveClass(/active/);
+  });
+
+  test('clicking back to Live restores live mode', async ({ page }) => {
+    await page.click('[data-mode="study"]');
+    await page.click('[data-mode="live"]');
+    await expect(page.locator('#live-mode')).toBeVisible();
+    await expect(page.locator('#study-mode')).not.toBeVisible();
+  });
+
+  test('live mode shows speed-optimized elements', async ({ page }) => {
+    await expect(page.locator('.live-card-picker')).toBeVisible();
+    await expect(page.locator('.live-betting-bar')).toBeVisible();
+    await expect(page.locator('.live-result')).toBeVisible();
+    await expect(page.locator('.live-new-hand-btn')).toBeVisible();
+  });
+
+  test('study mode shows detailed analysis elements', async ({ page }) => {
+    await page.click('[data-mode="study"]');
+    await expect(page.locator('#card-selector-grid')).toBeVisible();
+    await expect(page.locator('#advisor-analyze-btn')).toBeVisible();
+    await expect(page.locator('.advisor-layout')).toBeVisible();
+  });
+});
+
+test.describe('Live Mode — user workflow', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(getBaseUrl());
+    await page.click('[data-tab="advisor"]');
+    // Live mode is default
+  });
+
+  test('card picker shows 52 cards in 4 suits', async ({ page }) => {
+    const cards = page.locator('.live-pick-btn');
+    await expect(cards).toHaveCount(52);
+  });
+
+  test('clicking a card fills the next hole slot', async ({ page }) => {
+    // Click Ace of spades
+    await page.click('.live-pick-btn[data-card="As"]');
+    // Should appear in hole cards area
+    const firstSlot = page.locator('#live-hole-cards .live-card-slot').first();
+    await expect(firstSlot).toHaveClass(/filled/);
+    await expect(firstSlot).not.toHaveText('?');
+    // The card should now be marked as used in the picker
+    await expect(page.locator('.live-pick-btn[data-card="As"]')).toHaveClass(/used/);
+  });
+
+  test('new hand button clears everything', async ({ page }) => {
+    // Pick some cards
+    await page.click('.live-pick-btn[data-card="As"]');
+    await page.click('.live-pick-btn[data-card="Ks"]');
+    // Click new hand
+    await page.click('#live-new-hand');
+    // All slots should be empty
+    const emptySlots = page.locator('#live-hole-cards .live-card-slot.empty');
+    await expect(emptySlots).toHaveCount(4); // 4 hole card slots for omaha4
+    // Card should be available again
+    await expect(page.locator('.live-pick-btn[data-card="As"]')).not.toHaveClass(/used/);
+  });
+
+  test('spinner buttons change pot value', async ({ page }) => {
+    const potInput = page.locator('#live-pot');
+    await expect(potInput).toHaveValue('100');
+    // Click the + button for pot
+    await page.click('.spin-btn[data-target="live-pot"][data-delta="10"]');
+    await expect(potInput).toHaveValue('110');
+    // Click the - button
+    await page.click('.spin-btn[data-target="live-pot"][data-delta="-10"]');
+    await expect(potInput).toHaveValue('100');
+  });
+});

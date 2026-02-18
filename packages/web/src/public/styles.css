@@ -2968,8 +2968,11 @@ footer {
 /* STUDY MODE (original advisor layout)         */
 /* ============================================ */
 
-/* Play Advisor Tab Container */
-#advisor-tab {
+/* Play Advisor Tab Container
+   IMPORTANT: Use .tab-content scoping to avoid specificity issues.
+   #advisor-tab alone would override .tab-content { display: none }
+   because ID selectors beat class selectors. */
+#advisor-tab.tab-content.active {
   display: flex;
   flex-direction: column;
   gap: 20px;
