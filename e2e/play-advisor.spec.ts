@@ -799,6 +799,8 @@ test.describe('Dual-Mode Toggle — Live Table vs Study', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(getBaseUrl());
     await page.click('[data-tab="advisor"]');
+    await expect(page.locator('#advisor-tab')).toHaveClass(/active/);
+    await expect(page.locator('.advisor-mode-toggle')).toBeVisible();
   });
 
   test('mode toggle is visible with both options', async ({ page }) => {
@@ -815,7 +817,8 @@ test.describe('Dual-Mode Toggle — Live Table vs Study', () => {
   });
 
   test('clicking Study shows study mode and hides live mode', async ({ page }) => {
-    await page.click('[data-mode="study"]');
+    await expect(page.locator('#live-mode')).toBeVisible();
+    await page.locator('[data-mode="study"]').click();
     await expect(page.locator('#study-mode')).toBeVisible();
     await expect(page.locator('#live-mode')).not.toBeVisible();
     await expect(page.locator('[data-mode="study"]')).toHaveClass(/active/);
@@ -823,8 +826,10 @@ test.describe('Dual-Mode Toggle — Live Table vs Study', () => {
   });
 
   test('clicking back to Live restores live mode', async ({ page }) => {
-    await page.click('[data-mode="study"]');
-    await page.click('[data-mode="live"]');
+    await expect(page.locator('#live-mode')).toBeVisible();
+    await page.locator('[data-mode="study"]').click();
+    await expect(page.locator('#study-mode')).toBeVisible();
+    await page.locator('[data-mode="live"]').click();
     await expect(page.locator('#live-mode')).toBeVisible();
     await expect(page.locator('#study-mode')).not.toBeVisible();
   });

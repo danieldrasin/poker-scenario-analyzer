@@ -20,7 +20,8 @@ const PlayAdvisor = (function() {
     isLoading: false,
     // Live mode specific
     liveCardTarget: 'hole', // 'hole' or 'board'
-    liveNextSlot: 0 // next empty slot index
+    liveNextSlot: 0, // next empty slot index
+    liveReplaceTarget: null // { group: 'hole'|'board', index: N } when replacing a specific card
   };
 
   // Style options matching StyleProfiles.js
@@ -230,12 +231,123 @@ const PlayAdvisor = (function() {
     container.innerHTML = html;
   }
 
+  // ============ MOBILE LOUPE (magnifying card picker) ============
+  function initCardPickerLoupe() {
+    const picker = document.getElementById('live-card-picker');
+    if (!picker) return;
+
+    // Only activate loupe on touch devices
+    let loupeEl = document.getElementById('card-loupe');
+    if (!loupeEl) {
+      loupeEl = document.createElement('div');
+      loupeEl.id = 'card-loupe';
+      loupeEl.className = 'card-loupe';
+      loupeEl.innerHTML = '<div class="loupe-cards"></div>';
+      picker.parentElement.insertBefore(loupeEl, picker);
+    }
+
+    let activeCard = null;
+
+    function showLoupe(touchX, touchY) {
+      const pickerRect = picker.getBoundingClientRect();
+      const buttons = Array.from(picker.querySelectorAll('.live-pick-btn'));
+      if (!buttons.length) return;
+
+      // Find the button closest to touch point
+      let closestIdx = 0;
+      let closestDist = Infinity;
+      buttons.forEach((btn, i) => {
+        const r = btn.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dist = Math.hypot(touchX - cx, touchY - cy);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestIdx = i;
+        }
+      });
+
+      // Show a window of ~7 cards centered on closest
+      const windowSize = 7;
+      const half = Math.floor(windowSize / 2);
+      const start = Math.max(0, closestIdx - half);
+      const end = Math.min(buttons.length, start + windowSize);
+      const visibleBtns = buttons.slice(start, end);
+
+      const loupeCards = loupeEl.querySelector('.loupe-cards');
+      loupeCards.innerHTML = '';
+      visibleBtns.forEach((btn, i) => {
+        const clone = document.createElement('button');
+        clone.className = 'loupe-card-btn' + (btn.classList.contains('used') ? ' used' : '');
+        clone.dataset.card = btn.dataset.card;
+        clone.style.color = btn.style.color;
+        clone.textContent = btn.textContent;
+        // Highlight the center card
+        const centerIdx = closestIdx - start;
+        if (i === centerIdx) {
+          clone.classList.add('loupe-center');
+          activeCard = btn.dataset.card;
+        }
+        loupeCards.appendChild(clone);
+      });
+
+      // Position loupe above touch point
+      const loupeWidth = loupeEl.offsetWidth || 280;
+      let left = touchX - pickerRect.left - loupeWidth / 2;
+      left = Math.max(0, Math.min(left, pickerRect.width - loupeWidth));
+      loupeEl.style.left = left + 'px';
+      loupeEl.classList.add('visible');
+    }
+
+    function hideLoupe() {
+      loupeEl.classList.remove('visible');
+      activeCard = null;
+    }
+
+    // Touch events on the picker
+    picker.addEventListener('touchstart', (e) => {
+      // Check if it's a touch device with small screen (mobile)
+      if (window.innerWidth > 600) return;
+      const touch = e.touches[0];
+      showLoupe(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    picker.addEventListener('touchmove', (e) => {
+      if (window.innerWidth > 600) return;
+      if (!loupeEl.classList.contains('visible')) return;
+      const touch = e.touches[0];
+      showLoupe(touch.clientX, touch.clientY);
+      e.preventDefault(); // Prevent scrolling while using loupe
+    }, { passive: false });
+
+    picker.addEventListener('touchend', (e) => {
+      if (window.innerWidth > 600) return;
+      if (!loupeEl.classList.contains('visible')) return;
+      if (activeCard && !isCardSelected(activeCard)) {
+        livePickCard(activeCard);
+      }
+      hideLoupe();
+    });
+
+    picker.addEventListener('touchcancel', () => hideLoupe());
+
+    // Also allow tapping loupe cards directly
+    loupeEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.loupe-card-btn');
+      if (btn && !btn.classList.contains('used')) {
+        livePickCard(btn.dataset.card);
+        hideLoupe();
+      }
+    });
+  }
+
   function renderLiveCardSlots() {
     const holeContainer = document.getElementById('live-hole-cards');
     const boardContainer = document.getElementById('live-board-cards');
     if (!holeContainer || !boardContainer) return;
 
     const maxHole = getMaxHoleCards();
+    const replaceTarget = state.liveReplaceTarget; // e.g. { group: 'hole', index: 2 }
 
     // Build hole slots
     let holeHtml = '';
@@ -246,9 +358,10 @@ const PlayAdvisor = (function() {
         const rank = card[0];
         const symbol = SUIT_SYMBOLS[suit];
         const color = SUIT_COLORS[suit];
-        holeHtml += `<div class="live-card-slot filled" data-slot="hole-${i}" style="color: ${color}">${rank}${symbol}</div>`;
+        const isReplace = replaceTarget && replaceTarget.group === 'hole' && replaceTarget.index === i;
+        holeHtml += `<div class="live-card-slot filled ${isReplace ? 'replace-target' : ''}" data-slot="hole-${i}" style="color: ${color}">${rank}${symbol}</div>`;
       } else {
-        const isTarget = state.liveCardTarget === 'hole' && i === state.holeCards.length;
+        const isTarget = !replaceTarget && state.liveCardTarget === 'hole' && i === state.holeCards.length;
         holeHtml += `<div class="live-card-slot empty ${isTarget ? 'active-target' : ''}" data-slot="hole-${i}">?</div>`;
       }
     }
@@ -263,16 +376,17 @@ const PlayAdvisor = (function() {
         const rank = card[0];
         const symbol = SUIT_SYMBOLS[suit];
         const color = SUIT_COLORS[suit];
-        boardHtml += `<div class="live-card-slot board-slot filled" data-slot="board-${i}" style="color: ${color}">${rank}${symbol}</div>`;
+        const isReplace = replaceTarget && replaceTarget.group === 'board' && replaceTarget.index === i;
+        boardHtml += `<div class="live-card-slot board-slot filled ${isReplace ? 'replace-target' : ''}" data-slot="board-${i}" style="color: ${color}">${rank}${symbol}</div>`;
       } else {
-        const isTarget = state.liveCardTarget === 'board' && i === state.boardCards.length;
+        const isTarget = !replaceTarget && state.liveCardTarget === 'board' && i === state.boardCards.length;
         boardHtml += `<div class="live-card-slot board-slot empty ${isTarget ? 'active-target' : ''}" data-slot="board-${i}">?</div>`;
       }
     }
     boardContainer.innerHTML = boardHtml;
 
-    // Auto-switch target when hole cards are full
-    if (state.liveCardTarget === 'hole' && state.holeCards.length >= maxHole) {
+    // Auto-switch target when hole cards are full (only when not in replace mode)
+    if (!replaceTarget && state.liveCardTarget === 'hole' && state.holeCards.length >= maxHole) {
       state.liveCardTarget = 'board';
     }
   }
@@ -280,7 +394,16 @@ const PlayAdvisor = (function() {
   function livePickCard(card) {
     if (isCardSelected(card)) return;
 
-    if (state.liveCardTarget === 'hole') {
+    // Replace mode: swap a specific filled slot
+    if (state.liveReplaceTarget) {
+      const { group, index } = state.liveReplaceTarget;
+      if (group === 'hole') {
+        state.holeCards[index] = card;
+      } else {
+        state.boardCards[index] = card;
+      }
+      state.liveReplaceTarget = null; // Exit replace mode
+    } else if (state.liveCardTarget === 'hole') {
       const max = getMaxHoleCards();
       if (state.holeCards.length < max) {
         state.holeCards.push(card);
@@ -310,6 +433,7 @@ const PlayAdvisor = (function() {
   function liveClearHole() {
     state.holeCards = [];
     state.liveCardTarget = 'hole';
+    state.liveReplaceTarget = null;
     state.lastResponse = null;
     renderLiveCardPicker();
     renderLiveCardSlots();
@@ -322,6 +446,7 @@ const PlayAdvisor = (function() {
 
   function liveClearBoard() {
     state.boardCards = [];
+    state.liveReplaceTarget = null;
     state.lastResponse = null;
     renderLiveCardPicker();
     renderLiveCardSlots();
@@ -338,6 +463,7 @@ const PlayAdvisor = (function() {
     state.villainActions = [];
     state.lastResponse = null;
     state.liveCardTarget = 'hole';
+    state.liveReplaceTarget = null;
     renderLiveCardPicker();
     renderLiveCardSlots();
     updateLiveResult();
@@ -879,13 +1005,38 @@ const PlayAdvisor = (function() {
       });
     }
 
-    // Live card slot clicks (to set target)
-    document.getElementById('live-hole-cards')?.addEventListener('click', () => {
-      state.liveCardTarget = 'hole';
+    // Live card slot clicks — tap filled card to enter replace mode, tap empty area to set target
+    document.getElementById('live-hole-cards')?.addEventListener('click', (e) => {
+      const slot = e.target.closest('.live-card-slot');
+      if (slot && slot.classList.contains('filled')) {
+        const slotData = slot.dataset.slot; // e.g. "hole-2"
+        const index = parseInt(slotData.split('-')[1]);
+        // Toggle replace mode: click same slot again to cancel
+        if (state.liveReplaceTarget && state.liveReplaceTarget.group === 'hole' && state.liveReplaceTarget.index === index) {
+          state.liveReplaceTarget = null;
+        } else {
+          state.liveReplaceTarget = { group: 'hole', index };
+        }
+      } else {
+        state.liveReplaceTarget = null;
+        state.liveCardTarget = 'hole';
+      }
       renderLiveCardSlots();
     });
-    document.getElementById('live-board-cards')?.addEventListener('click', () => {
-      state.liveCardTarget = 'board';
+    document.getElementById('live-board-cards')?.addEventListener('click', (e) => {
+      const slot = e.target.closest('.live-card-slot');
+      if (slot && slot.classList.contains('filled')) {
+        const slotData = slot.dataset.slot; // e.g. "board-1"
+        const index = parseInt(slotData.split('-')[1]);
+        if (state.liveReplaceTarget && state.liveReplaceTarget.group === 'board' && state.liveReplaceTarget.index === index) {
+          state.liveReplaceTarget = null;
+        } else {
+          state.liveReplaceTarget = { group: 'board', index };
+        }
+      } else {
+        state.liveReplaceTarget = null;
+        state.liveCardTarget = 'board';
+      }
       renderLiveCardSlots();
     });
 
@@ -1155,6 +1306,7 @@ const PlayAdvisor = (function() {
     renderLiveCardPicker();
     renderLiveCardSlots();
     updateLiveResult();
+    initCardPickerLoupe();
 
     // Analytics toggle
     document.getElementById('analytics-toggle')?.addEventListener('click', toggleAnalytics);
