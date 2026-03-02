@@ -59,6 +59,24 @@ The operator should NOT have to execute any test commands. The agent handles all
 | `../Poker-Data-Architecture-Design.docx` | Architecture documentation |
 | `PLAY_ADVISOR_PLAN.md` | **Play Advisor feature plan (phases, model assignments)** |
 | `PLAY_ADVISOR_DESIGN.md` | Play Advisor technical architecture |
+| `TESTING_REQUIREMENTS.md` | **Style testing requirements for VISUAL_REPORT.html** |
+
+---
+
+## ⚠️ Style Testing / VISUAL_REPORT.html Requirements
+
+**READ `TESTING_REQUIREMENTS.md` before running style tests or generating the visual report.**
+
+Key points:
+- Must be a **full game simulation** (not unit tests of the decision engine)
+- **≥2,000 hands per configuration** for statistical significance
+- **50,000+ total hands** across all configurations
+- **Real deal/blind rotation**, full street progression, stack tracking
+- Cover **all variants** (PLO4/5/6), **all table sizes** (2-9p), **all 6 styles**
+- At smaller tables, run **all C(6,k) style matchup combinations**
+- Each decision goes through the **full Play Advisor pipeline** (not static params)
+- Track BB/100, VPIP, PFR, aggression factor, fold rates, showdown win rate
+- Generate Chart.js visual report with cross-variant, heads-up, and multiway sections
 
 ---
 

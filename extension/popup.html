@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokerNow Play Advisor</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+
+    <!-- Header -->
+    <div class="header">
+      <h1>Play Advisor</h1>
+      <span class="version">v1.0</span>
+    </div>
+
+    <!-- Mode Toggle -->
+    <div class="section">
+      <label class="section-label">Mode</label>
+      <div class="mode-toggle">
+        <button class="mode-btn" data-mode="off">Off</button>
+        <button class="mode-btn" data-mode="a1">A1 Auto</button>
+        <button class="mode-btn" data-mode="a2">A2 Advise</button>
+      </div>
+    </div>
+
+    <!-- Style Selector -->
+    <div class="section">
+      <label class="section-label" for="style-select">Playing Style</label>
+      <select id="style-select">
+        <option value="nit">Nit — 20% VPIP (Ultra-Tight)</option>
+        <option value="rock">Rock — 20% VPIP (Tight-Passive)</option>
+        <option value="reg">Reg — 25% VPIP (Solid Regular)</option>
+        <option value="tag" selected>TAG — 25% VPIP (Tight-Aggressive)</option>
+        <option value="lag">LAG — 35% VPIP (Loose-Aggressive)</option>
+        <option value="fish">Fish — 50% VPIP (Loose-Passive)</option>
+      </select>
+    </div>
+
+    <!-- Game Variant -->
+    <div class="section">
+      <label class="section-label" for="variant-select">Game Variant</label>
+      <select id="variant-select">
+        <option value="omaha4" selected>PLO-4 (4 cards)</option>
+        <option value="omaha5">PLO-5 (5 cards)</option>
+        <option value="omaha6">PLO-6 (6 cards)</option>
+      </select>
+    </div>
+
+    <!-- API URL -->
+    <div class="section">
+      <label class="section-label" for="api-url">API URL</label>
+      <input type="text" id="api-url" value="https://poker-simulator-gamma.vercel.app/api/advise" spellcheck="false">
+      <div class="api-shortcuts">
+        <button class="small-btn" id="btn-prod">Production</button>
+        <button class="small-btn" id="btn-local">Localhost</button>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="section">
+      <label class="checkbox-label">
+        <input type="checkbox" id="log-hands" checked>
+        <span>Log hands</span>
+      </label>
+    </div>
+
+    <!-- Actions -->
+    <div class="section actions">
+      <button class="action-btn" id="btn-health">
+        <span class="dot" id="health-dot"></span>
+        API Health Check
+      </button>
+      <button class="action-btn" id="btn-logs">
+        View Logs <span class="badge" id="log-count">0</span>
+      </button>
+      <button class="action-btn danger" id="btn-clear-logs">Clear Logs</button>
+    </div>
+
+    <!-- Status -->
+    <div class="status-bar" id="status-bar">
+      Ready
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

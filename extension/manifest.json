@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "PokerNow Play Advisor",
+  "version": "1.0.0",
+  "description": "A1/A2 copilot for PLO poker on PokerNow.club — auto-pilot or advisory overlay powered by the Play Advisor engine.",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://www.pokernow.club/*",
+    "https://www.pokernow.com/*",
+    "https://pokernow.club/*",
+    "https://pokernow.com/*",
+    "https://poker-simulator-gamma.vercel.app/*",
+    "http://localhost:3001/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.pokernow.club/*", "https://www.pokernow.com/*", "https://pokernow.club/*", "https://pokernow.com/*"],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "PokerNow Play Advisor",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

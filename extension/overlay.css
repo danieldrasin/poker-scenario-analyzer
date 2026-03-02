@@ -1,0 +1,320 @@
+/* PokerNow Play Advisor — In-Game Overlay Panel (A2 Advisory Mode) */
+/* Class names match content.js: #pokernow-advisor-overlay, .advisor-* */
+
+/* ── Container ───────────────────────────────────────────── */
+
+#pokernow-advisor-overlay {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  top: auto !important;
+  width: 300px !important;
+  max-height: 460px !important;
+  overflow-y: auto !important;
+  z-index: 2147483647 !important;
+  background: rgba(20, 20, 40, 0.96) !important;
+  border: 2px solid rgba(0, 212, 170, 0.5) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 212, 170, 0.15) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 13px !important;
+  color: #e0e0e0 !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  animation: paSlideIn 0.3s ease-out !important;
+  pointer-events: auto !important;
+  box-sizing: border-box !important;
+}
+
+@keyframes paSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+
+#pokernow-advisor-overlay .advisor-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(0, 212, 170, 0.08) !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+#pokernow-advisor-overlay .advisor-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  color: #00d4aa !important;
+}
+
+#pokernow-advisor-overlay .advisor-mode-badge {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  background: #00d4aa !important;
+  color: #1a1a2e !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+}
+
+#pokernow-advisor-overlay .advisor-close {
+  width: 22px !important;
+  height: 22px !important;
+  border: none !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #888 !important;
+  font-size: 16px !important;
+  line-height: 22px !important;
+  text-align: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+#pokernow-advisor-overlay .advisor-close:hover {
+  background: #e74c3c !important;
+  color: #fff !important;
+}
+
+/* ── Body ────────────────────────────────────────────────── */
+
+#pokernow-advisor-overlay .advisor-body {
+  padding: 10px 12px !important;
+}
+
+/* ── Action Row ──────────────────────────────────────────── */
+
+#pokernow-advisor-overlay .advisor-action-row {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  margin-bottom: 8px !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+#pokernow-advisor-overlay .advisor-action {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+}
+
+#pokernow-advisor-overlay .advisor-confidence {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #888 !important;
+}
+
+/* ── Cards Row ───────────────────────────────────────────── */
+
+#pokernow-advisor-overlay .advisor-cards-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-bottom: 4px !important;
+  font-size: 13px !important;
+}
+
+#pokernow-advisor-overlay .advisor-label {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: #666 !important;
+}
+
+#pokernow-advisor-overlay .advisor-cards {
+  font-weight: 700 !important;
+  font-family: 'SF Mono', Monaco, Consolas, monospace !important;
+  color: #ddd !important;
+}
+
+/* ── Sizing ──────────────────────────────────────────────── */
+
+#pokernow-advisor-overlay .advisor-sizing {
+  font-size: 12px !important;
+  color: #f39c12 !important;
+  font-weight: 600 !important;
+  margin: 6px 0 !important;
+}
+
+/* ── Reasoning ───────────────────────────────────────────── */
+
+#pokernow-advisor-overlay .advisor-reasoning {
+  margin: 8px 0 !important;
+  padding: 8px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-radius: 6px !important;
+}
+
+#pokernow-advisor-overlay .advisor-reason-primary {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  color: #ccc !important;
+  margin-bottom: 4px !important;
+}
+
+#pokernow-advisor-overlay .advisor-reason-math {
+  font-size: 11px !important;
+  color: #888 !important;
+  font-family: 'SF Mono', Monaco, Consolas, monospace !important;
+}
+
+#pokernow-advisor-overlay .advisor-reason-strategic {
+  font-size: 11px !important;
+  color: #999 !important;
+  font-style: italic !important;
+  margin-top: 4px !important;
+}
+
+/* ── Warnings ────────────────────────────────────────────── */
+
+#pokernow-advisor-overlay .advisor-warnings {
+  margin: 6px 0 !important;
+}
+
+#pokernow-advisor-overlay .advisor-warning-item {
+  font-size: 11px !important;
+  color: #f39c12 !important;
+  padding: 4px 8px !important;
+  background: rgba(243, 156, 18, 0.1) !important;
+  border-radius: 4px !important;
+  margin-bottom: 3px !important;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+
+#pokernow-advisor-overlay .advisor-btn-row {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 10px !important;
+}
+
+#pokernow-advisor-overlay .advisor-btn {
+  flex: 1 !important;
+  padding: 10px 8px !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  cursor: pointer !important;
+  text-align: center !important;
+}
+
+#pokernow-advisor-overlay .advisor-btn-accept {
+  background: #00d4aa !important;
+  color: #1a1a2e !important;
+}
+
+#pokernow-advisor-overlay .advisor-btn-accept:hover {
+  background: #00e8bb !important;
+  box-shadow: 0 0 12px rgba(0, 212, 170, 0.4) !important;
+}
+
+#pokernow-advisor-overlay .advisor-btn-override {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #888 !important;
+}
+
+#pokernow-advisor-overlay .advisor-btn-override:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ccc !important;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+
+#pokernow-advisor-overlay::-webkit-scrollbar {
+  width: 4px !important;
+}
+
+#pokernow-advisor-overlay::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+#pokernow-advisor-overlay::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 170, 0.3) !important;
+  border-radius: 2px !important;
+}
+
+/* ── Persistent Idle Badge ───────────────────────────────── */
+
+#pokernow-advisor-idle {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  top: auto !important;
+  z-index: 2147483646 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 14px !important;
+  background: rgba(20, 20, 40, 0.9) !important;
+  border: 1px solid rgba(0, 212, 170, 0.3) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 11px !important;
+  color: #888 !important;
+  pointer-events: auto !important;
+  cursor: default !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+#pokernow-advisor-idle .advisor-idle-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #00d4aa !important;
+  box-shadow: 0 0 6px rgba(0, 212, 170, 0.5) !important;
+  display: inline-block !important;
+  animation: paPulse 2s ease-in-out infinite !important;
+}
+
+@keyframes paPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+#pokernow-advisor-idle .advisor-idle-text {
+  font-weight: 700 !important;
+  color: #00d4aa !important;
+  letter-spacing: 0.5px !important;
+}
+
+#pokernow-advisor-idle .advisor-idle-mode {
+  background: rgba(0, 212, 170, 0.15) !important;
+  color: #00d4aa !important;
+  padding: 1px 5px !important;
+  border-radius: 3px !important;
+  font-weight: 700 !important;
+  font-size: 10px !important;
+}
+
+#pokernow-advisor-idle .advisor-idle-style {
+  color: #aaa !important;
+  font-weight: 600 !important;
+}
+
+#pokernow-advisor-idle .advisor-idle-status {
+  color: #666 !important;
+  font-style: italic !important;
+}

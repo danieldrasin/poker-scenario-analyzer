@@ -1,0 +1,271 @@
+/* PokerNow Play Advisor — Popup Styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  background: #1a1a2e;
+  color: #e0e0e0;
+}
+
+.popup-container {
+  padding: 16px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.header h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #00d4aa;
+  letter-spacing: 0.5px;
+}
+
+.version {
+  font-size: 11px;
+  color: #666;
+  background: #2a2a4a;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* ── Sections ────────────────────────────────────────────── */
+
+.section {
+  margin-bottom: 14px;
+}
+
+.section-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+/* ── Mode Toggle ─────────────────────────────────────────── */
+
+.mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: #16213e;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  color: #ccc;
+  background: #1a2a4e;
+}
+
+.mode-btn.active[data-mode="off"] {
+  background: #444;
+  color: #fff;
+}
+
+.mode-btn.active[data-mode="a1"] {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.mode-btn.active[data-mode="a2"] {
+  background: #00d4aa;
+  color: #1a1a2e;
+}
+
+/* ── Select Dropdowns ────────────────────────────────────── */
+
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  background: #16213e;
+  color: #e0e0e0;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+select:focus {
+  border-color: #00d4aa;
+}
+
+/* ── Text Input ──────────────────────────────────────────── */
+
+input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  background: #16213e;
+  color: #e0e0e0;
+  font-size: 12px;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  outline: none;
+}
+
+input[type="text"]:focus {
+  border-color: #00d4aa;
+}
+
+.api-shortcuts {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.small-btn {
+  padding: 4px 10px;
+  border: 1px solid #2a2a4a;
+  border-radius: 4px;
+  background: #16213e;
+  color: #888;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.small-btn:hover {
+  border-color: #00d4aa;
+  color: #00d4aa;
+}
+
+/* ── Checkbox ────────────────────────────────────────────── */
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  accent-color: #00d4aa;
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Action Buttons ──────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  background: #16213e;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.action-btn:hover {
+  border-color: #00d4aa;
+  color: #fff;
+}
+
+.action-btn.danger {
+  border-color: #4a2020;
+  color: #888;
+}
+
+.action-btn.danger:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+/* ── Health Dot ──────────────────────────────────────────── */
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #555;
+  display: inline-block;
+}
+
+.dot.online {
+  background: #00d4aa;
+  box-shadow: 0 0 6px #00d4aa;
+}
+
+.dot.offline {
+  background: #e74c3c;
+  box-shadow: 0 0 6px #e74c3c;
+}
+
+.dot.checking {
+  background: #f39c12;
+  animation: pulse 0.8s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Badge ───────────────────────────────────────────────── */
+
+.badge {
+  background: #2a2a4a;
+  color: #888;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ── Status Bar ──────────────────────────────────────────── */
+
+.status-bar {
+  margin-top: 14px;
+  padding: 8px 12px;
+  background: #16213e;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}
