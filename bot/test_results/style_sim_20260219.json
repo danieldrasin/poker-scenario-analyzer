@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-02-19T13:54:13.989Z",
+  "totalHands": 216000,
+  "configs": 108,
+  "elapsed": 15.064,
+  "styleSummary": [
+    {
+      "style": "nit",
+      "hands": 84262,
+      "avgBB100": 1.4430882248225771,
+      "configs": 48
+    },
+    {
+      "style": "rock",
+      "hands": 89451,
+      "avgBB100": -13.4143832936468,
+      "configs": 48
+    },
+    {
+      "style": "reg",
+      "hands": 78819,
+      "avgBB100": 13.854844644057904,
+      "configs": 48
+    },
+    {
+      "style": "tag",
+      "hands": 71492,
+      "avgBB100": 11.627594695910032,
+      "configs": 48
+    },
+    {
+      "style": "lag",
+      "hands": 63249,
+      "avgBB100": 10.004861736944457,
+      "configs": 48
+    },
+    {
+      "style": "fish",
+      "hands": 74406,
+      "avgBB100": -19.86244388893369,
+      "configs": 48
+    }
+  ]
+}

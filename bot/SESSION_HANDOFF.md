@@ -1,6 +1,6 @@
 # Play Advisor Validation - Session Handoff
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-02-16
 **Purpose:** Continuation prompt for new Cowork session
 **Root Directory:** `/Users/DanDrasin/projects/smalltalk stuff/poker`
 
@@ -8,32 +8,40 @@
 
 ## Quick Start Prompt
 
-Copy this entire section to start a new session:
+Copy everything between the triple-backtick fences to start a new session:
 
 ```
 I'm continuing work on the Poker Scenario Analyzer Play Advisor validation.
 
-Please read the handoff document at:
+Please read the handoff document first:
 poker-simulator/bot/SESSION_HANDOFF.md
 
+Working directory: /Users/DanDrasin/projects/smalltalk stuff/poker
+Main app lives in poker-simulator/ subdirectory.
+
 Key context:
-- Working directory: /Users/DanDrasin/projects/smalltalk stuff/poker
-- Main app is in poker-simulator/ subdirectory
-- Bot testing uses PyPokerEngine (local) + Play Advisor API (localhost:3001)
+- Bot testing uses `clubs` Python library for proper PLO4/5/6 dealing + Play Advisor API (localhost:3001)
 - Start advisor server: node poker-simulator/bot/LocalAdvisorServer.js
-- Framework has 3 styles: rock (tight-passive), tag (tight-aggressive), lag (loose-aggressive)
+- Framework has 6 styles defined in poker-simulator/api/lib/StyleProfiles.js:
+  nit, rock, reg, tag, lag, fish — each with variant-specific thresholds
+- The single source of truth for style behavior is StyleProfiles.js
+- Test runner: poker-simulator/bot/OmahaTestRunner.py (uses `clubs`)
+- Previous test runner (StyleBasedTestRunner.py) is superseded
 
 Available tools:
-- Use Bash/Desktop Commander for running Python tests and shell commands
-- Use Claude in Chrome for operator-assisted PokerNow testing (browser automation)
-- Use xlsx/docx/pdf skills for creating reports and spreadsheets
+- Bash — for running Python tests and local shell commands inside the sandbox
+- **Desktop Commander** — REQUIRED for git push and vercel deploy (runs on host Mac where credentials live via macOS Keychain). Use `mcp__desktop-commander__start_process` for these.
+- Claude in Chrome — for operator-assisted PokerNow browser automation
+- xlsx / docx / pdf skills — for creating reports and spreadsheets
 
 Current priorities:
-1. Operator-assisted testing on PokerNow (requires manual CAPTCHA bypass, then agent controls browser)
-2. Strategy tuning based on simulation results
-3. UI improvements for the Scenario Builder
+1. Operator-assisted testing on PokerNow (operator handles CAPTCHA, agent controls browser gameplay via Claude in Chrome)
+2. Strategy tuning — threshold calibration per variant to hit real-world VPIP targets
+3. UI improvements for the Scenario Builder and Play Advisor tabs
 
-IMPORTANT: The agent should RUN tests directly, not provide instructions for me to run.
+IMPORTANT directives:
+- The agent should RUN tests directly, never provide instructions for the operator to run.
+- Use absolute paths with /Users/DanDrasin/ (not ~) per user preference.
 ```
 
 ---
@@ -41,15 +49,44 @@ IMPORTANT: The agent should RUN tests directly, not provide instructions for me 
 ## Project Overview
 
 ### What This Is
-A Poker Scenario Analyzer with:
-- Monte Carlo simulation engine for Omaha (4/5/6-card)
-- **Play Advisor API** - real-time hand analysis and recommendations
-- Web UI for scenario building and probability matrix
-- Bot testing framework for strategy validation
+A Poker Scenario Analyzer for Omaha (PLO4/5/6) with:
+- Monte Carlo simulation engine (TypeScript)
+- **Play Advisor API** — real-time hand analysis and action recommendations
+- Web UI — Scenario Builder, Play Advisor, Probability Matrix, Saved Analysis tabs
+- Bot testing framework — multi-style simulation for strategy validation
+- AI coaching with BYOK (Anthropic / OpenAI / Gemini / Groq)
+- Tiered data storage: Tier 1 (bundled JSON), Tier 2 (Cloudflare R2), Tier 3 (live API)
 
 ### Deployment
 - **Live app:** https://poker-simulator-gamma.vercel.app
+- **GitHub:** https://github.com/danieldrasin/poker-scenario-analyzer.git
 - **Local advisor:** http://localhost:3001/api/advise
+
+### Deploy Credentials
+**CRITICAL — Deploy via Desktop Commander, NOT Bash:**
+Git and Vercel credentials are on the host Mac (macOS Keychain + Vercel CLI auth).
+The Cowork sandbox (Bash tool) CANNOT access these credentials.
+You MUST use the **Desktop Commander MCP tools** (`mcp__desktop-commander__start_process`)
+to run git and vercel commands — this executes on the actual Mac where auth works.
+
+Example git push:
+```
+mcp__desktop-commander__start_process:
+  command: cd "/Users/DanDrasin/projects/smalltalk stuff/poker/poker-simulator" && git add -A && git commit -m "message" && git push
+  timeout_ms: 30000
+```
+
+Example vercel deploy:
+```
+mcp__desktop-commander__start_process:
+  command: cd "/Users/DanDrasin/projects/smalltalk stuff/poker/poker-simulator" && vercel --prod
+  timeout_ms: 120000
+```
+
+- Git credential helper: `osxkeychain` (configured in git config)
+- Vercel CLI: `/opt/homebrew/bin/vercel`, logged in as `danieldrasin`
+- GitHub remote: `https://github.com/danieldrasin/poker-scenario-analyzer.git`
+- See `poker-simulator/CLAUDE.md` for full deploy workflow
 
 ---
 
@@ -62,75 +99,96 @@ All paths relative to `/Users/DanDrasin/projects/smalltalk stuff/poker`
 |------|---------|
 | `poker-simulator/PLAY_ADVISOR_DESIGN.md` | Technical architecture for Play Advisor |
 | `poker-simulator/PLAY_ADVISOR_PLAN.md` | Feature roadmap and phases |
-| `poker-simulator/CLAUDE.md` | AI assistant instructions (includes testing directive) |
+| `poker-simulator/CLAUDE.md` | AI assistant instructions (includes testing directive, deploy workflow) |
 | `Poker-Data-Architecture-Design.docx` | Overall data architecture |
+
+### Style System (Single Source of Truth)
+| File | Purpose |
+|------|---------|
+| `poker-simulator/api/lib/StyleProfiles.js` | **AUTHORITATIVE** — 6 style definitions with variant-specific thresholds, equity adjustments, sizing multipliers |
+| `poker-simulator/api/lib/ActionRecommender.js` | Style-aware decision logic (imports StyleProfiles, adjusts equity thresholds per style) |
+| `poker-simulator/api/lib/BetSizer.js` | Bet sizing (uses style sizing multipliers) |
 
 ### Core Implementation
 | File | Purpose |
 |------|---------|
 | `poker-simulator/api/advise.js` | Play Advisor API endpoint |
-| `poker-simulator/api/lib/ActionRecommender.js` | Decision logic (equity, pot odds, SPR) |
-| `poker-simulator/api/lib/BetSizer.js` | Bet sizing calculations |
-| `poker-simulator/packages/web/src/public/app.js` | Frontend with style definitions (lines 240-258) |
+| `poker-simulator/packages/web/src/public/app.js` | Main frontend JS |
 | `poker-simulator/packages/web/src/public/play-advisor.js` | Play Advisor UI tab |
+| `poker-simulator/packages/web/src/public/index.html` | Main HTML (Style dropdown on Play Advisor tab) |
+| `poker-simulator/packages/web/src/public/poker-stats.js` | Statistics calculations |
 
 ### Bot Testing Framework
 | File | Purpose |
 |------|---------|
-| `poker-simulator/bot/StyleBasedTestRunner.py` | **PRIMARY** - Tests using actual styles (rock/tag/lag) |
+| `poker-simulator/bot/OmahaTestRunner.py` | **PRIMARY** — Tests using `clubs` library, proper PLO4/5/6, button rotation, full betting sequences |
+| `poker-simulator/bot/StyleBasedTestRunner.py` | **SUPERSEDED** — earlier runner using PyPokerEngine (Hold'em engine, not real Omaha) |
 | `poker-simulator/bot/LocalAdvisorServer.js` | Local Play Advisor server for testing |
-| `poker-simulator/bot/PyPokerEngineAdapter.py` | Adapter for PyPokerEngine integration |
-| `poker-simulator/bot/STYLE_TESTING_REPORT.md` | Latest test results and analysis |
-| `poker-simulator/bot/test_results/*.json` | Raw test data |
+| `poker-simulator/bot/STYLE_TESTING_REPORT.md` | Latest comprehensive test results (56K hands) |
+| `poker-simulator/bot/test_results/*.json` | Raw test data (JSON) |
 
 ### Operator-Assisted Testing (Planned)
 | File | Purpose |
 |------|---------|
-| `poker-simulator/bot/PokerNowAutomation.js` | Playwright automation for PokerNow |
+| `poker-simulator/bot/PokerNowAutomation.js` | Playwright automation for PokerNow (reference) |
 | `poker-simulator/bot/OwnerAutomation.js` | Owner-assisted login with CAPTCHA handling |
 
 ---
 
-## Framework Styles (From app.js)
+## Style System (6 Styles)
 
-```javascript
-styleThreshold: { 'rock': 75, 'tag': 55, 'lag': 40 },
-styleVPIP: { 'rock': '~15%', 'tag': '~25%', 'lag': '~38%' },
-```
+The style system was expanded from the original 3 (rock/tag/lag) to 6 archetypes.
+**StyleProfiles.js** is the single source of truth used by both the API and the test runner.
 
-| Style | Threshold | VPIP | Description |
-|-------|-----------|------|-------------|
-| rock | 75 | ~15% | Tight-Passive - only premium hands |
-| tag | 55 | ~25% | Tight-Aggressive - selective, aggressive |
-| lag | 40 | ~38% | Loose-Aggressive - wide range, aggressive |
+| Style | VPIP Target | PFR Ratio | Aggression | Description |
+|-------|-------------|-----------|------------|-------------|
+| **nit** | ~20% | 70% | 0.70x | Ultra-tight, folds most marginal spots |
+| **rock** | ~20% | 45% | 0.50x | Same tight selection, but passive postflop |
+| **reg** | ~25% | 75% | 1.00x | Baseline solid player, balanced |
+| **tag** | ~28% | 72% | 1.10x | Selective + aggressive, classic winning style |
+| **lag** | ~35% | 65% | 1.25x | Wide range, high aggression, high variance |
+| **fish** | ~50% | 25% | 0.40x | Too many hands, too passive, recreational |
+
+### Variant-Specific Thresholds (from StyleProfiles.js)
+
+| Style | PLO4 | PLO5 | PLO6 |
+|-------|------|------|------|
+| nit | 55.0 | 65.5 | 73.0 |
+| rock | 55.0 | 65.5 | 73.0 |
+| reg | 53.6 | 63.9 | 71.3 |
+| tag | 52.0 | 62.0 | 69.5 |
+| lag | 50.5 | 61.0 | 68.5 |
+| fish | 46.5 | 56.7 | 64.3 |
 
 ---
 
-## Current Test Results
+## Current Test Results (56K Hands)
 
-### Basic Style Performance (500 hands)
-| Style | BB/100 | Win Rate | Notes |
-|-------|--------|----------|-------|
-| TAG | +10,736 | 41.4% | Best overall |
-| Rock | +6,027 | 39.0% | Solid but passive |
-| LAG | -32,305 | 19.6% | Too loose in test env |
+### Key Findings (from STYLE_TESTING_REPORT.md)
 
-### Table Composition Insights
-- **TAG** performs best against LAG-heavy tables
-- **LAG** dominates rock-heavy tables (+23,757 BB/100)
-- **Rock** struggles against any aggression
-- Strategy selection should be adaptive based on opponents
+**Heads-Up Rankings:** TAG > LAG > Rock across all variants
 
-### Statistical Note
-- ~6,272 hands needed per player for 95% confidence
-- Current tests are 5-8% of recommended sample size
+**Multi-player Insights:**
+- **TAG** dominates shorter tables (3-5 players)
+- **LAG** dominates larger tables (7-9 players) — aggression steals more pots
+- **Rock** is consistently the weakest style, especially in PLO5/6
+- **TAG is the most consistent overall** — always positive average
+
+### VPIP Calibration Issue
+Current thresholds produce VPIPs well above real-world targets, especially in PLO5/6.
+Recommended threshold increases are documented in STYLE_TESTING_REPORT.md.
+
+### Statistical Quality
+- 2,000 hands per configuration, 28 configurations, 56,000 total hands
+- For 95% confidence detecting 5 BB/100 difference: ~6,272 hands per config recommended
+- Confidence intervals are wide (±50-200 BB/100) — typical for Omaha variance
 
 ---
 
 ## Next Steps
 
-### 1. Operator-Assisted Live Testing
-**Goal:** Test Play Advisor against real opponents on PokerNow
+### 1. Operator-Assisted Live Testing on PokerNow
+**Goal:** Test Play Advisor against real opponents
 
 **Challenge:** PokerNow has reCAPTCHA that blocks pure automation
 
@@ -138,147 +196,126 @@ styleVPIP: { 'rock': '~15%', 'tag': '~25%', 'lag': '~38%' },
 1. Operator opens PokerNow in Chrome and manually logs in / bypasses CAPTCHA
 2. Operator joins or creates a poker table
 3. Agent uses `Claude in Chrome` MCP tools to:
-   - `tabs_context_mcp` - Get the tab with PokerNow
-   - `read_page` / `find` - Read game state (cards, pot, actions)
-   - `computer` - Click buttons, enter bet amounts
-   - `screenshot` - Capture game state for analysis
+   - `tabs_context_mcp` — get the tab with PokerNow
+   - `read_page` / `find` — read game state (cards, pot, actions)
+   - `computer` — click buttons, enter bet amounts
+   - `screenshot` — capture game state for analysis
 4. Agent calls Play Advisor API (localhost:3001) for recommendations
 5. Agent executes recommended actions via browser automation
 6. Operator monitors and can intervene if needed
 
-**Claude in Chrome workflow:**
-```
-1. tabs_context_mcp → get tab ID for PokerNow
-2. read_page(tabId) → extract game state (hole cards, board, pot)
-3. POST to localhost:3001/api/advise with game state
-4. Get recommendation (fold/call/raise + sizing)
-5. find(tabId, "fold button") or find(tabId, "raise slider")
-6. computer(action="left_click", ...) to execute action
-7. Repeat for each decision point
-```
-
 **Files to review:**
-- `poker-simulator/bot/PokerNowAutomation.js` - existing Playwright code (for reference)
-- `poker-simulator/bot/OwnerAutomation.js` - owner-assisted login flow
+- `poker-simulator/bot/PokerNowAutomation.js` — existing Playwright code (for reference)
+- `poker-simulator/bot/OwnerAutomation.js` — owner-assisted login flow
 
 ### 2. Strategy Tuning
-**Goal:** Improve style definitions based on test data
+**Goal:** Calibrate style thresholds to match real-world VPIP targets
 
-**Areas to explore:**
-- Adjust Rock threshold (75 may be too tight)
-- Calibrate LAG aggression factor
-- Add opponent modeling
-- Implement adaptive style switching
+**Known issues (from testing):**
+- PLO5/6 thresholds too low → all styles play too many hands
+- Rock/Nit need higher thresholds to achieve 15-20% VPIP
+- LAG enters nearly every pot in PLO5/6 (observed ~95-100% VPIP vs target ~35%)
+
+**Approach:**
+- Adjust thresholds in `StyleProfiles.js` (the single source of truth)
+- Run `OmahaTestRunner.py` to validate
+- Iterate until observed VPIP matches targets
 
 ### 3. UI Improvements
 **Goal:** Enhance Scenario Builder and Play Advisor tabs
 
 **Potential improvements:**
 - Show confidence intervals in results
-- Add table composition selector
-- Visualize strategy performance
+- Visualize strategy performance across compositions
 - Better mobile responsiveness
+- The Play Advisor tab now includes a Style dropdown (nit/rock/reg/tag/lag/fish)
 
 ---
 
 ## Running Tests (Agent Should Execute These)
 
 ```bash
-# Start Play Advisor server
+# Start Play Advisor server (if needed for API-assisted tests)
 cd "/Users/DanDrasin/projects/smalltalk stuff/poker/poker-simulator/bot"
 node LocalAdvisorServer.js &
 
-# Run style-based tests (from poker-simulator/bot directory)
-python3 StyleBasedTestRunner.py 1000
+# Full comprehensive test (28 configs × 2000 hands = 56K hands, ~3.5 min)
+python3 OmahaTestRunner.py fulltest 2000
 
-# Run table composition analysis
-python3 -c "from StyleBasedTestRunner import run_table_composition_test; run_table_composition_test(num_hands=500)"
+# Quick single test
+python3 OmahaTestRunner.py 4 6 500    # PLO4, 6 players, 500 hands
+
+# Custom hand count
+python3 OmahaTestRunner.py fulltest 5000  # 5000 hands per config (~9 min)
 ```
 
-Or from the root poker directory:
-```bash
-# Start server
-node poker-simulator/bot/LocalAdvisorServer.js &
+### Dependencies
 
-# Run tests
-cd poker-simulator/bot && python3 StyleBasedTestRunner.py 1000
+```bash
+# Python (for bot testing)
+pip3 install clubs numpy requests --break-system-packages
+
+# Node (for Play Advisor server)
+# Already installed in poker-simulator/
 ```
 
 ---
 
 ## Important Directives
 
-1. **Agent runs tests** - Do NOT tell operator to run commands
-2. **Use actual styles** - rock, tag, lag (not made-up strategies)
-3. **Track statistics** - Include confidence intervals, sample sizes
-4. **Document changes** - Update STYLE_TESTING_REPORT.md with findings
-
----
-
-## Dependencies
-
-```bash
-# Python (for bot testing)
-pip3 install PyPokerEngine requests --break-system-packages
-
-# Node (for Play Advisor server)
-# Already installed in project
-```
+1. **Agent runs tests** — Do NOT tell the operator to run commands
+2. **Use actual styles from StyleProfiles.js** — nit, rock, reg, tag, lag, fish (never invent new ones)
+3. **Track statistics** — Include confidence intervals, observed VPIP, sample sizes
+4. **StyleProfiles.js is the single source of truth** — update it for threshold changes
+5. **Use absolute paths** with `/Users/DanDrasin/` (not `~`) per user preference
+6. **Document changes** — Update STYLE_TESTING_REPORT.md with new findings
 
 ---
 
 ## Available Connectors (MCP Servers)
 
-The following connectors are available in Cowork for this project:
-
 ### Browser Automation
 | Connector | Purpose |
 |-----------|---------|
-| **Claude in Chrome** | Full browser automation - screenshots, clicking, typing, navigation, reading page content. **Essential for PokerNow testing.** |
+| **Claude in Chrome** | Full browser automation — screenshots, clicking, typing, navigation, reading page accessibility tree. **Essential for PokerNow testing.** |
 | **Control Chrome** | Open URLs, list/switch tabs, execute JavaScript, get page content |
 
 ### File & System Access
 | Connector | Purpose |
 |-----------|---------|
-| **Desktop Commander** | Execute shell commands, read/write files, search, process management. Use for running Python tests. |
-| **Google Drive** | Search and fetch Google Docs (if needed for documentation) |
-| **Apple Notes** | Read/write Apple Notes (if needed) |
+| **Desktop Commander** | Execute shell commands, read/write files, search, process management. Use for running Python tests, installing packages, managing processes. |
+| **Google Drive** | Search and fetch Google Docs |
+| **Apple Notes** | Read/write Apple Notes |
 
 ### Research
 | Connector | Purpose |
 |-----------|---------|
-| **PubMed** | Search biomedical literature (not relevant for poker, but available) |
 | **WebSearch / WebFetch** | Search the web and fetch page content |
+| **PubMed** | Biomedical literature (not relevant for poker) |
 
 **Key for this project:**
-- Use **Desktop Commander** or **Bash** for running Python tests and shell commands
-- Use **Claude in Chrome** for operator-assisted PokerNow testing (browser automation)
+- **Desktop Commander** or **Bash** — for running Python tests and shell commands
+- **Claude in Chrome** — for operator-assisted PokerNow testing (browser automation)
 
 ---
 
 ## Available Skills
 
-Skills provide specialized capabilities for document creation:
+Skills provide specialized capabilities for document creation. Invoke with the Skill tool.
 
 | Skill | Trigger | Use Case |
 |-------|---------|----------|
-| `xlsx` | Spreadsheets, Excel, .xlsx, data tables | Create test result spreadsheets, data analysis |
-| `pdf` | PDF files, .pdf, forms, merge/split | Generate PDF reports |
-| `pptx` | PowerPoint, presentations, slides, decks | Create strategy presentations |
-| `docx` | Word documents, reports, .docx | Create documentation, reports |
+| `xlsx` | Spreadsheets, Excel, .xlsx | Export test results to spreadsheets |
+| `pdf` | PDF files, .pdf | Generate PDF reports |
+| `pptx` | PowerPoint, presentations | Create strategy presentations |
+| `docx` | Word documents, reports | Create documentation |
 | `skill-creator` | Create/improve skills | Build custom skills for poker analysis |
-
-**Invoke skills with:** `skill: "xlsx"` or `skill: "pdf"` etc.
-
-**Relevant for this project:**
-- `xlsx` - Export test results to spreadsheets for analysis
-- `docx` - Create formal reports and documentation
-- `pdf` - Generate PDF summaries
 
 ---
 
 ## Contacts & Resources
 
-- **Vercel Dashboard:** Check deployment status
-- **GitHub:** Source control (if applicable)
+- **Live app:** https://poker-simulator-gamma.vercel.app
+- **GitHub:** https://github.com/danieldrasin/poker-scenario-analyzer.git
 - **PokerNow:** https://www.pokernow.club (live testing target)
+- **Groq API Key:** see `poker-simulator/CLAUDE.md` (stored credentials section)
