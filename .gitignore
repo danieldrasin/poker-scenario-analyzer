@@ -39,9 +39,6 @@ coverage/
 test-results/
 playwright-report/
 
-# Design handoff (reference only, not production code)
-design/
-
 # Mac app bundle (development only)
 Poker Simulator.app/
 .vercel

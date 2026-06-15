@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Omaha Edge — Component Architecture Spec</title>
+<style>
+  :root{
+    --base:#0e1525; --canvas:#0c1320; --surface:#19233a; --surface2:#212d46; --surface3:#27344e;
+    --line:rgba(148,163,184,.13); --line2:rgba(148,163,184,.26);
+    --teal:#00d4aa; --teal-dim:rgba(0,212,170,.13); --teal-line:rgba(0,212,170,.42);
+    --ink:#eef3f9; --ink2:#a3b3c9; --ink3:#647387;
+    --fold:#ef4444; --call:#3b82f6; --raise:#f59e0b; --bet:#22c55e;
+    --mono:ui-monospace,"SF Mono","Menlo","Monaco","Consolas",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:radial-gradient(1100px 700px at 80% -10%,rgba(0,212,170,.08),transparent 60%),var(--canvas);
+    color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  ::selection{background:rgba(0,212,170,.3);}
+  a{color:var(--teal);text-decoration:none;}
+
+  .top{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:13px clamp(18px,5vw,48px);background:rgba(12,19,32,.8);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);}
+  .top .b{display:flex;align-items:center;gap:11px;font-weight:650;letter-spacing:-.01em;}
+  .top .suit{color:var(--teal);font-size:19px;}
+  .top .tag{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--teal);
+    background:var(--teal-dim);border:1px solid var(--teal-line);padding:5px 11px;border-radius:100px;}
+  nav.toc{display:flex;flex-wrap:wrap;gap:6px;}
+  nav.toc a{font-family:var(--mono);font-size:11.5px;color:var(--ink2);border:1px solid var(--line);border-radius:7px;padding:5px 9px;}
+  nav.toc a:hover{border-color:var(--teal-line);color:var(--teal);}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:0 clamp(18px,5vw,40px);}
+  section{padding:clamp(34px,5vw,60px) 0;border-bottom:1px solid var(--line);}
+  h1{font-size:clamp(30px,5vw,46px);line-height:1.05;letter-spacing:-.035em;margin:0 0 16px;}
+  h2{font-size:clamp(22px,3vw,30px);letter-spacing:-.025em;margin:0 0 6px;display:flex;align-items:baseline;gap:12px;}
+  h2 .n{font-family:var(--mono);font-size:15px;color:var(--teal);}
+  h3{font-size:16px;margin:26px 0 10px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;}
+  .modpill{font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--surface2);border:1px solid var(--line2);
+    padding:3px 9px;border-radius:6px;font-weight:600;}
+  p{color:var(--ink2);margin:0 0 14px;max-width:80ch;}
+  .lead{font-size:18px;color:var(--ink);max-width:74ch;}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px;}
+  code{font-family:var(--mono);font-size:.9em;color:var(--teal);background:rgba(0,212,170,.08);padding:1px 5px;border-radius:4px;}
+  .muted{color:var(--ink3);}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0 6px;font-size:13.5px;}
+  th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);
+    font-weight:600;padding:8px 12px;border-bottom:1px solid var(--line2);}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink2);}
+  td:first-child{white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  td code,th code{white-space:nowrap;}
+  .ctype{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid var(--line2);color:var(--ink3);}
+  .ctype.comp{color:var(--teal);border-color:var(--teal-line);background:var(--teal-dim);}
+  .ctype.fn{color:var(--call);border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.1);}
+  .ctype.data{color:var(--raise);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1);}
+
+  .card{background:linear-gradient(180deg,var(--surface),var(--surface2));border:1px solid var(--line);border-radius:14px;padding:4px 18px 8px;margin:14px 0;}
+  .callout{border-left:3px solid var(--teal);background:var(--teal-dim);padding:14px 18px;border-radius:0 12px 12px 0;margin:18px 0;}
+  .callout .l{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--teal);margin-bottom:5px;}
+  .callout p{color:var(--ink);margin:0;font-size:14px;}
+
+  pre{background:#0a111e;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;font-family:var(--mono);
+    font-size:12.5px;line-height:1.65;color:#cdd9ea;margin:14px 0;}
+  pre .k{color:#7dd3fc;} pre .s{color:#86efac;} pre .c{color:var(--ink3);} pre .t{color:var(--teal);}
+
+  /* module dependency map */
+  .map{display:flex;flex-direction:column;gap:8px;margin:18px 0;}
+  .maprow{display:grid;grid-template-columns:170px 1fr;gap:14px;align-items:center;}
+  .modbox{font-family:var(--mono);font-size:12px;font-weight:700;padding:11px 13px;border-radius:11px;border:1px solid var(--line2);
+    background:var(--surface);display:flex;flex-direction:column;gap:3px;}
+  .modbox .dep{font-size:9.5px;font-weight:400;color:var(--ink3);letter-spacing:.04em;}
+  .modbox.kit{border-color:var(--teal-line);background:var(--teal-dim);}
+  .modbox.shell{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08);}
+  .maprow .desc{font-size:13px;color:var(--ink2);}
+  .lvl{display:flex;align-items:center;gap:8px;}
+  .lvl .bar{height:6px;border-radius:3px;background:var(--teal);opacity:.5;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr;}.maprow{grid-template-columns:1fr;}.top nav.toc{display:none;}}
+  .foot{padding:40px 0 70px;color:var(--ink3);font-family:var(--mono);font-size:12px;text-align:center;}
+  .pill{font-family:var(--mono);font-size:11px;color:var(--ink2);border:1px solid var(--line);border-radius:100px;padding:3px 10px;}
+  .tagrow{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 2px;}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="b"><span class="suit">♠</span> Omaha Edge · Architecture Spec</div>
+  <nav class="toc">
+    <a href="#overview">Overview</a>
+    <a href="#map">Modules</a>
+    <a href="#kit">poker-kit</a>
+    <a href="#coach">coach</a>
+    <a href="#play">play</a>
+    <a href="#study">study</a>
+    <a href="#journal">journal</a>
+    <a href="#shell">app</a>
+    <a href="#state">State</a>
+    <a href="#flows">Flows</a>
+  </nav>
+  <span class="tag">Handoff</span>
+</div>
+
+<div class="wrap">
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="eyebrow">Claude Code handoff · component architecture</div>
+    <h1>Omaha Edge — mobile PLO advisor</h1>
+    <p class="lead">A React (UMD + in-browser Babel) prototype. Every screen is a controlled <strong>Body</strong> component with no chrome of its own; a shell composes them inside one device frame. This document lists every module, component, prop, callback, and the shared state contract.</p>
+
+    <div class="grid2" style="margin-top:22px">
+      <div class="card">
+        <h3>Stack &amp; conventions</h3>
+        <table>
+          <tr><td>Runtime</td><td>React 18.3.1 UMD + ReactDOM, Babel standalone (<code>type="text/babel"</code>). No build step.</td></tr>
+          <tr><td>Module sharing</td><td>Each Babel script has its own scope. Cross-file sharing is via <code>window.*</code> (prefixed <code>PK*</code> / <code>pk*</code>). Import order matters.</td></tr>
+          <tr><td>Styling</td><td>Per-module injected <code>&lt;style&gt;</code> with a guard id (<code>pk-kit</code>, <code>pk-coach</code>, <code>pk-study</code>, <code>pk-journal</code>, <code>pk-shell</code>, plus <code>pk-app</code> in play). Tokens are CSS vars on <code>:root</code>.</td></tr>
+          <tr><td>Device frame</td><td>390×844 <code>.pk-screen</code> inside a 414×868 <code>.pk-bezel</code>, JS-scaled to viewport. Owned by the shell/wrappers — never by a Body.</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3>The Body / Wrapper split</h3>
+        <p style="font-size:14px;margin-top:8px"><strong>Body</strong> = header + content only, fully controlled by props. <strong>Wrapper</strong> (<code>*App</code>) = owns the bezel, status bar, tab bar, local state + overlays, and renders one Body. The unified shell renders all three Bodies and keeps them mounted for instant tab switches.</p>
+        <div class="tagrow">
+          <span class="pill">PlayBody → PlayApp</span>
+          <span class="pill">StudyBody → StudyApp</span>
+          <span class="pill">JournalBody → JournalApp</span>
+          <span class="pill">All 3 → UnifiedApp</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULE MAP -->
+  <section id="map">
+    <h2><span class="n">01</span> Module map &amp; load order</h2>
+    <p>Load top-to-bottom. Lower modules depend on <code>window.*</code> exports of the ones above. The standalone <code>*.html</code> files load <code>poker-kit → coach → &lt;that screen&gt;</code>; the unified prototype loads everything.</p>
+    <div class="map">
+      <div class="maprow"><div class="modbox kit">poker-kit.jsx<span class="dep">deps: React</span></div><div class="desc">Foundation — design tokens + CSS, card/atom components, the PLO advisor, and the probability-matrix data model. Pure; depends on nothing else.</div></div>
+      <div class="maprow"><div class="modbox">coach.jsx<span class="dep">deps: poker-kit</span></div><div class="desc">Shared AI Coach sheet + BYOK first-run. Context-aware (hand / play / matrix).</div></div>
+      <div class="maprow"><div class="modbox">play-app.jsx<span class="dep">deps: React · coach (overlay)</span></div><div class="desc">Play mode. Self-contained atoms + advisor copy. Exports <code>PlayBody</code>, <code>PlayApp</code>, <code>pkBuildHandEntry</code>.</div></div>
+      <div class="maprow"><div class="modbox">study-app.jsx<span class="dep">deps: poker-kit · coach</span></div><div class="desc">Study mode (Scenarios + Matrix). Exports <code>StudyBody</code>, <code>StudyApp</code>.</div></div>
+      <div class="maprow"><div class="modbox">journal-app.jsx<span class="dep">deps: poker-kit</span></div><div class="desc">Hand Journal. Exports <code>JournalBody</code>, <code>JournalApp</code>.</div></div>
+      <div class="maprow"><div class="modbox shell">app.jsx<span class="dep">deps: all of the above</span></div><div class="desc">Unified shell — one frame, instant tab switching, shared state, launch splash + walkthrough, cross-tab save/replay. Exports <code>UnifiedApp</code>.</div></div>
+    </div>
+    <div class="callout"><div class="l">Note for refactors</div><p><code>play-app.jsx</code> predates the kit and keeps its <em>own</em> copies of the atoms and <code>advise()</code> (separate Babel scope — no collision). If consolidating, point PlayBody at the <code>poker-kit</code> exports and delete the local copies. Behaviour is identical today.</p></div>
+  </section>
+
+  <!-- POKER-KIT -->
+  <section id="kit">
+    <h2><span class="n">02</span> poker-kit.jsx <span class="modpill">foundation</span></h2>
+    <p>Everything shared. Injected once under <code>&lt;style id="pk-kit"&gt;</code>. All exports below live on <code>window</code>.</p>
+
+    <h3><span class="ctype comp">components</span> Atoms</h3>
+    <table>
+      <tr><th>Export</th><th>Signature / props</th><th>Notes</th></tr>
+      <tr><td><code>PKStatusBar</code></td><td>—</td><td>iOS status bar (10:24, signal, battery).</td></tr>
+      <tr><td><code>PKHomeBar</code></td><td>—</td><td>Home indicator.</td></tr>
+      <tr><td><code>PKCard</code></td><td><code>{rank, suit, variant, w, h, onClick, style}</code></td><td><code>variant</code>: <code>'chip'</code> (dark, 4-colour) or <code>'face'</code> (white playing card).</td></tr>
+      <tr><td><code>PKMiniCard</code></td><td><code>{rank, suit, w=26, h=36}</code></td><td>Compact chip card for lists/threads.</td></tr>
+      <tr><td><code>PKEquityRing</code></td><td><code>{pct, size, thick, accent, children}</code></td><td>Conic-gradient ring; children render in the hole.</td></tr>
+      <tr><td><code>PKTabBar</code></td><td><code>{active, onTab}</code></td><td><code>active</code>: <code>'play'|'study'|'journal'</code>. <code>onTab(id)</code> callback.</td></tr>
+      <tr><td><code>PKSituationSheet</code></td><td><code>{situation, setSituation, close}</code></td><td>Bottom sheet editing position / players / villain style.</td></tr>
+    </table>
+
+    <h3><span class="ctype fn">functions</span> PLO advisor</h3>
+    <table>
+      <tr><th>Export</th><th>Signature</th><th>Returns</th></tr>
+      <tr><td><code>pkEvaluate</code></td><td><code>(cards) → number</code></td><td>Hand-strength score 0–100 (heuristic: pairs, suitedness, connectivity).</td></tr>
+      <tr><td><code>pkAdvise</code></td><td><code>(cards) → adv</code></td><td><code>{ready, equity, action, color, sizing, confidence, potOdds, playability}</code>. <code>action</code>: <code>RAISE|CALL|FOLD</code>; <code>sizing</code>: <code>{to, bb}</code> or <code>null</code>.</td></tr>
+      <tr><td><code>pkReason</code></td><td><code>(cards, adv) → string</code></td><td>One-line natural-language rationale.</td></tr>
+    </table>
+
+    <h3><span class="ctype fn">functions</span> Probability-matrix model</h3>
+    <table>
+      <tr><th>Export</th><th>Signature</th><th>Returns</th></tr>
+      <tr><td><code>pkFieldProb</code></td><td><code>(j, opp) → number</code></td><td>% chance ≥1 of <code>opp</code> opponents makes hand-category <code>j</code>.</td></tr>
+      <tr><td><code>pkOutcome</code></td><td><code>(i, j) → string</code></td><td><code>'win' | 'tie' | 'lose'</code> holding category <code>i</code> vs <code>j</code>.</td></tr>
+      <tr><td><code>pkRowData</code></td><td><code>(i, opp) → {rows, beat, ahead}</code></td><td><code>rows</code>: sorted <code>[{j,label,name,pct,outcome,color}]</code>; <code>ahead/beat</code>: %.</td></tr>
+    </table>
+
+    <h3><span class="ctype data">data</span> Constants</h3>
+    <table>
+      <tr><td><code>PKSUIT</code> / <code>PKFACE</code></td><td>Suit glyph + colour maps (chip deck / white-face deck).</td></tr>
+      <tr><td><code>PKRANKS</code> · <code>pkRv(rank)</code></td><td>Rank list A→2; rank→index helper.</td></tr>
+      <tr><td><code>PK_HAND_CATS</code></td><td>9 made-hand categories <code>[{key, short, name}]</code>, weakest→strongest.</td></tr>
+      <tr><td><code>PK_HEAT</code> · <code>PK_OUTCOME_COLOR</code></td><td>Heat ramp; <code>{win,tie,lose}</code>→CSS var colour.</td></tr>
+    </table>
+  </section>
+
+  <!-- COACH -->
+  <section id="coach">
+    <h2><span class="n">03</span> coach.jsx <span class="modpill">shared overlay</span></h2>
+    <p>Full-height sheet (<code>z-index:12</code>) used by both Play and Study. First-run shows BYOK; thereafter the chat. Injected under <code>pk-coach</code>.</p>
+    <table>
+      <tr><th>Export</th><th>Type</th><th>Props / signature</th><th>Notes</th></tr>
+      <tr><td><code>PKCoachSheet</code></td><td><span class="ctype comp">component</span></td><td><code>{context, close}</code></td><td>Renders <code>ByokScreen</code> until configured, then the iMessage thread. <code>close()</code> dismisses.</td></tr>
+      <tr><td><code>pkCoachConfigured</code></td><td><span class="ctype fn">fn</span></td><td><code>() → bool</code></td><td>True once a key is saved or skipped.</td></tr>
+      <tr><td><code>pkCoachReset</code></td><td><span class="ctype fn">fn</span></td><td><code>()</code></td><td>Clears BYOK (re-triggers first-run).</td></tr>
+      <tr><td><code>PK_PROVIDERS</code></td><td><span class="ctype data">data</span></td><td><code>[{id,name,model,badge,color}]</code></td><td>Groq · OpenAI · Anthropic · Gemini.</td></tr>
+    </table>
+    <h3>The <code>context</code> prop (drives opener + suggested replies)</h3>
+    <pre><span class="c">// from Play (PlayBody)</span>
+{ <span class="k">kind</span>: <span class="s">'play'</span>, <span class="k">name</span>: <span class="s">'this hand'</span>, <span class="k">cards</span>: [{rank,suit}×4] }   <span class="c">// cards omitted until 4 entered</span>
+
+<span class="c">// from Study › Scenarios</span>
+{ <span class="k">kind</span>: <span class="s">'hand'</span>, <span class="k">name</span>: <span class="s">'Aces, double-suited'</span>, <span class="k">cards</span>: [...] }
+
+<span class="c">// from Study › Matrix  (knows the focused category)</span>
+{ <span class="k">kind</span>: <span class="s">'matrix'</span>, <span class="k">category</span>: <span class="s">'Flush'</span>, <span class="k">catIndex</span>: <span class="t">5</span>, <span class="k">ahead</span>: <span class="t">82</span>, <span class="k">beat</span>: <span class="t">18</span>, <span class="k">opp</span>: <span class="t">5</span> }</pre>
+    <p class="muted">Internal: <code>ByokScreen({onSave, onSkip})</code>, <code>buildConversation(context)</code>. Replies are canned/context-aware — swap <code>buildConversation</code> + the <code>answer()</code> path for live provider calls.</p>
+  </section>
+
+  <!-- PLAY -->
+  <section id="play">
+    <h2><span class="n">04</span> play-app.jsx <span class="modpill">Play tab</span></h2>
+    <table>
+      <tr><th>Export</th><th>Type</th><th>Props / signature</th></tr>
+      <tr><td><code>PlayBody</code></td><td><span class="ctype comp">component</span></td><td><code>{mode, setMode, cards, setCards, situation, openSit, openCoach, onSaveHand}</code></td></tr>
+      <tr><td><code>PlayApp</code></td><td><span class="ctype comp">component</span></td><td>— (standalone wrapper; owns frame + nav + sit/coach overlays)</td></tr>
+      <tr><td><code>pkBuildHandEntry</code></td><td><span class="ctype fn">fn</span></td><td><code>(cards, adv) → journalEntry</code></td></tr>
+    </table>
+    <h3>PlayBody props &amp; callbacks</h3>
+    <table>
+      <tr><th>Prop</th><th>Kind</th><th>Purpose</th></tr>
+      <tr><td><code>mode / setMode</code></td><td>state</td><td><code>'starter' | 'expert'</code> view toggle.</td></tr>
+      <tr><td><code>cards / setCards</code></td><td>state</td><td>Hole cards <code>[{rank,suit}]</code> (≤4). Controlled so other tabs can replay into Play.</td></tr>
+      <tr><td><code>situation</code></td><td>data</td><td><code>{pos, players, style}</code> for the header chip.</td></tr>
+      <tr><td><code>openSit()</code></td><td>callback</td><td>Opens the shared situation sheet.</td></tr>
+      <tr><td><code>openCoach(ctx)</code></td><td>callback</td><td>Opens Coach with a <code>kind:'play'</code> context.</td></tr>
+      <tr><td><code>onSaveHand(entry)</code></td><td>callback</td><td>Fired by the swipe-up Save handle when 4 cards are locked.</td></tr>
+    </table>
+    <p class="muted">Internal: <code>StarterView</code> (felt + ring + fan + sheet picker), <code>ExpertView</code> (live strip + keypad + type-notation), <code>SaveHandle({onSave, saved})</code>, plus self-contained atoms and <code>advise/evaluate/parseNotation</code>. Walkthrough anchors: <code>[data-wt="rec"]</code> and <code>[data-wt="save"]</code>.</p>
+  </section>
+
+  <!-- STUDY -->
+  <section id="study">
+    <h2><span class="n">05</span> study-app.jsx <span class="modpill">Study tab</span></h2>
+    <table>
+      <tr><th>Export</th><th>Type</th><th>Props / signature</th></tr>
+      <tr><td><code>StudyBody</code></td><td><span class="ctype comp">component</span></td><td><code>{situation, openSit, openCoach}</code></td></tr>
+      <tr><td><code>StudyApp</code></td><td><span class="ctype comp">component</span></td><td>— (standalone wrapper)</td></tr>
+    </table>
+    <p>StudyBody owns its own sub-tab + selection state (<code>sub</code>, <code>sel</code>, <code>custom</code>, <code>matrixHand</code>) and builds the Coach context from them, calling <code>openCoach(ctx)</code>.</p>
+    <h3>Internal components</h3>
+    <table>
+      <tr><th>Component</th><th>Props</th><th>Role</th></tr>
+      <tr><td><code>ScenariosView</code></td><td><code>{situation, openSit, sel, setSel, custom, setCustom, openCoach}</code></td><td>Progressive disclosure: presets → strategy insight → collapsed custom builder.</td></tr>
+      <tr><td><code>MatrixView</code></td><td><code>{situation, hand, setHand}</code></td><td>Single-row focus: colour minimap + sorted threat bars; swipe/step to change <code>hand</code> (category index 0–8).</td></tr>
+      <tr><td><code>Dots</code></td><td><code>{score}</code></td><td>Playability indicator (0–5 dots).</td></tr>
+    </table>
+    <p class="muted">Data: <code>PRESETS</code> (6 starting-hand archetypes). The Coach sheet here is the shared <code>window.PKCoachSheet</code> (legacy local copy removed).</p>
+  </section>
+
+  <!-- JOURNAL -->
+  <section id="journal">
+    <h2><span class="n">06</span> journal-app.jsx <span class="modpill">Journal tab</span></h2>
+    <table>
+      <tr><th>Export</th><th>Type</th><th>Props / signature</th></tr>
+      <tr><td><code>JournalBody</code></td><td><span class="ctype comp">component</span></td><td><code>{savedHands, onReplay}</code></td></tr>
+      <tr><td><code>JournalApp</code></td><td><span class="ctype comp">component</span></td><td>— (standalone wrapper; reads <code>pk-journal-saved</code>, navigates Play for replay)</td></tr>
+    </table>
+    <h3>JournalBody props &amp; internals</h3>
+    <table>
+      <tr><th>Prop / component</th><th>Signature</th><th>Role</th></tr>
+      <tr><td><code>savedHands</code></td><td>data</td><td>User-saved entries; merged into a synthetic <code>'This session'</code> group above the seed sessions.</td></tr>
+      <tr><td><code>onReplay(hand)</code></td><td>callback</td><td>Fired by “Replay in Advisor”. Shell loads <code>hand.hole</code> into Play.</td></tr>
+      <tr><td><code>HandRow</code></td><td><code>{hand, expanded, onToggle, onDelete, note, setNote, onReplay}</code></td><td>Swipe-left to delete · tap to expand (board, advised-vs-played, note, replay).</td></tr>
+      <tr><td><code>FilterPill</code></td><td><code>{label, value, options, active, open, onOpen, onPick}</code></td><td>Date / Result / Action dropdown filter.</td></tr>
+    </table>
+    <p class="muted">Seed: <code>SESSIONS</code> + <code>HANDS</code>. Store helpers <code>loadStore/saveStore</code> persist <code>{deleted:[], notes:{}}</code> to <code>pk-journal</code>.</p>
+  </section>
+
+  <!-- SHELL -->
+  <section id="shell">
+    <h2><span class="n">07</span> app.jsx <span class="modpill">unified shell</span></h2>
+    <p>Composes the three Bodies in one frame and owns all shared state. Injected under <code>pk-shell</code>.</p>
+    <table>
+      <tr><th>Component</th><th>Props</th><th>Role</th></tr>
+      <tr><td><code>UnifiedApp</code></td><td>—</td><td>Root. Owns <code>tab, situation, mode, cards, savedHands, coach, sitOpen, toast</code> + onboarding. Keeps all three Bodies mounted (display-toggled) for instant switching.</td></tr>
+      <tr><td><code>LaunchSplash</code></td><td><code>{onStart}</code></td><td>Branded first-run splash.</td></tr>
+      <tr><td><code>Walkthrough</code></td><td><code>{step, onNext, onSkip}</code></td><td>3-step spotlight coachmarks over Starter (<code>WT_STEPS</code> drives the highlight rect + copy).</td></tr>
+    </table>
+    <h3>Shell-owned callbacks (the cross-tab wiring)</h3>
+    <table>
+      <tr><td><code>onSaveHand(entry)</code></td><td>Prepends to <code>savedHands</code>, shows the “Saved to Journal” toast.</td></tr>
+      <tr><td><code>onReplay(hand)</code></td><td><code>setCards(hand.hole)</code> → <code>setMode('starter')</code> → <code>setTab('play')</code>.</td></tr>
+      <tr><td><code>setCoach(ctx)</code></td><td>Passed as <code>openCoach</code> to both Play and Study; renders the global <code>PKCoachSheet</code>.</td></tr>
+    </table>
+  </section>
+
+  <!-- STATE -->
+  <section id="state">
+    <h2><span class="n">08</span> Persistence contract <span class="modpill">localStorage</span></h2>
+    <table>
+      <tr><th>Key</th><th>Shape</th><th>Owner</th></tr>
+      <tr><td><code>pk-situation</code></td><td><code>{pos, players, style}</code></td><td>shell / wrappers</td></tr>
+      <tr><td><code>pk-play-mode</code></td><td><code>'starter' | 'expert'</code></td><td>Play</td></tr>
+      <tr><td><code>pk-cards</code></td><td><code>[{rank, suit}]</code></td><td>Play</td></tr>
+      <tr><td><code>pk-journal-saved</code></td><td><code>[entry]</code> (see below)</td><td>shell (save) → Journal (read)</td></tr>
+      <tr><td><code>pk-journal</code></td><td><code>{deleted:[ids], notes:{id:str}}</code></td><td>Journal</td></tr>
+      <tr><td><code>pk-study-sub</code></td><td><code>'scenarios' | 'matrix'</code></td><td>Study</td></tr>
+      <tr><td><code>pk-byok</code></td><td><code>{provider, key, configured}</code> · <code>{skipped:true}</code> · <code>{}</code></td><td>Coach</td></tr>
+      <tr><td><code>pk-onboarded</code></td><td><code>'1'</code> once splash+walkthrough done</td><td>shell</td></tr>
+    </table>
+    <h3>Journal entry shape (<code>pkBuildHandEntry</code> output)</h3>
+    <pre>{ <span class="k">id</span>: <span class="s">'u'+Date.now()</span>, <span class="k">s</span>: <span class="s">'live'</span>, <span class="k">ts</span>, <span class="k">hole</span>: [{rank,suit}×4], <span class="k">board</span>: [],
+  <span class="k">advised</span>, <span class="k">size</span>, <span class="k">took</span>, <span class="k">equity</span>, <span class="k">conf</span>,
+  <span class="k">result</span>: <span class="s">'pending'</span>, <span class="k">amt</span>: <span class="t">0</span>, <span class="k">tags</span>: [], <span class="k">note</span>: <span class="s">''</span> }</pre>
+  </section>
+
+  <!-- FLOWS -->
+  <section id="flows">
+    <h2><span class="n">09</span> Cross-tab flows</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>Save → Journal</h3>
+        <pre><span class="c">PlayBody</span>: SaveHandle (4 cards) →
+  onSaveHand(<span class="t">pkBuildHandEntry</span>(cards, adv))
+<span class="c">UnifiedApp</span>: setSavedHands([entry, ...])
+  + toast
+<span class="c">JournalBody</span>: savedHands prop →
+  'This session' group (top)</pre>
+      </div>
+      <div class="card">
+        <h3>Replay → Play</h3>
+        <pre><span class="c">HandRow</span>: "Replay in Advisor" →
+  onReplay(hand)
+<span class="c">UnifiedApp</span>:
+  setCards(hand.hole)
+  setMode(<span class="s">'starter'</span>); setTab(<span class="s">'play'</span>)
+<span class="c">PlayBody</span>: shows locked read</pre>
+      </div>
+    </div>
+    <div class="callout"><div class="l">Verified end-to-end</div><p>Launch → walkthrough → enter cards → read → swipe-save → Study/Matrix → Coach (matrix context) → Journal → expand → Replay → back in Play. All three tabs render; Coach opens from Play &amp; Study. No console errors.</p></div>
+    <h3>Suggested next steps for implementation</h3>
+    <table>
+      <tr><td>Live Coach</td><td>Replace <code>buildConversation</code>/<code>answer()</code> canned path with provider calls using <code>pk-byok</code>.</td></tr>
+      <tr><td>Real solver</td><td>Swap the heuristic <code>pkAdvise</code>/<code>pkRowData</code> for tiered precomputed equity data.</td></tr>
+      <tr><td>Board streets</td><td><code>entry.board</code> already exists; extend PlayBody to capture flop/turn/river after preflop.</td></tr>
+      <tr><td>Atom consolidation</td><td>Point PlayBody at <code>poker-kit</code> atoms and delete play-app’s local copies.</td></tr>
+    </table>
+  </section>
+
+  <div class="foot">Omaha Edge · component architecture spec · generated for Claude Code handoff</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Poker Analyzer — Mobile UX Analysis</title>
+<style>
+  :root {
+    --base: #0b1120;
+    --canvas: #0e1525;
+    --surface: #1e293b;
+    --surface-2: #172033;
+    --surface-3: #223049;
+    --line: rgba(148, 163, 184, 0.14);
+    --line-strong: rgba(148, 163, 184, 0.28);
+    --teal: #00d4aa;
+    --teal-dim: rgba(0, 212, 170, 0.14);
+    --teal-line: rgba(0, 212, 170, 0.4);
+    --ink: #eaf0f8;
+    --ink-2: #9fb0c6;
+    --ink-3: #64748b;
+    --fold: #ef4444;
+    --call: #3b82f6;
+    --raise: #f59e0b;
+    --check: #94a3b8;
+    --mono: ui-monospace, "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 700px at 78% -8%, rgba(0, 212, 170, 0.10), transparent 60%),
+      radial-gradient(900px 600px at 8% 18%, rgba(59, 130, 246, 0.07), transparent 55%),
+      var(--canvas);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.62;
+    font-size: 17px;
+  }
+
+  ::selection { background: rgba(0, 212, 170, 0.3); }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px clamp(18px, 5vw, 56px);
+    background: rgba(11, 17, 32, 0.72);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar .brand { display: flex; align-items: center; gap: 11px; font-weight: 650; letter-spacing: -0.01em; }
+  .topbar .suit { color: var(--teal); font-size: 20px; }
+  .topbar .phase {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--teal); background: var(--teal-dim); border: 1px solid var(--teal-line);
+    padding: 5px 11px; border-radius: 100px;
+  }
+
+  /* ---------- layout ---------- */
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 clamp(18px, 5vw, 40px); }
+  section { padding: clamp(46px, 7vw, 86px) 0; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: none; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--teal); margin: 0 0 18px; display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow .num { color: var(--ink-3); }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  h1 { font-size: clamp(34px, 6vw, 60px); line-height: 1.04; letter-spacing: -0.035em; font-weight: 700; margin: 0 0 22px; }
+  h2 { font-size: clamp(25px, 3.6vw, 36px); line-height: 1.1; letter-spacing: -0.025em; font-weight: 680; margin: 0 0 16px; }
+  h3 { font-size: 19px; letter-spacing: -0.01em; font-weight: 640; margin: 0 0 8px; }
+  p { color: var(--ink-2); margin: 0 0 18px; max-width: 70ch; }
+  p strong, li strong { color: var(--ink); font-weight: 620; }
+  .lead { font-size: clamp(19px, 2.4vw, 23px); color: var(--ink); line-height: 1.5; }
+  a { color: var(--teal); }
+
+  .accent { color: var(--teal); }
+  mark { background: var(--teal-dim); color: var(--teal); padding: 0 5px; border-radius: 4px; }
+
+  /* ---------- hero ---------- */
+  .hero { padding-top: clamp(56px, 9vw, 110px); }
+  .hero .kicker {
+    font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 26px;
+  }
+  .hero h1 .accent { display: inline; }
+  .hero .sub { font-size: clamp(18px, 2.3vw, 22px); color: var(--ink-2); max-width: 64ch; margin-bottom: 36px; }
+  .metaline { display: flex; flex-wrap: wrap; gap: 10px 14px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); letter-spacing: 0.02em; }
+  .metaline span { display: inline-flex; align-items: center; gap: 8px; }
+  .metaline span::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--teal); }
+
+  /* ---------- thesis cards ---------- */
+  .thesis { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 30px; }
+  .tcard {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--line); border-radius: 16px; padding: 24px;
+  }
+  .tcard .t { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
+  .tcard .from { color: var(--ink-2); font-size: 15px; }
+  .tcard .to { color: var(--ink); font-size: 17px; font-weight: 600; }
+  .tcard .arrow { color: var(--teal); margin: 8px 0; font-size: 18px; }
+
+  /* ---------- generic grids ---------- */
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+  .split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; }
+  .split.rev { grid-template-columns: 0.9fr 1.1fr; }
+
+  ul.clean { list-style: none; padding: 0; margin: 0 0 18px; }
+  ul.clean li { position: relative; padding-left: 26px; margin-bottom: 13px; color: var(--ink-2); max-width: 64ch; }
+  ul.clean li::before {
+    content: ""; position: absolute; left: 4px; top: 10px; width: 7px; height: 7px;
+    border: 1.5px solid var(--teal); border-radius: 2px; transform: rotate(45deg);
+  }
+  ul.clean li b { color: var(--ink); font-weight: 620; }
+
+  /* ---------- callout ---------- */
+  .callout {
+    border-left: 3px solid var(--teal); background: var(--teal-dim);
+    padding: 18px 22px; border-radius: 0 12px 12px 0; margin: 24px 0;
+  }
+  .callout .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); margin-bottom: 6px; }
+  .callout p { color: var(--ink); margin: 0; font-size: 16px; }
+
+  /* ---------- priority ladder ---------- */
+  .ladder { display: flex; flex-direction: column; gap: 10px; margin-top: 26px; }
+  .rung {
+    display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 18px;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px 20px; transition: border-color .2s;
+  }
+  .rung:hover { border-color: var(--line-strong); }
+  .rung .freq { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 600; }
+  .rung .rank { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--teal); line-height: 1; }
+  .rung .act h3 { margin: 0 0 3px; font-size: 17px; }
+  .rung .act p { margin: 0; font-size: 14px; color: var(--ink-2); max-width: none; }
+  .rung.hot { background: linear-gradient(100deg, rgba(0,212,170,0.12), var(--surface-2) 60%); border-color: var(--teal-line); }
+  .rung.cold { opacity: 0.72; }
+  .tag { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
+  .tag.zone { color: var(--teal); background: var(--teal-dim); border: 1px solid var(--teal-line); }
+  .tag.study { color: var(--ink-3); background: rgba(148,163,184,0.08); border: 1px solid var(--line); }
+
+  /* =================================================================
+     PHONE WIREFRAMES (schematic, monochrome — placeholders for Phase 2)
+     ================================================================= */
+  .frames { display: flex; flex-wrap: wrap; gap: 30px 26px; justify-content: center; margin-top: 8px; }
+  .figure { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .figure .cap { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); letter-spacing: 0.04em; text-align: center; max-width: 230px; }
+  .figure .cap b { color: var(--ink-2); font-weight: 600; display: block; margin-bottom: 2px; letter-spacing: 0.08em; text-transform: uppercase; font-size: 10.5px; }
+
+  .phone {
+    position: relative; width: 232px; height: 482px; border-radius: 36px;
+    background: var(--surface); border: 1px solid var(--line-strong);
+    box-shadow: 0 30px 60px -24px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04);
+    padding: 10px; flex: none;
+  }
+  .phone::before { /* notch */
+    content: ""; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 78px; height: 20px; background: var(--base); border-radius: 0 0 12px 12px; z-index: 4;
+  }
+  .screen {
+    position: relative; width: 100%; height: 100%; border-radius: 27px; overflow: hidden;
+    background: var(--canvas); display: flex; flex-direction: column;
+  }
+  .statusbar { height: 30px; flex: none; }
+  .scr-body { flex: 1; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+
+  /* schematic atoms */
+  .bar { height: 8px; border-radius: 4px; background: rgba(148,163,184,0.18); }
+  .bar.w70 { width: 70%; } .bar.w50 { width: 50%; } .bar.w40 { width: 40%; } .bar.w30 { width: 30%; } .bar.w85 { width: 85%; }
+  .bar.t { background: var(--teal); opacity: 0.8; }
+  .chip { height: 22px; border-radius: 100px; background: var(--surface-3); border: 1px solid var(--line); flex: none; }
+  .chip.t { background: var(--teal-dim); border-color: var(--teal-line); }
+  .blk { border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); }
+
+  /* bottom nav */
+  .tabbar {
+    height: 50px; flex: none; display: flex; border-top: 1px solid var(--line);
+    background: rgba(15,21,37,0.9); padding: 0 6px;
+  }
+  .tabbar .tb { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .tabbar .ti { width: 20px; height: 20px; border-radius: 6px; border: 1.6px solid var(--ink-3); }
+  .tabbar .tl { width: 22px; height: 5px; border-radius: 3px; background: var(--ink-3); opacity: 0.6; }
+  .tabbar .tb.on .ti { border-color: var(--teal); background: var(--teal-dim); }
+  .tabbar .tb.on .tl { background: var(--teal); opacity: 1; }
+
+  /* thumb zone overlay */
+  .thumb-arc {
+    position: absolute; bottom: -120px; right: -70px; width: 360px; height: 360px;
+    border-radius: 50%; pointer-events: none; z-index: 3;
+    background: radial-gradient(circle at 78% 78%, rgba(0,212,170,0.22), rgba(0,212,170,0.10) 42%, transparent 66%);
+  }
+  .reach-line { position: absolute; right: -70px; bottom: 8px; width: 300px; height: 300px; border: 1.5px dashed var(--teal-line); border-radius: 50%; z-index: 3; pointer-events: none; }
+  .zlabel { position: absolute; z-index: 5; font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 7px; border-radius: 100px; }
+  .zlabel.easy { bottom: 70px; left: 14px; color: var(--teal); background: rgba(11,17,32,0.85); border: 1px solid var(--teal-line); }
+  .zlabel.hard { top: 50px; right: 14px; color: var(--fold); background: rgba(11,17,32,0.85); border: 1px solid rgba(239,68,68,0.4); }
+
+  /* action badge schematic */
+  .actbadge { border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; }
+  .actbadge.raise { background: linear-gradient(120deg, rgba(245,158,11,0.22), rgba(245,158,11,0.08)); border: 1px solid rgba(245,158,11,0.45); }
+  .actbadge .big { font-family: var(--mono); font-weight: 800; font-size: 20px; letter-spacing: 0.04em; color: var(--raise); }
+  .actbadge .meta { text-align: right; }
+  .actbadge .meta .s1 { font-family: var(--mono); font-size: 13px; color: var(--ink); font-weight: 700; }
+  .actbadge .meta .s2 { font-family: var(--mono); font-size: 9px; color: var(--ink-3); }
+
+  /* card slots */
+  .slots { display: flex; gap: 5px; }
+  .slot { flex: 1; aspect-ratio: 0.7; border-radius: 7px; border: 1.5px solid var(--line-strong); background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
+  .slot.filled { border-color: var(--teal-line); background: var(--teal-dim); }
+  .slot .pip { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--ink); }
+  .slot .pip.r { color: var(--fold); }
+  .slot.empty .pip { color: var(--ink-3); font-weight: 400; }
+
+  /* rank-suit picker */
+  .rankgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .rankgrid .rk { aspect-ratio: 1; border-radius: 8px; background: var(--surface-3); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--ink-2); }
+  .rankgrid .rk.on { background: var(--teal-dim); border-color: var(--teal-line); color: var(--teal); }
+  .suitrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .suitrow .su { aspect-ratio: 1.5; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+  /* matrix focus list */
+  .threatrow { display: flex; align-items: center; gap: 8px; }
+  .threatrow .tn { font-family: var(--mono); font-size: 10px; color: var(--ink-2); width: 52px; flex: none; }
+  .threatrow .track { flex: 1; height: 14px; border-radius: 7px; background: rgba(148,163,184,0.1); overflow: hidden; }
+  .threatrow .fill { height: 100%; border-radius: 7px; }
+  .threatrow .pct { font-family: var(--mono); font-size: 10px; width: 30px; text-align: right; flex: none; color: var(--ink-2); }
+  /* mini heatmap */
+  .minimap { display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; }
+  .minimap i { aspect-ratio: 1; border-radius: 2px; display: block; }
+
+  /* imessage */
+  .msg { max-width: 78%; padding: 8px 11px; border-radius: 15px; font-size: 11px; line-height: 1.35; }
+  .msg .ln { height: 6px; border-radius: 3px; background: currentColor; opacity: 0.5; margin: 4px 0; }
+  .msg.them { align-self: flex-start; background: var(--surface-3); color: var(--ink-2); border-bottom-left-radius: 5px; }
+  .msg.me { align-self: flex-end; background: var(--teal); color: #052b24; border-bottom-right-radius: 5px; }
+  .msg.card-bubble { align-self: flex-start; background: var(--surface-2); border: 1px solid rgba(245,158,11,0.4); color: var(--ink); max-width: 88%; }
+  .typing { align-self: flex-start; display: flex; gap: 4px; padding: 10px 13px; background: var(--surface-3); border-radius: 15px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); display: block; animation: tdot 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: 0.15s; } .typing i:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes tdot { 0%,60%,100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+  .suggestrow { display: flex; gap: 5px; overflow: hidden; }
+  .suggestrow .sg { flex: none; height: 22px; padding: 0 10px; border-radius: 100px; background: transparent; border: 1px solid var(--teal-line); display: flex; align-items: center; }
+  .suggestrow .sg .bar { width: 38px; background: var(--teal); opacity: 0.7; }
+  .inputbar { display: flex; gap: 6px; align-items: center; }
+  .inputbar .field { flex: 1; height: 28px; border-radius: 100px; background: var(--surface-2); border: 1px solid var(--line); }
+  .inputbar .send { width: 28px; height: 28px; border-radius: 50%; background: var(--teal); flex: none; }
+
+  /* journal entries */
+  .jcard { border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); padding: 9px 10px; display: flex; flex-direction: column; gap: 7px; }
+  .jcard .top { display: flex; justify-content: space-between; align-items: center; }
+  .jcard .minicards { display: flex; gap: 3px; }
+  .jcard .mc { width: 15px; height: 21px; border-radius: 3px; border: 1px solid var(--line-strong); background: var(--surface-3); }
+  .jbadge { font-family: var(--mono); font-size: 9px; font-weight: 800; letter-spacing: 0.06em; padding: 3px 7px; border-radius: 5px; }
+  .jbadge.raise { color: var(--raise); background: rgba(245,158,11,0.16); }
+  .jbadge.fold { color: var(--fold); background: rgba(239,68,68,0.16); }
+  .jtags { display: flex; gap: 4px; }
+  .jtags .jt { height: 14px; width: 40px; border-radius: 100px; background: rgba(0,212,170,0.1); border: 1px solid var(--teal-line); }
+  .session-hdr { display: flex; justify-content: space-between; align-items: center; padding: 2px 2px 4px; }
+  .session-hdr .bar.t { height: 6px; }
+
+  /* sheet drag indicator */
+  .sheet { margin-top: auto; border-radius: 16px 16px 0 0; background: var(--surface); border: 1px solid var(--line); border-bottom: none; padding: 8px 12px 10px; display: flex; flex-direction: column; gap: 7px; }
+  .grabber { width: 36px; height: 4px; border-radius: 100px; background: var(--ink-3); opacity: 0.5; align-self: center; }
+
+  /* before / after */
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  .ba .col { border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; background: var(--surface-2); }
+  .ba .col.now { border-color: rgba(239,68,68,0.25); }
+  .ba .col.next { border-color: var(--teal-line); background: linear-gradient(180deg, var(--teal-dim), var(--surface-2) 70%); }
+  .ba .h { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; }
+  .ba .col.now .h { color: var(--fold); }
+  .ba .col.next .h { color: var(--teal); }
+  .ba ul { list-style: none; margin: 0; padding: 0; }
+  .ba li { font-size: 14.5px; color: var(--ink-2); padding: 6px 0; padding-left: 20px; position: relative; }
+  .ba .col.now li::before { content: "×"; position: absolute; left: 0; color: var(--fold); font-weight: 700; }
+  .ba .col.next li::before { content: "→"; position: absolute; left: 0; color: var(--teal); font-weight: 700; }
+
+  /* decisions */
+  .decisions { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 26px; }
+  .dq { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .dq .q { font-weight: 640; color: var(--ink); margin-bottom: 8px; display: flex; gap: 10px; align-items: baseline; }
+  .dq .q .n { font-family: var(--mono); color: var(--teal); font-size: 13px; }
+  .dq p { font-size: 14.5px; margin: 0; }
+
+  .closing { text-align: center; padding: clamp(56px,9vw,100px) 0; }
+  .closing .suitline { font-size: 30px; letter-spacing: 8px; margin-bottom: 22px; }
+  .closing .s1 { color: var(--ink); } .closing .s2 { color: var(--fold); } .closing .s3 { color: var(--call); } .closing .s4 { color: var(--teal); }
+
+  @media (max-width: 820px) {
+    .thesis, .two, .split, .split.rev, .ba, .decisions { grid-template-columns: 1fr; }
+    .split, .split.rev { gap: 32px; }
+    .rung { grid-template-columns: 44px 1fr; }
+    .rung .tag { grid-column: 2; justify-self: start; }
+  }
+  @media (max-width: 480px) {
+    body { font-size: 16px; }
+    .topbar .phase { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="suit">♠</span> Poker Analyzer · Mobile Redesign</div>
+  <div class="phase">Phase 1 — UX Analysis</div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero" data-screen-label="Hero">
+    <div class="kicker">Omaha Scenario Analyzer · iPhone 375–430px · June 14, 2026</div>
+    <h1>The desktop tool is a <span class="accent">study app</span>.<br />The phone needs to be a <span class="accent">table app</span>.</h1>
+    <p class="sub">The current build doesn't just break on mobile — it's organized around the wrong job. On a laptop you have time to configure. At a felt table, with a 20-second clock and the phone in one hand under the rail, you have time for one thing: <strong>cards in, decision out.</strong> This document lays out the UX restructure before we touch a single pixel of visual design.</p>
+    <div class="metaline">
+      <span>3 source docs reviewed</span>
+      <span>4 personas</span>
+      <span>4 flows audited</span>
+      <span>6 redesign targets</span>
+    </div>
+
+    <div class="thesis">
+      <div class="tcard">
+        <div class="t">The reframe</div>
+        <div class="from">Config → Analysis → Results, top to bottom, as one 1,000px scrolling form</div>
+        <div class="arrow">↓</div>
+        <div class="to">Result on top, input in the thumb zone, configuration hidden in a sheet</div>
+      </div>
+      <div class="tcard">
+        <div class="t">The architecture</div>
+        <div class="from">4 text tabs of equal weight — Scenario Builder, Play Advisor, Matrix, Journal</div>
+        <div class="arrow">↓</div>
+        <div class="to">Two intents: <span class="accent">Play</span> (at the table) and <span class="accent">Study</span> (everything else)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 01 PRIORITY ===================== -->
+  <section data-screen-label="Frequency priority">
+    <div class="eyebrow"><span class="num">01</span> What a player actually does at the table</div>
+    <h2>Design for frequency, not for the feature list</h2>
+    <p>You asked the right question: <em>what does a poker player do most?</em> Everything else follows from the answer. Here is every at-the-table action ranked by how often it happens in a session. The top three happen <strong>on every single hand</strong> — they get the thumb zone, the biggest targets, and zero scrolling. The bottom of the ladder is real, but it belongs in Study, not in the player's face during a hand.</p>
+
+    <div class="ladder">
+      <div class="rung hot">
+        <div class="rank">1</div>
+        <div class="act"><h3>Enter the cards</h3><p>Hole cards every hand, board cards on every street. The single most repeated action in the app.</p></div>
+        <span class="tag zone">Thumb zone · biggest targets</span>
+      </div>
+      <div class="rung hot">
+        <div class="rank">2</div>
+        <div class="act"><h3>Read the recommendation</h3><p>FOLD / CALL / RAISE + sizing + confidence. The whole reason the app exists. Must be glanceable, never scrolled to.</p></div>
+        <span class="tag zone">Above the fold · sticky</span>
+      </div>
+      <div class="rung hot">
+        <div class="rank">3</div>
+        <div class="act"><h3>Start a new hand</h3><p>Clear the cards, keep the situation, go again. Happens the moment the last one ends.</p></div>
+        <span class="tag zone">One-tap · persistent</span>
+      </div>
+      <div class="rung">
+        <div class="rank">4</div>
+        <div class="act"><h3>Adjust pot / call / stack</h3><p>Changes within most hands as the action develops. Wants steppers, not a keyboard.</p></div>
+        <span class="freq">most hands</span>
+      </div>
+      <div class="rung">
+        <div class="rank">5</div>
+        <div class="act"><h3>Change position / players</h3><p>Shifts roughly once per orbit (~8 hands). Persists between hands, so it's a quick summary-row edit.</p></div>
+        <span class="freq">~1 / orbit</span>
+      </div>
+      <div class="rung cold">
+        <div class="rank">6</div>
+        <div class="act"><h3>Save a hand to the Journal</h3><p>A few notable spots per session. One tap from the result, then forget it.</p></div>
+        <span class="tag study">occasional</span>
+      </div>
+      <div class="rung cold">
+        <div class="rank">7</div>
+        <div class="act"><h3>AI Coach · Matrix · Scenario Builder</h3><p>Deep, valuable, and almost never used mid-hand. These define <em>Study</em>, not Play.</p></div>
+        <span class="tag study">Study context</span>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="label">Principle</div>
+      <p>If it doesn't happen on rungs 1–4, it does not get permanent screen space in Play. The mistake in the current app is treating all seven as peers in one scrolling column.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 02 ONE-HANDED FLOW ===================== -->
+  <section data-screen-label="One-handed flow">
+    <div class="eyebrow"><span class="num">02</span> Optimizing the flow for one hand</div>
+    <h2>Invert the screen around the thumb</h2>
+    <div class="split">
+      <div>
+        <p>Held one-handed, the thumb sweeps a comfortable arc across the <strong>bottom two-thirds</strong> of the screen. The top corners are a stretch; the very top is a two-hand reach. The current app puts navigation and all the controls up top and the <em>Analyze</em> button 1,000px down — exactly backwards.</p>
+        <ul class="clean">
+          <li><b>Navigation drops to the bottom.</b> A tab bar in the thumb arc replaces four stacked text tabs up top — and reclaims ~50px of vertical space at the same time.</li>
+          <li><b>Output rises, input sits low.</b> The action badge pins near the top where the eye lands; the card entry and New Hand live where the thumb already is.</li>
+          <li><b>Config collapses into a pull-up sheet.</b> Position, pot, stack live in a bottom sheet you thumb open and dismiss — never a scroll past them to reach the cards.</li>
+          <li><b>Auto-analyze stays.</b> No separate Analyze tap on mobile — the result updates as cards land. Preserve the 300ms debounce.</li>
+        </ul>
+      </div>
+      <div class="figure">
+        <div class="phone">
+          <div class="thumb-arc"></div>
+          <div class="reach-line"></div>
+          <span class="zlabel hard">hard reach</span>
+          <span class="zlabel easy">natural thumb arc</span>
+          <div class="screen">
+            <div class="statusbar"></div>
+            <div class="scr-body">
+              <div class="actbadge raise">
+                <span class="big">RAISE</span>
+                <span class="meta"><div class="s1">$175</div><div class="s2">92% confident</div></span>
+              </div>
+              <div style="height:8px"></div>
+              <div class="slots">
+                <div class="slot filled"><span class="pip r">A♥</span></div>
+                <div class="slot filled"><span class="pip">A♠</span></div>
+                <div class="slot filled"><span class="pip">K♠</span></div>
+                <div class="slot empty"><span class="pip">+</span></div>
+              </div>
+              <div class="blk" style="height:96px; display:flex; align-items:center; justify-content:center;">
+                <div class="rankgrid" style="width:88%">
+                  <div class="rk on">A</div><div class="rk">K</div><div class="rk">Q</div><div class="rk">J</div><div class="rk">T</div>
+                </div>
+              </div>
+              <div class="suitrow" style="margin-top:2px">
+                <div class="su" style="color:#fff">♠</div><div class="su" style="color:var(--fold)">♥</div><div class="su" style="color:var(--call)">♦</div><div class="su" style="color:var(--teal)">♣</div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb on"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><b>Play screen</b>Output high · input + nav in the thumb arc</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 03 IA ===================== -->
+  <section data-screen-label="Information architecture">
+    <div class="eyebrow"><span class="num">03</span> Information architecture</div>
+    <h2>Four equal tabs → two clear intents</h2>
+    <p>Scenario Builder and Play Advisor secretly do the same job — configure a hand, get analysis — at two levels of abstraction. On a phone that overlap is just confusion and wasted chrome. The code already tracks <code style="font-family:var(--mono);color:var(--teal);font-size:0.9em">state.mode = 'live' | 'study'</code>; the IA should simply make that split visible.</p>
+
+    <div class="ba">
+      <div class="col now">
+        <div class="h">Today · 4 peers</div>
+        <ul>
+          <li>Scenario Builder (default — wrong for mobile)</li>
+          <li>Play Advisor (live + study buried inside)</li>
+          <li>Probability Matrix (unreadable on phone)</li>
+          <li>Hand Journal (empty placeholder)</li>
+        </ul>
+      </div>
+      <div class="col next">
+        <div class="h">Proposed · bottom tab bar</div>
+        <ul>
+          <li><b style="color:var(--ink)">Play</b> — default on mobile. The Live table surface.</li>
+          <li><b style="color:var(--ink)">Study</b> — sub-tabs: Advisor · Scenarios · Matrix</li>
+          <li><b style="color:var(--ink)">Journal</b> — saved hands &amp; session review</li>
+          <li>AI Coach — a sheet reachable from both, not a tab</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout">
+      <div class="label">Why three, not four</div>
+      <p>Three is the most you can put in a thumb-reachable bottom bar with icon + label and still leave breathing room. The Matrix earns its keep inside Study, where the user has time — not as a peer of the at-table flow. Desktop can keep the full four-tab layout; this restructure is mobile-first via breakpoints.</p>
+    </div>
+  </section>
+
+  <!-- ===================== 04 SCENARIO BUILDER ===================== -->
+  <section data-screen-label="Scenario Builder">
+    <div class="eyebrow"><span class="num">04</span> Rethinking the Scenario Builder</div>
+    <h2>Stop showing every setting at once</h2>
+    <div class="split rev">
+      <div class="figure">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"></div>
+            <div class="scr-body">
+              <div class="bar w40 t" style="height:10px"></div>
+              <!-- context summary row -->
+              <div class="blk" style="padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                  <div class="bar w70"></div>
+                  <div style="font-family:var(--mono); font-size:11px; color:var(--teal)">TAG · BTN · 6-max</div>
+                </div>
+                <div class="chip" style="width:46px">&nbsp;</div>
+              </div>
+              <div class="bar w50" style="margin-top:4px"></div>
+              <!-- preset chips primary -->
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <div class="chip t" style="width:54px"></div><div class="chip" style="width:48px"></div>
+                <div class="chip" style="width:60px"></div><div class="chip" style="width:44px"></div>
+                <div class="chip" style="width:56px"></div><div class="chip" style="width:50px"></div>
+              </div>
+              <!-- strategy insight raised -->
+              <div class="actbadge raise" style="margin-top:6px">
+                <span class="big" style="font-size:16px">RAISE</span>
+                <span class="meta"><div class="s1">Playability 72</div><div class="s2">nut potential ▰▰▰▱</div></span>
+              </div>
+              <div class="blk" style="height:30px; display:flex; align-items:center; padding:0 12px; gap:8px;">
+                <div class="bar w30" style="opacity:.6"></div>
+                <div style="margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--ink-3)">Build custom ⌄</div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb on"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><b>Study › Scenarios</b>Summary row · presets first · custom collapsed</div>
+      </div>
+      <div>
+        <p>The current builder fires three side-by-side dropdowns, eight opponent buttons, a card grid, and toggles at the user before they've done anything. On a phone that's a wall. The fix is sequencing and disclosure:</p>
+        <ul class="clean">
+          <li><b>Context becomes one summary row.</b> Replace the three dropdowns with a single tappable line — <span class="accent">"TAG · BTN · 6-max"</span> — that opens one sheet to edit game, position, style, and table size together. Native segmented controls for the low-count choices; a wheel picker for the 6 styles with their descriptions.</li>
+          <li><b>Presets lead.</b> They're the path 80% of users take, so they sit up top at full weight — not styled like afterthought tags.</li>
+          <li><b>Strategy Insight rises above the fold.</b> The action badge + nut-potential bar is the most useful pre-analysis content; today it's buried under seven sections. It comes up right under the presets.</li>
+          <li><b>Custom builder is one collapsed row.</b> "Build custom ⌄" expands the structure / rank / suitedness controls only for the power users who want them.</li>
+          <li><b>Cut the dev-facing noise.</b> The <code style="font-family:var(--mono);color:var(--teal);font-size:.9em">pair:AA:ds</code> query-preview block and redundant constraint tags are hidden on mobile.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 05 CARD ENTRY ===================== -->
+  <section data-screen-label="Card entry">
+    <div class="eyebrow"><span class="num">05</span> Card entry — the most-touched control</div>
+    <h2>Two big taps beat scanning 52 tiny ones</h2>
+    <div class="split">
+      <div>
+        <p>The 13-column grid renders ~28px buttons at 9.6px text on a 375px screen — below every Apple touch-target and legibility minimum. The loupe magnifier is a clever patch, but it asks the user to press-hold-drag-release over targets they can't read. Borrow the pattern every fast mobile poker tool uses:</p>
+        <ul class="clean">
+          <li><b>Rank first, suit second.</b> 13 big rank buttons (5-wide, ~60px), then 4 large suit buttons. Two deliberate taps per card, both in the thumb zone, both legible.</li>
+          <li><b>Auto-advance &amp; auto-fill.</b> Hole slots fill first, then board — the existing behavior, kept. Tap a filled slot to re-enter replace mode.</li>
+          <li><b>4-color deck, fixed.</b> Keep the four suit colors for fast recognition, but move diamonds off <code style="font-family:var(--mono);font-size:.9em">#2563eb</code> so card blue never collides with UI blue.</li>
+          <li><b>Power-user shortcut.</b> A "type it" field accepts <span class="accent">AKQJs</span> notation for players who'd rather thumb-type than tap. The grid stays available via a toggle.</li>
+          <li><b>Haptic tick</b> on each pick in the iOS shell — confirmation without looking, which matters when the phone's under the rail.</li>
+        </ul>
+      </div>
+      <div class="figure">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"></div>
+            <div class="scr-body">
+              <div class="slots" style="margin-bottom:6px">
+                <div class="slot filled"><span class="pip r">A♥</span></div>
+                <div class="slot filled"><span class="pip">A♠</span></div>
+                <div class="slot empty"><span class="pip">3</span></div>
+                <div class="slot empty"><span class="pip">4</span></div>
+              </div>
+              <div style="font-family:var(--mono); font-size:10px; color:var(--ink-3); letter-spacing:.1em; text-transform:uppercase;">1 · Rank</div>
+              <div class="rankgrid">
+                <div class="rk">A</div><div class="rk on">K</div><div class="rk">Q</div><div class="rk">J</div><div class="rk">T</div>
+                <div class="rk">9</div><div class="rk">8</div><div class="rk">7</div><div class="rk">6</div><div class="rk">5</div>
+                <div class="rk">4</div><div class="rk">3</div><div class="rk">2</div><div class="rk" style="grid-column:span 2; aspect-ratio:auto; font-size:10px; color:var(--ink-3)">type ⌨</div>
+              </div>
+              <div style="font-family:var(--mono); font-size:10px; color:var(--ink-3); letter-spacing:.1em; text-transform:uppercase; margin-top:4px;">2 · Suit</div>
+              <div class="suitrow">
+                <div class="su" style="color:#fff; border-color:var(--line-strong)">♠</div>
+                <div class="su" style="color:var(--fold)">♥</div>
+                <div class="su" style="color:var(--call)">♦</div>
+                <div class="su" style="color:var(--teal)">♣</div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb on"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><b>Rank → suit picker</b>Every target ≥ 44px · legible · one-handed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 06 MATRIX ===================== -->
+  <section data-screen-label="Probability matrix">
+    <div class="eyebrow"><span class="num">06</span> The 9×9 probability matrix</div>
+    <h2>A player reads one row, not a spreadsheet</h2>
+    <div class="split rev">
+      <div class="figure">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"></div>
+            <div class="scr-body">
+              <div class="bar w50 t" style="height:9px"></div>
+              <div style="font-family:var(--mono); font-size:10px; color:var(--ink-3)">When I hold a <span style="color:var(--teal)">FLUSH</span> →</div>
+              <!-- mini map orientation -->
+              <div class="minimap">
+                <!-- 9x9 = 81 swatches, colored -->
+                <script>/* placeholder filled below by CSS classes */</script>
+              </div>
+              <div style="height:2px"></div>
+              <div style="font-family:var(--mono); font-size:10px; color:var(--ink-3); letter-spacing:.08em; text-transform:uppercase;">Threat landscape · sorted</div>
+              <!-- focused row as sorted bars -->
+              <div class="threatrow"><span class="tn">Str.Fl</span><div class="track"><div class="fill" style="width:8%; background:#22c55e"></div></div><span class="pct">2%</span></div>
+              <div class="threatrow"><span class="tn">Quads</span><div class="track"><div class="fill" style="width:14%; background:#22c55e"></div></div><span class="pct">5%</span></div>
+              <div class="threatrow"><span class="tn">Flush+</span><div class="track"><div class="fill" style="width:34%; background:#fde047"></div></div><span class="pct">18%</span></div>
+              <div class="threatrow"><span class="tn">F.House</span><div class="track"><div class="fill" style="width:52%; background:#f59e0b"></div></div><span class="pct">31%</span></div>
+              <div class="threatrow"><span class="tn">Straight</span><div class="track"><div class="fill" style="width:64%; background:#f97316"></div></div><span class="pct">44%</span></div>
+              <div class="threatrow"><span class="tn">Set</span><div class="track"><div class="fill" style="width:78%; background:#ef4444"></div></div><span class="pct">61%</span></div>
+              <div class="threatrow"><span class="tn">Two Pair</span><div class="track"><div class="fill" style="width:88%; background:#ef4444"></div></div><span class="pct">73%</span></div>
+            </div>
+            <div class="tabbar">
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb on"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><b>Matrix · focus mode</b>Color minimap to orient · one row as sorted bars · swipe to change row</div>
+      </div>
+      <div>
+        <p>81 cells of 10px numbers will never be a good phone experience, and squeezing harder only makes it worse. But a player never reads the whole grid — they read <strong>one row</strong>: "I have a flush; how likely is someone to beat it?" So we reframe the table as a focused, single-question view:</p>
+        <ul class="clean">
+          <li><b>A color-only minimap up top</b> keeps the whole 9×9 as pure heat swatches — no numbers — purely to orient and to tap into a different row.</li>
+          <li><b>The selected row becomes the screen.</b> Each opponent hand type is a labeled, color-coded bar with its percentage, <span class="accent">sorted by threat</span> so the dangerous matchups rise to the top.</li>
+          <li><b>Swipe left/right to change your hand</b> (the row); the bars re-sort. Tap a bar to drill into the Scenario Builder, preserving the existing click-through.</li>
+          <li><b>Live mode gets the one-number version</b> — a single "danger meter" derived from the same row, no table at all.</li>
+          <li>This also <b>fixes the contrast failures</b>: big bars carry the color, and the number sits on the dark surface at full legibility instead of white-on-red at 10px.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 07 iMESSAGE ===================== -->
+  <section data-screen-label="Play Advisor chat">
+    <div class="eyebrow"><span class="num">07</span> The AI Play Advisor as a native chat</div>
+    <h2>Make the Coach feel like Messages</h2>
+    <div class="split">
+      <div>
+        <p>Today the Coach is a fixed 400px panel that renders <em>off the right edge of every phone</em> — a hard break. Rebuilt as a full-height sheet that slides up over the Play/Study surface, it should read like iMessage, because that's the mental model users already have for chat:</p>
+        <ul class="clean">
+          <li><b>Real bubbles.</b> Coach left in a gray bubble with a tail, you right in a teal bubble; consecutive messages group. A three-dot <span class="accent">typing indicator</span> while it thinks, then text streams in.</li>
+          <li><b>The hand rides at the top.</b> A pinned context chip shows the cards being discussed, so the conversation is always anchored to a specific spot.</li>
+          <li><b>Suggested replies kill the typing tax.</b> Tappable chips — "What if the flop is monotone?", "How does position change this?" — sit above the keyboard. This is the fix for the #1 Coach friction: nobody wants to thumb-type strategy questions at a table.</li>
+          <li><b>Rich answers as card bubbles.</b> The recommendation can arrive as a styled bubble (action + sizing) inline in the thread, not as a wall of text.</li>
+          <li><b>Input bar floats above the keyboard</b> with a growing field and a round send button — standard iOS, with the BYOK key setup moved into a calm first-run sheet instead of a cramped modal.</li>
+        </ul>
+      </div>
+      <div class="figure">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"></div>
+            <div class="blk" style="margin:6px 10px 0; padding:7px 10px; display:flex; align-items:center; gap:8px; border-radius:10px;">
+              <div class="minicards" style="display:flex; gap:3px;">
+                <div style="width:13px;height:18px;border-radius:3px;border:1px solid var(--fold);background:rgba(239,68,68,.12)"></div>
+                <div style="width:13px;height:18px;border-radius:3px;border:1px solid var(--line-strong);background:var(--surface-3)"></div>
+                <div style="width:13px;height:18px;border-radius:3px;border:1px solid var(--teal-line);background:var(--teal-dim)"></div>
+                <div style="width:13px;height:18px;border-radius:3px;border:1px solid var(--call);background:rgba(59,130,246,.12)"></div>
+              </div>
+              <div class="bar w40" style="height:6px"></div>
+            </div>
+            <div class="scr-body" style="gap:7px; justify-content:flex-start; padding-top:10px;">
+              <div class="msg me" style="width:62%"><div class="ln" style="width:90%"></div><div class="ln" style="width:60%"></div></div>
+              <div class="msg card-bubble">
+                <div style="font-family:var(--mono); font-weight:800; color:var(--raise); font-size:12px; margin-bottom:4px;">RAISE · $175</div>
+                <div class="ln" style="width:95%; opacity:.4"></div><div class="ln" style="width:80%; opacity:.4"></div>
+              </div>
+              <div class="msg them" style="width:70%"><div class="ln" style="width:92%"></div><div class="ln" style="width:78%"></div><div class="ln" style="width:50%"></div></div>
+              <div class="typing"><i></i><i></i><i></i></div>
+              <div style="margin-top:auto; display:flex; flex-direction:column; gap:7px;">
+                <div class="suggestrow">
+                  <div class="sg"><div class="bar"></div></div>
+                  <div class="sg"><div class="bar" style="width:30px"></div></div>
+                  <div class="sg"><div class="bar" style="width:44px"></div></div>
+                </div>
+                <div class="inputbar">
+                  <div class="field"></div>
+                  <div class="send"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><b>Coach · chat sheet</b>Pinned hand · card-bubble answers · suggested replies · typing dots</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 08 JOURNAL ===================== -->
+  <section data-screen-label="Hand Journal">
+    <div class="eyebrow"><span class="num">08</span> The Hand Journal</div>
+    <h2>From empty placeholder to the reason people come back</h2>
+    <div class="split rev">
+      <div class="figure">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar"></div>
+            <div class="scr-body" style="gap:9px;">
+              <div class="bar w50 t" style="height:10px"></div>
+              <!-- filter chips -->
+              <div style="display:flex; gap:5px; overflow:hidden;">
+                <div class="chip t" style="width:42px"></div><div class="chip" style="width:38px"></div>
+                <div class="chip" style="width:50px"></div><div class="chip" style="width:36px"></div>
+              </div>
+              <!-- session header -->
+              <div class="session-hdr">
+                <div style="font-family:var(--mono); font-size:10px; color:var(--ink-2)">TUE · 12 hands</div>
+                <div style="font-family:var(--mono); font-size:10px; color:var(--teal)">4R · 3F · 78%</div>
+              </div>
+              <div class="jcard">
+                <div class="top">
+                  <div class="minicards"><div class="mc"></div><div class="mc"></div><div class="mc"></div><div class="mc"></div></div>
+                  <div class="jbadge raise">RAISE</div>
+                </div>
+                <div class="jtags"><div class="jt"></div><div class="jt" style="width:30px"></div></div>
+              </div>
+              <div class="jcard">
+                <div class="top">
+                  <div class="minicards"><div class="mc"></div><div class="mc"></div><div class="mc"></div><div class="mc"></div></div>
+                  <div class="jbadge fold">FOLD</div>
+                </div>
+                <div class="jtags"><div class="jt" style="width:50px"></div></div>
+              </div>
+              <div class="jcard" style="opacity:.5">
+                <div class="top">
+                  <div class="minicards"><div class="mc"></div><div class="mc"></div><div class="mc"></div><div class="mc"></div></div>
+                  <div class="jbadge raise">RAISE</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb"><div class="ti"></div><div class="tl"></div></div>
+              <div class="tb on"><div class="ti"></div><div class="tl"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="cap"><b>Journal · session list</b>Grouped by session · filter chips · swipe to replay</div>
+      </div>
+      <div>
+        <p>The Journal is the "stickiness" feature — the thing that pulls a player back between sessions. The data model is already designed (IndexedDB, full advisor snapshot). The UI should make saved hands feel like a deck you flip through:</p>
+        <ul class="clean">
+          <li><b>One-tap save from any result.</b> The action badge gets a save affordance; the whole advisor snapshot is captured silently.</li>
+          <li><b>Grouped by session.</b> Each session is a header with a one-line summary — <span class="accent">"Tue · 12 hands · 4R 3F · 78% avg conf"</span> — turning the Journal into a session log, not just a pile.</li>
+          <li><b>Each card shows what matters at a glance:</b> the hand, the board, the recommendation badge, and — crucially — <b>what you actually did vs. what was advised</b>, flagged when they diverge.</li>
+          <li><b>Filter chips</b> across the top: by tag (#bluff, #river), by action, by style, by date. Horizontal scroll, no menus.</li>
+          <li><b>Gestures do the work.</b> Swipe a row to replay it in the Advisor (all fields pre-filled) or delete. Swipe-to-log — right "followed advice," left "deviated" — builds the record with zero typing.</li>
+          <li><b>An empty state that invites,</b> not a "coming soon" sign — "Your saved hands will live here. Save your first from the Advisor."</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 09 NEXT ===================== -->
+  <section data-screen-label="Next steps">
+    <div class="eyebrow"><span class="num">09</span> What I need from you for Phase 2</div>
+    <h2>Decisions before we go hi-fi</h2>
+    <p>These wireframes are deliberately monochrome — structure, not skin. Once you're happy with the thinking above, Phase 2 builds it as a real, clickable iOS-feeling prototype in the dark poker aesthetic. A few forks I'd like your call on first:</p>
+
+    <div class="decisions">
+      <div class="dq">
+        <div class="q"><span class="n">A</span> The palette</div>
+        <p>The brief documents <span class="accent">#1a1a2e + teal #00d4aa</span>; you mentioned <span class="accent">#1e293b</span>. I'm proposing a deep slate base with the teal as the single brand accent. Lock that, or explore a couple of accent directions?</p>
+      </div>
+      <div class="dq">
+        <div class="q"><span class="n">B</span> Card entry default</div>
+        <p>Make <b>rank-then-suit</b> the default picker (grid as a toggle), or keep the 52-grid as primary with bigger targets? I lean rank-then-suit for one-handed speed.</p>
+      </div>
+      <div class="dq">
+        <div class="q"><span class="n">C</span> Nav model</div>
+        <p>Three-item bottom bar (Play · Study · Journal) with Matrix inside Study — or do you want Matrix promoted to its own tab on phone?</p>
+      </div>
+      <div class="dq">
+        <div class="q"><span class="n">D</span> Scope of the prototype</div>
+        <p>Build the full Play flow first as one polished iPhone prototype, then add Study/Journal — or lay all five screens side-by-side on a canvas to compare directions?</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="label">My recommendation</div>
+      <p>Lock the teal-on-slate palette, default to rank-then-suit, three-tab bar, and let me build the <strong>Play flow</strong> end-to-end first — card entry → live result → New Hand → pull-up situation sheet — as a working iPhone prototype you can thumb through. That's the hand that gets played 1,000 times a session; nail it, then Study and Journal follow the same system.</p>
+    </div>
+  </section>
+
+  <section class="closing" data-screen-label="Closing">
+    <div class="suitline"><span class="s1">♠</span> <span class="s2">♥</span> <span class="s3">♦</span> <span class="s4">♣</span></div>
+    <h2 style="max-width:24ch; margin:0 auto 14px;">Cards in, decision out — in the thumb zone, in under five seconds.</h2>
+    <p style="margin:0 auto; color:var(--ink-3); font-family:var(--mono); font-size:13px; letter-spacing:0.06em;">Phase 1 · UX Analysis &amp; Recommendations · Ready for your notes</p>
+  </section>
+
+</div>
+
+<script>
+  // Fill the matrix minimap with a deterministic green→red heat pattern (orientation only)
+  (function () {
+    var mm = document.querySelector('.minimap');
+    if (!mm) return;
+    var heat = ['#22c55e','#4ade80','#86efac','#fde047','#facc15','#f59e0b','#f97316','#ef4444','#dc2626'];
+    for (var r = 0; r < 9; r++) {
+      for (var c = 0; c < 9; c++) {
+        var i = document.createElement('i');
+        // diagonal-ish gradient so it reads like a real threat map
+        var idx = Math.min(8, Math.max(0, Math.round((r * 0.6 + c * 0.7) + (Math.sin(r * c) * 1.2))));
+        i.style.background = heat[idx];
+        if (r === 5) { i.style.outline = '1.5px solid #eaf0f8'; i.style.outlineOffset = '-1px'; } // highlighted row
+        mm.appendChild(i);
+      }
+    }
+  })();
+</script>
+
+</body>
+</html>

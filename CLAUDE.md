@@ -167,6 +167,32 @@ curl -X POST https://poker-scenario-analyzer.vercel.app/api/advise \
 
 ---
 
+## Mobile Redesign (In Progress)
+
+Reference materials in `design/` directory — extracted from Claude Design handoff package.
+
+### Architecture
+- `poker-kit.jsx` — shared design system (CSS tokens, atoms, PLO advisor engine, matrix model)
+- `coach.jsx` — AI Coach sheet (BYOK setup, context-aware chat, iMessage-style UI)
+- `play-app.jsx` — Play mode (Starter/Expert toggle, rank-then-suit picker, equity ring)
+- `study-app.jsx` — Study mode (preset scenarios, probability matrix focus view, custom builder)
+- `journal-app.jsx` — Hand Journal (session-grouped entries, swipe-to-delete, filters, notes)
+- `app.jsx` — Unified shell (splash, onboarding walkthrough, tab switching, cross-tab data flow)
+
+### Key Design Decisions
+- Mobile-first: iPhone 375-430px primary target
+- 3-tab bottom nav: Play / Study / Journal
+- Play mode has Starter (felt spotlight) and Expert (speed keypad) toggle
+- AI Coach is a shared pull-up sheet, not a tab
+- Rank-then-suit card picker replaces 52-card grid on mobile
+- Probability matrix uses single-row focus view with color minimap
+- BYOK for AI: Groq, OpenAI, Anthropic, Gemini
+
+### Implementation Target
+Replace the current `packages/web/src/public/` files (index.html, styles.css, app.js, play-advisor.js) with the new mobile-first design while preserving the existing API surface and data architecture.
+
+---
+
 ## Project Context
 
 This is a Poker Scenario Analyzer with:
