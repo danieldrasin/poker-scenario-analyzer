@@ -744,9 +744,13 @@ function saveCurrentHand() {
     advised: adv.action, size: adv.sizing ? adv.sizing.to : null,
     took: adv.action, equity: adv.equity, conf: adv.confidence,
     result: 'pending', amt: 0, tags: [], note: '',
-    variant: state.variant, madeHand: madeHand ? madeHand.name : null
+    variant: state.variant, madeHand: madeHand ? madeHand.name : null,
+    position: state.situation.pos,
+    players: state.situation.players,
+    econ: { pot: state.econ.pot, toCall: state.econ.toCall, stack: state.econ.stack }
   };
   state.savedHands.unshift(entry);
+  if (state.savedHands.length > 100) state.savedHands = state.savedHands.slice(0, 100);
   persist();
   showToast('Saved to Journal');
 }
@@ -1355,9 +1359,10 @@ function money(n) { return (n > 0 ? '+$' : n < 0 ? '−$' : '$') + Math.abs(n); 
 function renderJournal() {
   const store = state.journalStore;
   const saved = state.savedHands || [];
-  const liveSession = saved.length ? [{ id: 'live', label: 'This session', venue: 'live · just now', ts: NOW }] : [];
-  const allSessions = [...liveSession, ...SESSIONS];
-  const allHands = [...saved, ...SEED_HANDS];
+  const hasSaved = saved.length > 0;
+  const liveSession = hasSaved ? [{ id: 'live', label: 'This session', venue: 'live · just now', ts: NOW }] : [];
+  const allSessions = hasSaved ? [...liveSession] : [...SESSIONS];
+  const allHands = hasSaved ? [...saved] : [...SEED_HANDS];
 
   $('jr-session-count').textContent = allSessions.length;
 
@@ -1388,12 +1393,35 @@ function renderJournal() {
   if (!grouped.length) {
     scroll.innerHTML = `<div class="jr-empty">
       <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pk-ink3)" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3" stroke-linecap="round"/></svg></div>
-      <div class="t">No hands match</div>
-      <div class="s">${store.deleted.length >= allHands.length ? 'Save your first hand from the Advisor.' : 'Try clearing a filter to see more.'}</div></div>`;
+      <div class="t">${!hasSaved ? 'No hands saved yet' : 'No hands match'}</div>
+      <div class="s">${!hasSaved ? 'Save your first hand from the Play tab.' : 'Try clearing a filter to see more.'}</div></div>`;
     return;
   }
 
   scroll.innerHTML = '';
+
+  // Clear all button (only when there are real saved hands)
+  if (hasSaved) {
+    const clearRow = h('div', '', null, { style: { display: 'flex', justifyContent: 'flex-end', padding: '0 16px 6px' } });
+    const clearBtn = h('div', 'mono', 'Clear all', { style: { fontSize: '11px', color: 'var(--pk-fold)', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', background: 'rgba(239,68,68,.1)' } });
+    clearBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (clearBtn.dataset.confirm) {
+        state.savedHands = [];
+        state.journalStore = { deleted: [], notes: {} };
+        persist();
+        renderJournal();
+        showToast('Journal cleared');
+        return;
+      }
+      clearBtn.textContent = 'Tap again to confirm';
+      clearBtn.dataset.confirm = '1';
+      clearBtn.style.background = 'rgba(239,68,68,.25)';
+      setTimeout(() => { clearBtn.textContent = 'Clear all'; delete clearBtn.dataset.confirm; clearBtn.style.background = 'rgba(239,68,68,.1)'; }, 3000);
+    };
+    clearRow.appendChild(clearBtn);
+    scroll.appendChild(clearRow);
+  }
   grouped.forEach(({ se, hands }) => {
     const net = hands.reduce((a, hand) => a + hand.amt, 0);
     const wins = hands.filter(hand => hand.amt > 0).length;
@@ -1436,7 +1464,13 @@ function renderJournal() {
       </div>`;
 
       if (expanded) {
+        const variantLabel = hand.variant ? (VARIANTS.find(v => v.id === hand.variant) || {}).name || hand.variant : '';
+        const posLabel = hand.position || '';
+        const econHTML = hand.econ ? `<div class="jr-stats" style="margin-top:6px"><span class="st">Pot <b>$${hand.econ.pot}</b></span><span class="st">To call <b>$${hand.econ.toCall}</b></span><span class="st">Stack <b>$${hand.econ.stack}</b></span></div>` : '';
+        const ctxChips = (variantLabel || posLabel) ? `<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">${variantLabel ? `<span class="jr-tag">${variantLabel}</span>` : ''}${posLabel ? `<span class="jr-tag">${posLabel}</span>` : ''}${hand.players ? `<span class="jr-tag">${hand.players}-max</span>` : ''}</div>` : '';
+
         row.innerHTML += `<div class="jr-exp">
+          ${ctxChips}
           <div class="jr-board">
             <div class="jr-bgroup"><div class="gl">Hand</div><div class="jr-bcards">${hand.hole.map(c => chipCardHTML(c.rank, c.suit, 30, 42)).join('')}</div></div>
             ${hand.board.length ? `<div class="jr-bgroup"><div class="gl">Board</div><div class="jr-bcards">${hand.board.map(c => chipCardHTML(c.rank, c.suit, 30, 42)).join('')}</div></div>` : ''}
@@ -1450,6 +1484,7 @@ function renderJournal() {
             <span class="st">Confidence <b>${hand.conf}%</b></span>
             <span class="st">Result <b style="color:${hand.result === 'pending' ? 'var(--pk-teal)' : hand.amt > 0 ? 'var(--pk-bet)' : hand.amt < 0 ? 'var(--pk-fold)' : 'var(--pk-ink2)'}">${hand.result === 'pending' ? 'open' : money(hand.amt)}</b></span>
           </div>
+          ${econHTML}
           <div class="jr-notelabel">Your note</div>
           <textarea class="jr-note" data-hand-id="${hand.id}" placeholder="What did you learn from this hand?">${noteVal}</textarea>
           <div class="jr-expacts">
@@ -1493,11 +1528,14 @@ function renderJournal() {
   scroll.querySelectorAll('[data-replay]').forEach(el => {
     el.onclick = e => {
       e.stopPropagation();
-      const hand = [...state.savedHands, ...SEED_HANDS].find(h => h.id === el.dataset.replay);
+      const allReplayable = [...state.savedHands, ...SEED_HANDS];
+      const hand = allReplayable.find(h => h.id === el.dataset.replay);
       if (hand) {
         if (hand.variant) state.variant = hand.variant;
         state.cards = hand.hole.slice();
         state.board = hand.board ? hand.board.slice() : [];
+        if (hand.position) state.situation.pos = hand.position;
+        if (hand.econ) Object.assign(state.econ, hand.econ);
         state.boardPickerActive = false;
         state.armed = null;
         state.mode = 'starter';
