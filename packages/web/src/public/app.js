@@ -1,2670 +1,1273 @@
-// Poker Scenario Analyzer UI
-// BUILD_TIMESTAMP is replaced at build time, or shows current time for debugging
-const BUILD_TIMESTAMP = '2026-02-09T18:25:00Z';
+// ============================================================
+// Omaha Edge — Vanilla JS App Engine
+// Converted from React prototype (design/*.jsx)
+// ============================================================
+'use strict';
 
-const HAND_TYPE_CODES = ['HC', '1P', '2P', '3C', 'ST', 'FL', 'FH', '4C', 'SF'];
-const HAND_TYPE_NAMES = {
-  'HC': 'High Card',
-  '1P': 'Pair',
-  '2P': 'Two Pair',
-  '3C': 'Set',
-  'ST': 'Straight',
-  'FL': 'Flush',
-  'FH': 'Full House',
-  '4C': 'Quads',
-  'SF': 'Str. Flush'
+// ── Suit & Rank Constants ──
+const SUIT = {
+  s: { g: '♠', c: 'var(--su-spade)' },
+  h: { g: '♥', c: 'var(--su-heart)' },
+  d: { g: '♦', c: 'var(--su-diamond)' },
+  c: { g: '♣', c: 'var(--su-club)' }
 };
-
-const RANK_CHARS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
-
-// Current state
-const state = {
-  game: 'omaha4',
-  opponents: 5,
-  position: 'BTN',
-  style: 'tag',
-  structure: 'pair',
-  rank: 14, // Ace
-  rankModifier: '=', // '=', '+', '-'
-  suitedness: 'ds',
-  sideCards: 'any'
+const FACE_SUIT = {
+  s: { g: '♠', c: '#1e293b' },
+  h: { g: '♥', c: '#e23744' },
+  d: { g: '♦', c: '#2b7fff' },
+  c: { g: '♣', c: '#1a9c5b' }
 };
+const RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
+const ORDER = '23456789TJQKA';
+const rv = r => ORDER.indexOf(r);
 
-// Matrix focus tracking - which cell is currently highlighted
-let matrixFocusedCell = null; // { playerType: 0-8, oppType: 0-8 }
-
-// Update visual focus on matrix cells
-function updateMatrixCellFocus() {
-  // Remove focus from all cells
-  document.querySelectorAll('.matrix td.matrix-cell-focused').forEach(cell => {
-    cell.classList.remove('matrix-cell-focused');
-  });
-
-  // Add focus to the current cell if set
-  if (matrixFocusedCell) {
-    const cell = document.querySelector(
-      `.matrix td[data-player-type="${matrixFocusedCell.playerType}"][data-opp-type="${matrixFocusedCell.oppType}"]`
-    );
-    if (cell) {
-      cell.classList.add('matrix-cell-focused');
-    }
+// ── PLO Heuristic Advisor (from poker-kit.jsx) ──
+function evaluate(cards) {
+  if (!cards.length) return 0;
+  const vals = cards.map(c => rv(c.rank)), ranks = cards.map(c => c.rank), suits = cards.map(c => c.suit);
+  let s = 0;
+  const sorted = [...vals].sort((a, b) => b - a), w = [1.7, 1.15, 0.55, 0.25];
+  sorted.forEach((v, i) => s += v * (w[i] || 0.2));
+  const counts = {}; ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+  Object.entries(counts).forEach(([r, n]) => { if (n >= 2) s += 7 + rv(r) * 0.7; if (n >= 3) s -= 11; if (n >= 4) s -= 12; });
+  const sc = {}; suits.forEach(x => sc[x] = (sc[x] || 0) + 1);
+  const ds = Object.values(sc).filter(n => n === 2).length === 2;
+  const oneSuited = Object.values(sc).filter(n => n >= 2).length >= 1;
+  if (ds) s += 11; else if (oneSuited) s += 5.5;
+  if (Object.values(sc).some(n => n >= 3)) s -= 5;
+  if (Object.values(sc).some(n => n >= 4)) s -= 6;
+  const uniq = [...new Set(vals)].sort((a, b) => a - b);
+  let conn = 0;
+  for (let i = 1; i < uniq.length; i++) {
+    const g = uniq[i] - uniq[i - 1];
+    if (g === 1) conn += 3; else if (g === 2) conn += 1.5; else if (g === 3) conn += 0.5;
   }
+  s += Math.min(conn, 12);
+  const frac = cards.length / 4;
+  return Math.max(0, Math.min(100, s * (cards.length === 4 ? 1 : (0.9 / frac))));
 }
 
-// Map scenario structure to matrix hand type index
-function structureToHandTypeIndex(structure) {
-  const mapping = {
-    'pair': 1,      // Pair
-    'dpair': 2,     // Two Pair
-    'run': 4,       // Straight
-    'bway': 5,      // Flush (broadway often suited)
-    'any': 0        // High Card
-  };
-  return mapping[structure] ?? 0;
+function advise(cards) {
+  const score = evaluate(cards);
+  const equity = Math.round(30 + score * 0.36);
+  let action = 'FOLD', color = 'var(--pk-fold)', sizing = null;
+  if (equity >= 55) { action = 'RAISE'; color = 'var(--pk-raise)'; sizing = { to: '$175', bb: '3.5 bb' }; }
+  else if (equity >= 46) { action = 'CALL'; color = 'var(--pk-call)'; sizing = { to: '$50', bb: 'call' }; }
+  const d = Math.min(Math.abs(equity - 55), Math.abs(equity - 46));
+  const confidence = Math.min(97, Math.round(72 + Math.min(d, 16) * 1.45));
+  const potOdds = action === 'FOLD' ? '—' : (equity >= 55 ? '2.4:1' : '1.9:1');
+  const playability = Math.round(score);
+  return { ready: cards.length === 4, equity, action, color, sizing, confidence, potOdds, playability };
 }
 
-// View in Matrix with highlighting based on current scenario
-function viewInMatrixWithHighlight() {
-  // Determine which cell to highlight based on current scenario state
-  const playerTypeIndex = structureToHandTypeIndex(state.structure);
-
-  // Set focus (use same type for opponent as a reasonable default)
-  matrixFocusedCell = { playerType: playerTypeIndex, oppType: playerTypeIndex };
-
-  // Switch to matrix tab
-  switchToMatrixTab();
-
-  // Apply focus after tab switch (matrix might need to re-render)
-  setTimeout(() => {
-    updateMatrixCellFocus();
-    // Scroll the focused cell into view
-    const focusedCell = document.querySelector('.matrix-cell-focused');
-    if (focusedCell) {
-      focusedCell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-    }
-  }, 100);
+function reasonText(cards, adv) {
+  const n = 4 - cards.length;
+  if (n > 0) return 'Add ' + n + ' more card' + (n > 1 ? 's' : '') + ' for your read.';
+  const ranks = cards.map(c => c.rank), suits = cards.map(c => c.suit);
+  const counts = {}; ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+  const sc = {}; suits.forEach(s => sc[s] = (sc[s] || 0) + 1);
+  const ds = Object.values(sc).filter(n => n === 2).length === 2;
+  const aces = counts['A'] >= 2, anyPair = Object.values(counts).some(n => n >= 2);
+  const broadway = ranks.every(r => 'AKQJT'.includes(r));
+  if (aces && ds) return 'Double-suited aces — top of your raising range from the button.';
+  if (aces) return 'A pair of aces with playable side cards — raise for value.';
+  if (broadway && ds) return 'Double-suited broadway — premium holding, raise.';
+  if (anyPair && ds) return 'Paired and double-suited — strong, raise.';
+  if (adv.action === 'RAISE') return 'Connected and suited enough to raise for value.';
+  if (adv.action === 'CALL') return 'Speculative — playable in position, proceed with care.';
+  return 'Disconnected and offsuit — fold and wait for a better spot.';
 }
 
-// Make functions globally available
-window.viewInMatrixWithHighlight = viewInMatrixWithHighlight;
-
-// ============ MATRIX ZOOM CONTROL ============
-let matrixZoomedOut = false;
-
-function toggleMatrixZoom() {
-  matrixZoomedOut = !matrixZoomedOut;
-  const matrixContainer = document.getElementById('matrix-container');
-  const toggleBtn = document.getElementById('matrix-zoom-toggle');
-
-  if (matrixContainer) {
-    if (matrixZoomedOut) {
-      matrixContainer.classList.add('zoomed-out');
-      if (toggleBtn) {
-        toggleBtn.querySelector('.zoom-label').textContent = 'Normal View';
-        toggleBtn.querySelector('.zoom-icon').textContent = '🔎';
-      }
-    } else {
-      matrixContainer.classList.remove('zoomed-out');
-      if (toggleBtn) {
-        toggleBtn.querySelector('.zoom-label').textContent = 'Fit to Screen';
-        toggleBtn.querySelector('.zoom-icon').textContent = '🔍';
-      }
-    }
+function parseNotation(str) {
+  const out = [];
+  for (let i = 0; i < str.length && out.length < 4;) {
+    const ch = str[i].toUpperCase();
+    if ('AKQJT98765432'.includes(ch)) {
+      const su = (str[i + 1] || '').toLowerCase();
+      if ('shdc'.includes(su)) { if (!out.some(c => c.rank === ch && c.suit === su)) out.push({ rank: ch, suit: su }); i += 2; }
+      else i += 1;
+    } else i += 1;
   }
+  return out;
 }
 
-window.toggleMatrixZoom = toggleMatrixZoom;
+// ── Matrix Data Model (from poker-kit.jsx) ──
+const HAND_CATS = [
+  { key: 'high',  short: 'High',     name: 'High Card' },
+  { key: 'pair',  short: 'Pair',     name: 'One Pair' },
+  { key: 'two',   short: '2 Pair',   name: 'Two Pair' },
+  { key: 'trips', short: 'Trips',    name: 'Trips / Set' },
+  { key: 'str',   short: 'Straight', name: 'Straight' },
+  { key: 'flush', short: 'Flush',    name: 'Flush' },
+  { key: 'boat',  short: 'Boat',     name: 'Full House' },
+  { key: 'quads', short: 'Quads',    name: 'Quads' },
+  { key: 'sf',    short: 'St.Flush', name: 'Straight Flush' },
+];
+const FINAL_FREQ = [6, 33, 30, 12, 9, 5.5, 3.6, 0.35, 0.05];
+const OUTCOME_COLOR = { win: 'var(--pk-bet)', tie: 'var(--pk-raise)', lose: 'var(--pk-fold)' };
 
-// ============ INTRO CARD MANAGEMENT ============
-// Collapsible onboarding cards with localStorage persistence
+function fieldProb(j, opp) { const p = FINAL_FREQ[j] / 100; return (1 - Math.pow(1 - p, opp)) * 100; }
+function outcome(i, j) { return i > j ? 'win' : i < j ? 'lose' : 'tie'; }
 
-function initIntroCards() {
-  document.querySelectorAll('.intro-card').forEach(card => {
-    const storageKey = card.dataset.storageKey;
-    if (storageKey && localStorage.getItem(storageKey) === 'true') {
-      card.classList.add('collapsed');
-    }
-  });
+function rowData(i, opp) {
+  const rows = HAND_CATS.map((c, j) => ({
+    j, label: c.short, name: c.name,
+    pct: fieldProb(j, opp),
+    outcome: outcome(i, j),
+    color: OUTCOME_COLOR[outcome(i, j)]
+  }));
+  const rank = { lose: 0, tie: 1, win: 2 };
+  rows.sort((a, b) => rank[a.outcome] - rank[b.outcome] || b.pct - a.pct);
+  let aheadP = 1;
+  for (let j = i + 1; j < 9; j++) aheadP *= Math.pow(1 - FINAL_FREQ[j] / 100, opp);
+  const beat = (1 - aheadP) * 100;
+  return { rows, beat, ahead: 100 - beat };
 }
 
-function toggleIntroCard(cardId) {
-  const card = document.getElementById(cardId);
-  if (!card) return;
-
-  if (card.classList.contains('collapsed')) {
-    card.classList.remove('collapsed');
-    const storageKey = card.dataset.storageKey;
-    if (storageKey) localStorage.removeItem(storageKey);
-  } else {
-    collapseIntroCard(cardId);
-  }
-}
-
-function collapseIntroCard(cardId) {
-  const card = document.getElementById(cardId);
-  if (!card) return;
-
-  card.classList.add('collapsed');
-  const storageKey = card.dataset.storageKey;
-  if (storageKey) localStorage.setItem(storageKey, 'true');
-}
-
-// Make functions globally available for onclick handlers
-window.toggleIntroCard = toggleIntroCard;
-window.collapseIntroCard = collapseIntroCard;
-
-// ============ TIERED DATA SERVICE ============
-// Tier 1: Bundled JSON (instant, limited scenarios)
-// Tier 2: Cloudflare R2 (fast, pre-computed 1M iterations)
-// Tier 3: Live simulation (slower, any scenario)
-
-const TieredDataService = {
-  // Fetch simulation data using tiered approach
-  async fetchSimulationData(gameVariant, playerCount, options = {}) {
-    const { forceRefresh = false, statusCallback = null } = options;
-
-    // Try Tier 2 first (R2 pre-computed data)
-    if (!forceRefresh) {
-      statusCallback?.('Checking pre-computed data...');
-      try {
-        const tier2Data = await this.fetchFromTier2(gameVariant, playerCount);
-        if (tier2Data) {
-          statusCallback?.('Loaded from cache (1M simulations)');
-          return { source: 'tier2', data: tier2Data };
-        }
-      } catch (e) {
-        console.log('Tier 2 not available, falling back to Tier 3');
-      }
-    }
-
-    // Fall back to Tier 3 (live simulation)
-    statusCallback?.('Running live simulation...');
-    const tier3Data = await this.fetchFromTier3(gameVariant, playerCount);
-    return { source: 'tier3', data: tier3Data };
-  },
-
-  // Tier 2: Fetch from Cloudflare R2
-  async fetchFromTier2(gameVariant, playerCount) {
-    const url = `/api/data?game=${gameVariant}&players=${playerCount}`;
-    console.log('Tier2: Fetching from', url);
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.log('Tier2: Response not OK', response.status);
-      if (response.status === 404 || response.status === 503) {
-        return null; // Not found or R2 not configured
-      }
-      throw new Error('Tier 2 fetch failed');
-    }
-    const result = await response.json();
-    console.log('Tier2: API response keys:', Object.keys(result));
-    console.log('Tier2: result.data exists:', !!result.data);
-    if (result.data) {
-      console.log('Tier2: result.data keys:', Object.keys(result.data));
-    }
-    if (result.fallback === 'tier1') {
-      return null; // R2 returned fallback indicator
-    }
-    return result.data;
-  },
-
-  // Tier 3: Live Monte Carlo simulation
-  async fetchFromTier3(gameVariant, playerCount, iterations = 50000) {
-    const response = await fetch('/api/simulate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameVariant, playerCount, iterations })
-    });
-    if (!response.ok) {
-      throw new Error('Simulation failed');
-    }
-    const data = await response.json();
-    return data.result;
-  }
-};
-
-// Strategy configuration
-const STRATEGY_CONFIG = {
-  // Base playability scores for hand types (0-100)
-  handStrength: {
-    'pair:AA': 95, 'pair:KK': 88, 'pair:QQ': 80, 'pair:JJ': 72, 'pair:TT': 65,
-    'pair:99': 55, 'pair:88': 48, 'pair:77': 42, 'pair:66': 36, 'pair:55': 30,
-    'pair:44': 25, 'pair:33': 22, 'pair:22': 20,
-    'dpair:any': 70, 'run:A': 85, 'run:K': 78, 'run:Q': 70, 'run:J': 62,
-    'run:T': 55, 'run:9': 48, 'run:8': 42, 'run:7': 35, 'run:6': 28,
-    'bway:any': 72, 'any:any': 30
-  },
-
-  // Position modifiers (BB gets discount since already invested, but OOP postflop)
-  positionMod: { 'UTG': -15, 'MP': -8, 'CO': 0, 'BTN': +12, 'SB': -5, 'BB': -2 },
-
-  // Style thresholds (minimum score to play)
-  styleThreshold: { 'rock': 75, 'tag': 55, 'lag': 40 },
-
-  // Style VPIP targets for context
-  styleVPIP: { 'rock': '~15%', 'tag': '~25%', 'lag': '~38%' },
-
-  // Suitedness bonus
-  suitBonus: { 'ds': 12, 'ss': 6, 'r': -3, 'any': 4 },
-
-  // Nut potential ratings (0-100)
-  nutPotential: {
-    'pair:AA:ds': 95, 'pair:AA:ss': 85, 'pair:AA:r': 70,
-    'pair:KK:ds': 85, 'pair:KK:ss': 75, 'pair:KK:r': 60,
-    'pair:QQ:ds': 75, 'pair:QQ:ss': 65, 'pair:QQ:r': 50,
-    'run:A:ds': 90, 'run:A:ss': 80, 'run:K:ds': 75, 'run:K:ss': 65,
-    'run:T:ds': 55, 'run:9:ds': 45, 'run:8:ds': 38,
-    'bway:any:ds': 85, 'bway:any:ss': 70,
-    'dpair:any:ds': 75, 'dpair:any:ss': 60
-  }
-};
-
-// Loading indicator helpers
-function showDataLoading(message = 'Loading data...') {
-  const container = document.getElementById('data-status');
-  if (container) {
-    container.innerHTML = `
-      <div class="data-loading">
-        <div class="spinner"></div>
-        <span>${message}</span>
-      </div>
-    `;
-    container.style.display = 'block';
-  }
-}
-
-function hideDataLoading() {
-  const container = document.getElementById('data-status');
-  if (container) {
-    container.style.display = 'none';
-    container.innerHTML = '';
-  }
-}
-
-function showStorageUsage() {
-  if (typeof DataManager === 'undefined') return;
-
-  DataManager.getStorageUsage().then(usage => {
-    const container = document.getElementById('storage-status');
-    if (!container || !usage) return;
-
-    const percent = (usage.used / usage.quota * 100).toFixed(1);
-    const statusClass = percent > 90 ? 'critical' : percent > 70 ? 'warning' : '';
-
-    container.innerHTML = `
-      <div class="storage-usage">
-        <span>Storage:</span>
-        <div class="storage-bar">
-          <div class="storage-bar-fill ${statusClass}" style="width: ${Math.min(percent, 100)}%"></div>
-        </div>
-        <span>${formatBytes(usage.used)} / ${formatBytes(usage.quota)}</span>
-      </div>
-    `;
-  }).catch(() => {});
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-}
-
-// Initialize
-document.addEventListener('DOMContentLoaded', async () => {
-  // Initialize onboarding intro cards
-  initIntroCards();
-
-  // Show deployment timestamp
-  const deployInfo = document.getElementById('deploy-info');
-  if (deployInfo) {
-    const deployDate = new Date(BUILD_TIMESTAMP);
-    deployInfo.textContent = `v${deployDate.toLocaleDateString()} ${deployDate.toLocaleTimeString()}`;
-    deployInfo.style.cssText = 'position:absolute;bottom:4px;right:8px;font-size:10px;color:#666;opacity:0.7;';
-  }
-
-  // Initialize DataManager first (for IndexedDB and Tier 1 data access)
-  if (typeof DataManager !== 'undefined') {
-    showDataLoading('Initializing data storage...');
-    await DataManager.init();
-    console.log('DataManager initialized');
-
-    // Load Tier 1 bundled data for current variant
-    const variant = document.getElementById('game-select')?.value || 'omaha4';
-    showDataLoading('Loading simulation data...');
-    const tier1Data = await DataManager.loadTier1Data(variant);
-    if (tier1Data) {
-      window.bundledData = tier1Data;
-      console.log('Tier 1 data loaded:', variant, Object.keys(tier1Data.byPlayerCount || {}).length, 'player counts');
-    }
-    hideDataLoading();
-    showStorageUsage();
-  }
-
-  initTabs();
-  initScenarioBuilder();
-  initMatrix();
-  initWorkflowHints();
-  loadSavedSimulations();
-  updateQueryPreview();
-  updateStrategyInsight();
-  updateMultiwayAlert();
-  updatePresetRecommendations();
-
-  // Reload bundled data when game variant changes
-  document.getElementById('game-select')?.addEventListener('change', async (e) => {
-    if (typeof DataManager !== 'undefined') {
-      showDataLoading(`Loading ${e.target.value} data...`);
-      const tier1Data = await DataManager.loadTier1Data(e.target.value);
-      if (tier1Data) {
-        window.bundledData = tier1Data;
-        console.log('Tier 1 data reloaded for:', e.target.value);
-      }
-      hideDataLoading();
-    }
-  });
-});
-
-// Workflow hint dismissal
-function initWorkflowHints() {
-  const dismissBtn = document.getElementById('dismiss-hint');
-  if (dismissBtn) {
-    dismissBtn.addEventListener('click', () => {
-      document.getElementById('workflow-hint').style.display = 'none';
-      localStorage.setItem('hint-dismissed', 'true');
-    });
-    // Check if already dismissed
-    if (localStorage.getItem('hint-dismissed') === 'true') {
-      document.getElementById('workflow-hint').style.display = 'none';
-    }
-  }
-}
-
-// ============ TAB NAVIGATION ============
-
-// Track if matrix has been auto-loaded
-let matrixAutoLoaded = false;
-
-function initTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tabId = btn.dataset.tab;
-
-      // Update buttons
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      // Update content
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.getElementById(`${tabId}-tab`).classList.add('active');
-
-      // Auto-load matrix with Tier 2 data on first view
-      if (tabId === 'matrix' && !matrixAutoLoaded) {
-        matrixAutoLoaded = true;
-        autoLoadMatrix();
-      }
-    });
-  });
-
-  // Add change listeners for Matrix tab selectors - auto-reload on change
-  const matrixGameSelect = document.getElementById('matrix-game');
-  const matrixPlayersSelect = document.getElementById('matrix-players');
-
-  if (matrixGameSelect) {
-    matrixGameSelect.addEventListener('change', () => {
-      if (matrixAutoLoaded) {
-        autoLoadMatrix();
-      }
-    });
-  }
-
-  if (matrixPlayersSelect) {
-    matrixPlayersSelect.addEventListener('change', () => {
-      if (matrixAutoLoaded) {
-        autoLoadMatrix();
-      }
-    });
-  }
-}
-
-// Auto-load matrix using Tier 2 data (no button click needed)
-async function autoLoadMatrix() {
-  const game = document.getElementById('matrix-game').value;
-  const players = parseInt(document.getElementById('matrix-players').value, 10);
-  const container = document.getElementById('matrix-container');
-
-  // Show loading state
-  container.innerHTML = '<div class="loading-matrix">Loading probability matrix...</div>';
-
-  try {
-    // Use TieredDataService to fetch Tier 2 data
-    const { source, data } = await TieredDataService.fetchSimulationData(game, players, { forceRefresh: false });
-
-    if (data && data.statistics) {
-      displayMatrix(data);
-      // Show source info below matrix
-      const iterations = data.metadata?.config?.iterations || 'N/A';
-      const sourceInfo = source === 'tier2' 
-        ? `✓ Loaded ${iterations.toLocaleString()} pre-computed hands` 
-        : `✓ Loaded from ${source}`;
-      const infoEl = document.createElement('div');
-      infoEl.className = 'matrix-source-info';
-      infoEl.style.cssText = 'text-align: center; color: #16a34a; font-size: 12px; margin-top: 8px;';
-      infoEl.textContent = sourceInfo;
-      container.appendChild(infoEl);
-    } else {
-      throw new Error('No data available');
-    }
-  } catch (error) {
-    console.error('Auto-load matrix failed:', error);
-    container.innerHTML = '<div class="matrix-empty">Unable to load pre-computed data. Try refreshing the page.</div>';
-  }
-}
-
-// ============ SCENARIO BUILDER ============
-
-function initScenarioBuilder() {
-  // Game select
-  document.getElementById('game-select').addEventListener('change', (e) => {
-    state.game = e.target.value;
-    updateBuilderVisibility();
-    updateQueryPreview();
-    updateStrategyInsight();
-  });
-
-  // Position select
-  document.getElementById('position-select')?.addEventListener('change', (e) => {
-    state.position = e.target.value;
-    updateStrategyInsight();
-    updatePresetRecommendations();
-  });
-
-  // Style select
-  document.getElementById('style-select')?.addEventListener('change', (e) => {
-    state.style = e.target.value;
-    updateStrategyInsight();
-    updatePresetRecommendations();
-  });
-
-  // Opponent buttons
-  document.querySelectorAll('.opp-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.opp-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.opponents = parseInt(btn.dataset.count, 10);
-      updateQueryPreview();
-      updateStrategyInsight();
-      updateMultiwayAlert();
-      updatePresetRecommendations();
-    });
-  });
-
-  // Preset chips
-  document.querySelectorAll('.preset-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.preset-chip').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      applyPreset(btn.dataset.query);
-    });
-  });
-
-  // Structure select (compact)
-  const structureSelect = document.getElementById('structure-select');
-  if (structureSelect) {
-    structureSelect.addEventListener('change', (e) => {
-      state.structure = e.target.value;
-      updateBuilderVisibility();
-      updateConstraintTags();
-      updateQueryPreview();
-      updateStrategyInsight();
-      clearActivePreset();
-    });
-  }
-
-  // Rank stepper
-  const rankDown = document.getElementById('rank-down');
-  const rankUp = document.getElementById('rank-up');
-  if (rankDown) {
-    rankDown.addEventListener('click', () => {
-      if (state.rank > 2) {
-        state.rank--;
-        updateRankDisplay();
-        updateQueryPreview();
-        updateStrategyInsight();
-        clearActivePreset();
-      }
-    });
-  }
-  if (rankUp) {
-    rankUp.addEventListener('click', () => {
-      if (state.rank < 14) {
-        state.rank++;
-        updateRankDisplay();
-        updateQueryPreview();
-        updateStrategyInsight();
-        clearActivePreset();
-      }
-    });
-  }
-
-  // Rank modifier buttons
-  document.querySelectorAll('.rank-mod').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.rank-mod').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.rankModifier = btn.dataset.mod;
-      updateConstraintTags();
-      updateQueryPreview();
-      updateStrategyInsight();
-      clearActivePreset();
-    });
-  });
-
-  // Suit select (compact)
-  const suitSelect = document.getElementById('suit-select');
-  if (suitSelect) {
-    suitSelect.addEventListener('change', (e) => {
-      state.suitedness = e.target.value;
-      updateConstraintTags();
-      updateQueryPreview();
-      updateStrategyInsight();
-      clearActivePreset();
-    });
-  }
-
-  // Side cards select (compact)
-  const sidecardsSelect = document.getElementById('sidecards-select');
-  if (sidecardsSelect) {
-    sidecardsSelect.addEventListener('change', (e) => {
-      state.sideCards = e.target.value;
-      updateConstraintTags();
-      updateQueryPreview();
-      updateStrategyInsight();
-      clearActivePreset();
-    });
-  }
-
-  // Copy query button
-  document.getElementById('copy-query')?.addEventListener('click', () => {
-    const queryCode = document.getElementById('query-code').textContent;
-    navigator.clipboard.writeText(queryCode).then(() => {
-      const btn = document.getElementById('copy-query');
-      btn.textContent = '✓';
-      setTimeout(() => btn.textContent = '📋', 1500);
-    });
-  });
-
-  // Analyze button
-  document.getElementById('analyze-btn')?.addEventListener('click', runScenarioAnalysis);
-
-  // Initialize display
-  updateRankDisplay();
-  updateBuilderVisibility();
-  updateConstraintTags();
-}
-
-function clearActivePreset() {
-  document.querySelectorAll('.preset-chip').forEach(b => b.classList.remove('active'));
-}
-
-function updateBuilderVisibility() {
-  const sidecardsCell = document.getElementById('sidecards-cell');
-  const rankCell = document.getElementById('rank-cell');
-
-  // Side cards only relevant for pairs
-  if (sidecardsCell) {
-    sidecardsCell.style.display = (state.structure === 'pair' || state.structure === 'dpair') ? 'flex' : 'none';
-  }
-
-  // Rank not relevant for "any" or "bway" structure
-  if (rankCell) {
-    rankCell.style.display = (state.structure === 'any' || state.structure === 'bway') ? 'none' : 'flex';
-  }
-}
-
-function updateRankDisplay() {
-  const display = document.getElementById('rank-display');
-  if (display) {
-    display.textContent = getRankChar(state.rank);
-  }
-}
-
-function updateConstraintTags() {
-  const container = document.getElementById('constraint-tags');
-  if (!container) return;
-
-  const tags = [];
-
-  // Structure tag
-  const structNames = { pair: 'Pair', dpair: 'Double Pair', run: 'Rundown', bway: 'Broadway', any: 'Any' };
-  if (state.structure !== 'any') {
-    tags.push(`<span class="tag">${structNames[state.structure]}</span>`);
-  }
-
-  // Rank tag
-  if (state.structure !== 'any' && state.structure !== 'bway') {
-    const rankName = getRankName(state.rank);
-    const modStr = state.rankModifier === '+' ? '+' : (state.rankModifier === '-' ? '−' : '');
-    tags.push(`<span class="tag">${rankName}${modStr}</span>`);
-  }
-
-  // Suitedness tag
-  const suitNames = { ds: 'Double-Suited', ss: 'Single-Suited', r: 'Rainbow', any: '' };
-  if (suitNames[state.suitedness]) {
-    tags.push(`<span class="tag">${suitNames[state.suitedness]}</span>`);
-  }
-
-  // Side cards tag
-  if ((state.structure === 'pair' || state.structure === 'dpair') && state.sideCards !== 'any') {
-    const sideNames = { conn: 'Connected', bway: 'Broadway', wheel: 'Wheel' };
-    tags.push(`<span class="tag">${sideNames[state.sideCards]} Kickers</span>`);
-  }
-
-  container.innerHTML = tags.join('');
-}
-
-function updateQueryPreview() {
-  const query = buildQueryString();
-  const description = describeQuery();
-  const examples = generateSampleHands();
-
-  document.getElementById('query-code').textContent = query;
-  document.getElementById('query-description').textContent = description;
-  document.getElementById('hand-cards').innerHTML = examples;
-}
-
-// Generate 3 varied example hands that match the current query
-function generateSampleHands() {
-  const suitClasses = { '♠': 'spade', '♥': 'heart', '♦': 'diamond', '♣': 'club' };
-
-  // Helper to format a card with color
-  const card = (rank, suit) => {
-    const cls = suitClasses[suit];
-    return `<span class="${cls}">${getRankChar(rank)}${suit}</span>`;
-  };
-
-  // Helper to make a hand string
-  const hand = (cards) => cards.join('');
-
-  const r = state.rank;
-  const hands = [];
-
-  // Get suit patterns based on suitedness
-  const suitPatterns = getSuitPatterns(state.suitedness);
-
-  if (state.structure === 'pair') {
-    // 3 varied pairs with different kicker profiles
-    const kickers = getVariedKickers(r, state.sideCards);
-
-    hands.push(hand([card(r, suitPatterns[0][0]), card(r, suitPatterns[0][1]),
-                     card(kickers[0][0], suitPatterns[0][2]), card(kickers[0][1], suitPatterns[0][3])]));
-    hands.push(hand([card(r, suitPatterns[1][0]), card(r, suitPatterns[1][1]),
-                     card(kickers[1][0], suitPatterns[1][2]), card(kickers[1][1], suitPatterns[1][3])]));
-    hands.push(hand([card(r, suitPatterns[2][0]), card(r, suitPatterns[2][1]),
-                     card(kickers[2][0], suitPatterns[2][2]), card(kickers[2][1], suitPatterns[2][3])]));
-
-  } else if (state.structure === 'dpair') {
-    // 3 varied double pairs with different second pair ranks
-    const secondRanks = [r-1 > 1 ? r-1 : 13, r-3 > 1 ? r-3 : 11, r-5 > 1 ? r-5 : 9];
-
-    for (let i = 0; i < 3; i++) {
-      const r2 = secondRanks[i];
-      hands.push(hand([card(r, suitPatterns[i][0]), card(r, suitPatterns[i][1]),
-                       card(r2, suitPatterns[i][2]), card(r2, suitPatterns[i][3])]));
-    }
-
-  } else if (state.structure === 'run') {
-    // 3 rundowns: tight (no gaps), 1-gap, different suit arrangements
-    const rundowns = [
-      [r, r-1, r-2, r-3],           // tight: AKQJ
-      [r, r-1, r-3, r-4],           // 1-gap: AKJ T
-      [r, r-2, r-3, r-4]            // top-gap: AQJ T
-    ];
-
-    for (let i = 0; i < 3; i++) {
-      const rr = rundowns[i].map(x => x < 2 ? x + 13 : x);
-      hands.push(hand([card(rr[0], suitPatterns[i][0]), card(rr[1], suitPatterns[i][1]),
-                       card(rr[2], suitPatterns[i][2]), card(rr[3], suitPatterns[i][3])]));
-    }
-
-  } else if (state.structure === 'bway') {
-    // 3 broadway variations
-    const bways = [
-      [14, 13, 12, 11],  // AKQJ
-      [14, 13, 12, 10],  // AKQT
-      [13, 12, 11, 10]   // KQJT
-    ];
-
-    for (let i = 0; i < 3; i++) {
-      hands.push(hand([card(bways[i][0], suitPatterns[i][0]), card(bways[i][1], suitPatterns[i][1]),
-                       card(bways[i][2], suitPatterns[i][2]), card(bways[i][3], suitPatterns[i][3])]));
-    }
-
-  } else {
-    // Any - show truly varied hands
-    hands.push(hand([card(14, '♠'), card(8, '♥'), card(7, '♦'), card(3, '♣')]));
-    hands.push(hand([card(11, '♠'), card(11, '♥'), card(6, '♦'), card(5, '♣')]));
-    hands.push(hand([card(9, '♠'), card(8, '♠'), card(4, '♥'), card(2, '♥')]));
-  }
-
-  // Format as 3 separate example hands
-  return hands.map((h, i) => `<span class="example-hand">${h}</span>`).join('');
-}
-
-// Get suit patterns that satisfy the suitedness constraint
-function getSuitPatterns(suitedness) {
-  if (suitedness === 'ds') {
-    return [
-      ['♠', '♥', '♠', '♥'],  // spade-heart DS
-      ['♦', '♣', '♦', '♣'],  // diamond-club DS
-      ['♠', '♦', '♠', '♦']   // spade-diamond DS
-    ];
-  } else if (suitedness === 'ss') {
-    return [
-      ['♠', '♥', '♠', '♦'],  // spades suited
-      ['♥', '♦', '♥', '♣'],  // hearts suited
-      ['♦', '♠', '♦', '♥']   // diamonds suited
-    ];
-  } else if (suitedness === 'r') {
-    return [
-      ['♠', '♥', '♦', '♣'],
-      ['♥', '♦', '♣', '♠'],
-      ['♦', '♣', '♠', '♥']
-    ];
-  } else {
-    // Any - mix of patterns
-    return [
-      ['♠', '♥', '♠', '♥'],
-      ['♠', '♥', '♦', '♣'],
-      ['♠', '♠', '♥', '♦']
-    ];
-  }
-}
-
-// Get varied kicker combinations for pairs
-function getVariedKickers(pairRank, sideCards) {
-  if (sideCards === 'conn') {
-    // Connected to the pair
-    const above = pairRank < 14 ? pairRank + 1 : 13;
-    const below = pairRank > 2 ? pairRank - 1 : 14;
-    return [
-      [above, below],                           // wrap around pair
-      [above, above > 2 ? above - 1 : 14],      // both above
-      [below, below > 2 ? below - 1 : 14]       // both below
-    ];
-  } else if (sideCards === 'bway') {
-    return [[13, 12], [13, 11], [12, 11]];  // KQ, KJ, QJ
-  } else if (sideCards === 'wheel') {
-    return [[5, 4], [5, 3], [4, 3]];  // 54, 53, 43
-  } else {
-    // Any - show varied kickers (high, mid, low)
-    const high = pairRank === 14 ? 13 : 14;
-    return [
-      [high, high - 1],     // high kickers
-      [8, 7],               // mid kickers
-      [5, 3]                // low kickers
-    ];
-  }
-}
-
-function buildQueryString() {
-  const parts = [state.structure];
-
-  if (state.structure !== 'any') {
-    const rankChar = getRankChar(state.rank);
-    if (state.rankModifier === '+') {
-      parts.push(`${rankChar}+`);
-    } else if (state.rankModifier === '-') {
-      parts.push(`${rankChar}-`);
-    } else {
-      parts.push(rankChar + rankChar);
-    }
-  }
-
-  if (state.suitedness && state.suitedness !== 'any') {
-    parts.push(state.suitedness);
-  }
-
-  if ((state.structure === 'pair' || state.structure === 'dpair') &&
-      state.sideCards && state.sideCards !== 'any') {
-    parts.push(state.sideCards);
-  }
-
-  return parts.join(':');
-}
-
-function getRankChar(rank) {
-  if (rank === 14) return 'A';
-  if (rank === 13) return 'K';
-  if (rank === 12) return 'Q';
-  if (rank === 11) return 'J';
-  if (rank === 10) return 'T';
-  return rank.toString();
-}
-
-function describeQuery() {
-  const structureNames = {
-    'pair': 'Pair',
-    'dpair': 'Double Pair',
-    'run': 'Rundown',
-    'bway': 'Broadway',
-    'any': 'Any hand'
-  };
-
-  const suitNames = {
-    'ds': 'double-suited',
-    'ss': 'single-suited',
-    'r': 'rainbow',
-    'any': ''
-  };
-
-  const sideCardNames = {
-    'conn': 'with connected kickers',
-    'bway': 'with broadway kickers',
-    'wheel': 'with wheel cards',
-    'any': ''
-  };
-
-  let desc = structureNames[state.structure] || state.structure;
-
-  if (state.structure !== 'any') {
-    const rankName = getRankName(state.rank);
-    if (state.rankModifier === '+') {
-      desc += ` ${rankName} or better`;
-    } else if (state.rankModifier === '-') {
-      desc += ` ${rankName} or worse`;
-    } else {
-      desc += ` ${rankName}`;
-    }
-  }
-
-  if (suitNames[state.suitedness]) {
-    desc += ' ' + suitNames[state.suitedness];
-  }
-
-  if ((state.structure === 'pair' || state.structure === 'dpair') && sideCardNames[state.sideCards]) {
-    desc += ' ' + sideCardNames[state.sideCards];
-  }
-
-  return desc;
-}
-
-function getRankName(rank) {
-  const names = { 14: 'Aces', 13: 'Kings', 12: 'Queens', 11: 'Jacks', 10: 'Tens' };
-  return names[rank] || rank + 's';
-}
-
-function applyPreset(queryStr) {
-  // Parse query string and update state
-  const parts = queryStr.split(':');
-
-  // Structure
-  state.structure = parts[0];
-  const structSelect = document.getElementById('structure-select');
-  if (structSelect) structSelect.value = parts[0];
-
-  // Rank (if present)
-  if (parts[1]) {
-    const rankPart = parts[1];
-    if (rankPart.endsWith('+')) {
-      state.rankModifier = '+';
-      state.rank = parseRankChar(rankPart.slice(0, -1));
-    } else if (rankPart.endsWith('-')) {
-      state.rankModifier = '-';
-      state.rank = parseRankChar(rankPart.slice(0, -1));
-    } else if (rankPart === 'any') {
-      state.rank = 14;
-      state.rankModifier = '=';
-    } else {
-      state.rankModifier = '=';
-      state.rank = parseRankChar(rankPart.charAt(0));
-    }
-
-    // Update rank modifier buttons
-    document.querySelectorAll('.rank-mod').forEach(b => {
-      b.classList.toggle('active', b.dataset.mod === state.rankModifier);
-    });
-  }
-
-  // Suitedness (if present)
-  const suitPart = parts.find(p => ['ds', 'ss', 'r'].includes(p)) || 'any';
-  state.suitedness = suitPart;
-  const suitSelect = document.getElementById('suit-select');
-  if (suitSelect) suitSelect.value = suitPart;
-
-  // Side cards (if present for pair structures)
-  const sidePart = parts.find(p => ['conn', 'bway', 'wheel'].includes(p)) || 'any';
-  state.sideCards = sidePart;
-  const sideSelect = document.getElementById('sidecards-select');
-  if (sideSelect) sideSelect.value = sidePart;
-
-  updateBuilderVisibility();
-  updateRankDisplay();
-  updateConstraintTags();
-  updateQueryPreview();
-  updateStrategyInsight();
-}
-
-function parseRankChar(char) {
-  const c = char.toUpperCase();
-  if (c === 'A') return 14;
-  if (c === 'K') return 13;
-  if (c === 'Q') return 12;
-  if (c === 'J') return 11;
-  if (c === 'T') return 10;
-  return parseInt(c, 10);
-}
-
-async function runScenarioAnalysis() {
-  const btn = document.getElementById('analyze-btn');
-  btn.disabled = true;
-
-  const updateStatus = (msg) => {
-    btn.innerHTML = `<span class="btn-icon">⏳</span><span class="btn-text">${msg}</span>`;
-  };
-
-  try {
-    updateStatus('Loading data...');
-
-    // Use tiered data service - tries R2 first, then live simulation
-    const { source, data } = await TieredDataService.fetchSimulationData(
-      state.game,
-      state.opponents + 1,
-      { statusCallback: updateStatus }
-    );
-
-    // Show data source in results
-    console.log(`Analysis data from: ${source} (${data.metadata?.iterations?.toLocaleString() || 'N/A'} iterations)`);
-    displayScenarioResults(data);
-
-  } catch (error) {
-    console.error('Analysis error:', error);
-    alert('Analysis failed: ' + error.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">🔍</span><span class="btn-text">Analyze Scenario</span>';
-  }
-}
-
-function displayScenarioResults(result) {
-  // Debug: Log the full result structure
-  console.log('displayScenarioResults received:', JSON.stringify(result, null, 2).slice(0, 500));
-
-  // Validate result structure
-  if (!result) {
-    console.error('displayScenarioResults: result is null/undefined');
-    alert('Analysis failed: No data received');
-    return;
-  }
-  if (!result.statistics) {
-    console.error('displayScenarioResults: result.statistics is missing', result);
-    alert('Analysis failed: Invalid data structure (no statistics)');
-    return;
-  }
-  if (!result.metadata) {
-    console.error('displayScenarioResults: result.metadata is missing', result);
-    alert('Analysis failed: Invalid data structure (no metadata)');
-    return;
-  }
-
-  const resultsSection = document.getElementById('results-section');
-  resultsSection.style.display = 'block';
-
-  // Update title
-  document.getElementById('results-title').textContent = `Analysis: ${describeQuery()}`;
-
-  // Extract REAL statistics from simulation data
-  const stats = result.statistics;
-  // Handle both nested (config.iterations) and flat (iterations) formats
-  const handsAnalyzed = result.metadata.config?.iterations || result.metadata.iterations || 0;
-
-  // Calculate actual win rate from hand type distribution
-  let totalWins = 0;
-  let totalHands = 0;
-  if (stats.handTypeDistribution) {
-    stats.handTypeDistribution.forEach(ht => {
-      totalWins += ht.wins || 0;
-      totalHands += ht.count || 0;
-    });
-  }
-  const winRate = totalHands > 0 ? (totalWins / totalHands * 100).toFixed(1) : '0.0';
-
-  // Calculate hand frequency from starting category if available
-  let frequency = '~';
-  if (stats.byStartingCategory) {
-    const categories = Object.values(stats.byStartingCategory);
-    const totalCatHands = categories.reduce((sum, cat) => sum + cat.count, 0);
-    if (totalCatHands > 0) {
-      frequency = (categories[0]?.count / totalCatHands * 100).toFixed(2);
-    }
-  }
-
-  document.getElementById('stat-winrate').textContent = `${winRate}%`;
-  document.getElementById('stat-hands').textContent = handsAnalyzed.toLocaleString();
-  document.getElementById('stat-frequency').textContent = `${frequency}%`;
-
-  // Strategic scores based on actual simulation data
-  // Nut potential: higher if strong hands (flush, full house, quads) win more
-  const strongHands = stats.handTypeDistribution?.filter(ht => ht.handType >= 5) || [];
-  const strongHandWinRate = strongHands.length > 0
-    ? strongHands.reduce((sum, ht) => sum + ht.winRate * ht.count, 0) / strongHands.reduce((sum, ht) => sum + ht.count, 0)
-    : 50;
-  const nutPotential = Math.min(95, Math.max(10, strongHandWinRate));
-
-  // RNIO (Risk of Not Improving Odds): based on how often we have weak hands
-  const weakHands = stats.handTypeDistribution?.filter(ht => ht.handType <= 1) || [];
-  const weakHandPct = weakHands.length > 0
-    ? weakHands.reduce((sum, ht) => sum + ht.percentage, 0)
-    : 30;
-  const rnioRisk = Math.min(80, Math.max(5, weakHandPct * 1.5));
-
-  // Multiway strength: based on win rate consistency across hand types
-  const avgWinRate = parseFloat(winRate);
-  const multiwayStrength = Math.min(90, Math.max(15, avgWinRate * 2));
-
-  document.getElementById('score-nut').style.width = `${nutPotential}%`;
-  document.getElementById('score-nut-val').textContent = `${nutPotential.toFixed(0)}%`;
-
-  document.getElementById('score-rnio').style.width = `${rnioRisk}%`;
-  document.getElementById('score-rnio-val').textContent = `${rnioRisk.toFixed(0)}%`;
-
-  document.getElementById('score-multiway').style.width = `${multiwayStrength}%`;
-  document.getElementById('score-multiway-val').textContent = `${multiwayStrength.toFixed(0)}%`;
-
-  // Update flop guidance based on hand type
-  updateFlopGuidance();
-
-  // Update multiway table
-  updateMultiwayTable(result);
-
-  // Scroll to results
-  resultsSection.scrollIntoView({ behavior: 'smooth' });
-}
-
-function updateFlopGuidance() {
-  const goodFlops = document.getElementById('good-flops');
-  const dangerFlops = document.getElementById('danger-flops');
-
-  // Guidance varies by hand type
-  if (state.structure === 'pair') {
-    goodFlops.innerHTML = `
-      <li>Set on dry board (e.g., K72 rainbow)</li>
-      <li>Set with nut flush draw</li>
-      <li>Underpair on very dry board</li>
-    `;
-    dangerFlops.innerHTML = `
-      <li>Monotone without nut flush draw</li>
-      <li>Set on highly coordinated board</li>
-      <li>Underpair on wet, connected board</li>
-    `;
-  } else if (state.structure === 'run') {
-    goodFlops.innerHTML = `
-      <li>Nut straight on rainbow board</li>
-      <li>13+ out wrap draws</li>
-      <li>Made straight + flush draw</li>
-    `;
-    dangerFlops.innerHTML = `
-      <li>Non-nut straight on flush board</li>
-      <li>Low wrap with better wraps possible</li>
-      <li>Paired boards reducing outs</li>
-    `;
-  } else if (state.structure === 'bway') {
-    goodFlops.innerHTML = `
-      <li>Broadway heavy flops (KQJ, QJT)</li>
-      <li>Nut flush draws with pair</li>
-      <li>Overpairs on low boards</li>
-    `;
-    dangerFlops.innerHTML = `
-      <li>Low connected flops (678, 456)</li>
-      <li>Monotone low boards</li>
-      <li>Paired boards without trips</li>
-    `;
-  } else {
-    goodFlops.innerHTML = `
-      <li>Boards that complete your draws</li>
-      <li>Nut flush draw opportunities</li>
-      <li>Top set potential</li>
-    `;
-    dangerFlops.innerHTML = `
-      <li>Monotone without suited cards</li>
-      <li>Highly connected boards</li>
-      <li>Paired + wet textures</li>
-    `;
-  }
-}
-
-function updateMultiwayTable(result) {
-  const tbody = document.getElementById('multiway-body');
-  tbody.innerHTML = '';
-
-  // Show win rates for different opponent counts
-  for (let opp = 1; opp <= 8; opp++) {
-    // Simulate diminishing returns with more opponents
-    const baseWin = 45 / (opp + 1);
-    const adjustedWin = baseWin * (0.9 + Math.random() * 0.2);
-    const nutRequired = opp >= 4 ? 'Yes' : (opp >= 2 ? 'Often' : 'Sometimes');
-
-    let strategy = 'Play for value';
-    if (opp >= 6) strategy = 'Nuts or fold';
-    else if (opp >= 4) strategy = 'Nut draws only';
-    else if (opp >= 2) strategy = 'Strong draws OK';
-
-    const row = document.createElement('tr');
-    if (opp === state.opponents) row.style.background = '#dbeafe';
-
-    row.innerHTML = `
-      <td>${opp}</td>
-      <td>${adjustedWin.toFixed(1)}%</td>
-      <td>${nutRequired}</td>
-      <td>${strategy}</td>
-    `;
-    tbody.appendChild(row);
-  }
-}
-
-// ============ MATRIX TAB ============
-
-function initMatrix() {
-  document.getElementById('run-matrix').addEventListener('click', runMatrixSimulation);
-
-  // Auto-reload matrix when game or player count changes (if matrix tab is active)
-  document.getElementById('matrix-game').addEventListener('change', () => {
-    if (document.getElementById('matrix-tab').classList.contains('active')) {
-      autoLoadMatrix();
-    }
-  });
-
-  document.getElementById('matrix-players').addEventListener('change', () => {
-    if (document.getElementById('matrix-tab').classList.contains('active')) {
-      autoLoadMatrix();
-    }
-  });
-}
-
-async function runMatrixSimulation() {
-  const game = document.getElementById('matrix-game').value;
-  const players = parseInt(document.getElementById('matrix-players').value, 10);
-  const forceRefresh = document.getElementById('matrix-iterations').value > 100000; // Force live sim for custom high iterations
-
-  const btn = document.getElementById('run-matrix');
-  btn.disabled = true;
-  btn.textContent = 'Loading...';
-
-  const progress = document.getElementById('matrix-progress');
-  const progressFill = document.getElementById('matrix-progress-fill');
-  const progressText = document.getElementById('matrix-progress-text');
-  progress.style.display = 'flex';
-
-  // Progress animation
-  let pct = 0;
-  const interval = setInterval(() => {
-    pct += Math.random() * 20;
-    if (pct > 95) pct = 95;
-    progressFill.style.width = `${pct}%`;
-    progressText.textContent = `${Math.round(pct)}%`;
-  }, 200);
-
-  try {
-    // Use tiered data service - tries R2 first (1M pre-computed), then live simulation
-    const { source, data } = await TieredDataService.fetchSimulationData(
-      game,
-      players,
-      {
-        forceRefresh,
-        statusCallback: (msg) => { btn.textContent = msg; }
-      }
-    );
-
-    clearInterval(interval);
-    progressFill.style.width = '100%';
-    progressText.textContent = '100%';
-
-    // Log data source
-    const iterations = data.metadata?.iterations?.toLocaleString() || 'N/A';
-    console.log(`Matrix data from: ${source} (${iterations} iterations)`);
-    btn.textContent = source === 'tier2' ? `Loaded (${iterations} cached)` : `Simulated (${iterations})`;
-
-    displayMatrix(data);
-    loadSavedSimulations();
-
-    setTimeout(() => {
-      progress.style.display = 'none';
-    }, 1000);
-
-  } catch (error) {
-    clearInterval(interval);
-    console.error('Matrix error:', error);
-    alert('Simulation failed: ' + error.message);
-    progress.style.display = 'none';
-  } finally {
-    setTimeout(() => {
-      btn.disabled = false;
-      btn.textContent = 'Run Simulation';
-    }, 2000);
-  }
-}
-
-function displayMatrix(result) {
-  const container = document.getElementById('matrix-container');
-  const matrix = result.statistics.probabilityMatrix;
-
-  // Store matrix data for drill-down
-  window.currentMatrixData = result;
-
-  // Helper to get threat percentage from matrix
-  // THREAT LANDSCAPE: "When I have X, what % of hands have at least one opponent with Y?"
-  function getThreatPct(rowIndex, colIndex) {
-    if (Array.isArray(matrix) && Array.isArray(matrix[rowIndex])) {
-      const entry = matrix[rowIndex][colIndex];
-      // New format with threatPct
-      if (entry && typeof entry.threatPct !== 'undefined') {
-        return entry.threatPct;
-      }
-      // Fallback to winRate for old data (will be replaced after regeneration)
-      if (entry && typeof entry.winRate !== 'undefined') {
-        return entry.winRate;
-      }
-    }
-    return 0;
-  }
-
-  let html = `
-    <div class="matrix-header" style="margin-bottom: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <h3>${result.metadata.config.gameVariant.toUpperCase()} - ${result.metadata.config.playerCount} Players</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem;">${result.metadata.config.iterations.toLocaleString()} iterations • Click a cell to explore</p>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <button class="help-btn" id="matrix-help-btn" title="What does this matrix show?">❓ Help</button>
-          <button class="save-sim-btn" id="save-simulation-btn" title="Save this simulation locally">💾</button>
-        </div>
-      </div>
-    </div>
-    <div class="matrix-explanation" style="background: var(--card-bg); padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem;">
-      <strong>📊 Threat Landscape:</strong> Each cell shows the <em>% of hands</em> where at least one opponent has that hand type.
-      <br><span style="color: var(--text-muted);">Row = Your hand | Column = Opponent's best hand | Higher % = More common threat</span>
-    </div>
-    <table class="matrix">
-      <tr><th>Your Hand \\ Opponent's Best</th>`;
-
-  HAND_TYPE_CODES.forEach(code => {
-    html += `<th title="${HAND_TYPE_NAMES[code]}">${code}</th>`;
-  });
-  html += '</tr>';
-
-  HAND_TYPE_CODES.forEach((rowCode, rowIndex) => {
-    html += `<tr><td title="${HAND_TYPE_NAMES[rowCode]}">${rowCode}</td>`;
-
-    HAND_TYPE_CODES.forEach((colCode, colIndex) => {
-      const pct = getThreatPct(rowIndex, colIndex);
-      const heatClass = getThreatHeatClass(pct);
-      const isFocused = matrixFocusedCell &&
-                        matrixFocusedCell.playerType === rowIndex &&
-                        matrixFocusedCell.oppType === colIndex;
-      const focusedClass = isFocused ? ' matrix-cell-focused' : '';
-      html += `<td class="${heatClass} clickable${focusedClass}"
-                   data-player-type="${rowIndex}"
-                   data-opp-type="${colIndex}"
-                   data-prob="${pct.toFixed(2)}"
-                   title="When you have ${HAND_TYPE_NAMES[rowCode]}, ${pct.toFixed(1)}% of hands have an opponent with ${HAND_TYPE_NAMES[colCode]}">
-                   <span class="cell-value">${pct.toFixed(1)}</span>
-                   <button class="cell-ai-btn" data-player-type="${rowIndex}" data-opp-type="${colIndex}" data-prob="${pct.toFixed(2)}" title="Ask AI Coach about this matchup">🤖</button>
-                 </td>`;
-    });
-
-    html += '</tr>';
-  });
-
-  html += '</table>';
-  container.innerHTML = html;
-
-  // Add click handlers to cells (clicking the cell value)
-  container.querySelectorAll('.matrix td.clickable').forEach(cell => {
-    cell.addEventListener('click', (e) => {
-      // Don't trigger if clicking the AI button
-      if (e.target.classList.contains('cell-ai-btn')) return;
-
-      const playerType = parseInt(cell.dataset.playerType, 10);
-      const oppType = parseInt(cell.dataset.oppType, 10);
-      const prob = cell.dataset.prob;
-      drillDownFromMatrix(playerType, oppType, prob);
-    });
-  });
-
-  // Add click handlers for AI coach buttons
-  container.querySelectorAll('.cell-ai-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent cell click
-      const playerType = parseInt(btn.dataset.playerType, 10);
-      const oppType = parseInt(btn.dataset.oppType, 10);
-      const prob = btn.dataset.prob;
-      drillDownFromMatrix(playerType, oppType, prob, { triggerAICoach: true });
-    });
-  });
-
-  // Add save button handler
-  const saveBtn = document.getElementById('save-simulation-btn');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', async () => {
-      if (typeof DataManager === 'undefined' || !window.currentMatrixData) {
-        alert('No simulation data to save');
-        return;
-      }
-
-      try {
-        saveBtn.disabled = true;
-        saveBtn.textContent = '⏳ Saving...';
-
-        const id = await DataManager.saveUserSimulation(window.currentMatrixData);
-        saveBtn.textContent = '✅ Saved!';
-
-        // Refresh the saved simulations list
-        await loadSavedSimulationsFromDB();
-
-        setTimeout(() => {
-          saveBtn.textContent = '💾 Save';
-          saveBtn.disabled = false;
-        }, 2000);
-
-        console.log('Simulation saved:', id);
-      } catch (error) {
-        console.error('Failed to save simulation:', error);
-        saveBtn.textContent = '❌ Error';
-        setTimeout(() => {
-          saveBtn.textContent = '💾 Save';
-          saveBtn.disabled = false;
-        }, 2000);
-      }
-    });
-  }
-
-  // Add help button handler
-  const helpBtn = document.getElementById('matrix-help-btn');
-  if (helpBtn) {
-    helpBtn.addEventListener('click', () => {
-      openHelpModal();
-    });
-  }
-}
-
-// Drill down from matrix cell to scenario builder
-function drillDownFromMatrix(playerHandType, oppHandType, probability, options = {}) {
-  const { triggerAICoach = false } = options;
-  const playerTypeName = HAND_TYPE_NAMES[HAND_TYPE_CODES[playerHandType]];
-  const oppTypeName = HAND_TYPE_NAMES[HAND_TYPE_CODES[oppHandType]];
-
-  // Track focused cell for highlighting
-  matrixFocusedCell = { playerType: playerHandType, oppType: oppHandType };
-  updateMatrixCellFocus();
-
-  // Get game variant and player count from the current matrix data
-  const matrixData = window.currentMatrixData;
-  const gameVariant = matrixData?.metadata?.config?.gameVariant || 'omaha4';
-  const playerCount = matrixData?.metadata?.config?.playerCount || 6;
-
-  // Sync game selector with matrix
-  const gameSelect = document.getElementById('game-select');
-  if (gameSelect) {
-    gameSelect.value = gameVariant;
-    gameSelect.classList.add('linked-from-matrix');
-    // Trigger change event to update any dependent UI
-    gameSelect.dispatchEvent(new Event('change'));
-  }
-
-  // Sync player count with matrix (data-count attribute, not data-value)
-  const playerBtns = document.querySelectorAll('.opp-btn');
-  playerBtns.forEach(btn => {
-    btn.classList.remove('active', 'linked-from-matrix');
-    if (parseInt(btn.dataset.count, 10) === playerCount) {
-      btn.classList.add('active', 'linked-from-matrix');
-    }
-  });
-  state.opponents = playerCount;
-
-  // Map hand types to scenario builder structures
-  const typeToStructure = {
-    0: 'any',      // High Card
-    1: 'pair',     // Pair
-    2: 'dpair',    // Two Pair
-    3: 'pair',     // Set (trips from pair)
-    4: 'run',      // Straight
-    5: 'bway',     // Flush (often broadway)
-    6: 'dpair',    // Full House
-    7: 'pair',     // Quads
-    8: 'run'       // Straight Flush
-  };
-
-  // Update state to match the selected hand type
-  state.structure = typeToStructure[playerHandType] || 'any';
-
-  // Set reasonable defaults based on hand type
-  if (playerHandType >= 3) {  // Premium hands (set+)
-    state.rank = 14;  // Start with Aces
-    state.suitedness = 'ds';
-  } else if (playerHandType === 1) {  // Pair
-    state.rank = 12;  // Queens
-    state.suitedness = 'ds';
-  } else if (playerHandType === 2) {  // Two Pair
-    state.rank = 13;  // Kings
-  }
-
-  // Update UI elements with linked-from-matrix styling
-  const structSelect = document.getElementById('structure-select');
-  if (structSelect) {
-    structSelect.value = state.structure;
-    structSelect.classList.add('linked-from-matrix');
-  }
-
-  const suitSelect = document.getElementById('suit-select');
-  if (suitSelect) {
-    suitSelect.value = state.suitedness;
-    suitSelect.classList.add('linked-from-matrix');
-  }
-
-  // Update all displays
-  updateRankDisplay();
-  updateBuilderVisibility();
-  updateConstraintTags();
-  updateQueryPreview();
-  updateStrategyInsight();
-  clearActivePreset();
-
-  // Switch to scenario tab
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-tab="scenario"]').classList.add('active');
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('scenario-tab').classList.add('active');
-
-  // Show context of where user came from
-  showMatrixContext(playerTypeName, oppTypeName, probability, gameVariant, playerCount);
-
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // Clear linked styling after animation
-  setTimeout(() => {
-    document.querySelectorAll('.linked-from-matrix').forEach(el => {
-      el.classList.remove('linked-from-matrix');
-    });
-  }, 3000);
-
-  // If AI Coach was requested, check config first then trigger
-  if (triggerAICoach) {
-    setTimeout(() => {
-      triggerAICoachWithConfigCheck();
-    }, 500);
-  }
-}
-
-// Trigger AI Coach with configuration check
-function triggerAICoachWithConfigCheck() {
-  // Check if API key is configured
-  if (AICoach.apiKey && AICoach.apiKey.trim()) {
-    // Configured - proceed directly
-    const explainBtn = document.getElementById('explain-btn');
-    if (explainBtn) explainBtn.click();
-  } else {
-    // Not configured - show settings modal with callback
-    showAIConfigPrompt();
-  }
-}
-
-// Show AI configuration prompt before using AI Coach
-function showAIConfigPrompt() {
-  const settingsModal = document.getElementById('settings-modal');
-  if (!settingsModal) return;
-
-  // Show settings modal
-  settingsModal.style.display = 'flex';
-
-  // Add a one-time listener for when modal closes
-  const checkConfigOnClose = () => {
-    // Remove listener
-    settingsModal.removeEventListener('click', backdropClickHandler);
-
-    // Check if now configured
-    setTimeout(() => {
-      if (AICoach.apiKey && AICoach.apiKey.trim()) {
-        // Now configured - trigger AI Coach
-        const explainBtn = document.getElementById('explain-btn');
-        if (explainBtn) explainBtn.click();
-      } else {
-        // Still not configured - ask if user wants to proceed anyway
-        showProceedWithoutConfigPrompt();
-      }
-    }, 100);
-  };
-
-  // Listen for backdrop click to close
-  const backdropClickHandler = (e) => {
-    if (e.target === settingsModal) {
-      checkConfigOnClose();
-    }
-  };
-  settingsModal.addEventListener('click', backdropClickHandler);
-
-  // Also listen for save/cancel buttons
-  const saveBtn = document.getElementById('save-settings');
-  const cancelBtn = document.getElementById('cancel-settings');
-
-  const buttonHandler = () => {
-    saveBtn?.removeEventListener('click', buttonHandler);
-    cancelBtn?.removeEventListener('click', buttonHandler);
-    settingsModal.removeEventListener('click', backdropClickHandler);
-    setTimeout(checkConfigOnClose, 100);
-  };
-
-  saveBtn?.addEventListener('click', buttonHandler, { once: true });
-  cancelBtn?.addEventListener('click', buttonHandler, { once: true });
-}
-
-// Ask user if they want to proceed without AI configuration
-function showProceedWithoutConfigPrompt() {
-  const proceed = confirm(
-    "You haven't configured an AI provider yet.\n\n" +
-    "The AI Coach provides deep insights and personalized recommendations for your poker scenarios.\n\n" +
-    "Would you like to proceed to the AI Coach anyway? (You can configure it there)"
-  );
-
-  if (proceed) {
-    const explainBtn = document.getElementById('explain-btn');
-    if (explainBtn) explainBtn.click();
-  }
-}
-
-function showMatrixContext(playerType, oppType, probability, gameVariant, playerCount) {
-  // Remove any existing context
-  const existing = document.querySelector('.matrix-context-card');
-  if (existing) existing.remove();
-
-  const gameLabel = {
-    'omaha4': '4-Card Omaha',
-    'omaha5': '5-Card Omaha',
-    'omaha6': '6-Card Omaha',
-    'holdem': 'Texas Hold\'em'
-  }[gameVariant] || gameVariant.toUpperCase();
-
-  // Create unified context card that groups matrix info with derived settings
-  const card = document.createElement('div');
-  card.className = 'matrix-context-card';
-  card.innerHTML = `
-    <div class="matrix-context-header">
-      <span class="linked-badge">From Matrix</span>
-      <span class="back-to-matrix" onclick="switchToMatrixTab()">← Back to Matrix</span>
-    </div>
-    <div class="matrix-context-body">
-      <div class="matrix-matchup">
-        <div class="matchup-label">Matchup Analysis</div>
-        <div class="matchup-vs">
-          <span class="matchup-hand you">${playerType}</span>
-          <span class="matchup-separator">vs</span>
-          <span class="matchup-hand opp">${oppType}</span>
-        </div>
-        <div class="matchup-prob">${probability}% of hands face this</div>
-      </div>
-      <div class="matrix-settings-summary">
-        <div class="setting-pill"><span class="pill-label">Game</span> ${gameLabel}</div>
-        <div class="setting-pill"><span class="pill-label">Players</span> ${playerCount}</div>
-        <div class="setting-pill"><span class="pill-label">Your Hand</span> ${playerType}</div>
-      </div>
-    </div>
-    <div class="matrix-context-hint">
-      Settings below are synced to this matrix cell. Modify to explore variations.
-    </div>
-  `;
-
-  // Insert at top of scenario builder
-  const scenarioBuilder = document.querySelector('.scenario-builder');
-  if (scenarioBuilder) {
-    scenarioBuilder.insertBefore(card, scenarioBuilder.firstChild);
-  }
-}
-
-function switchToMatrixTab() {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-tab="matrix"]').classList.add('active');
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('matrix-tab').classList.add('active');
-
-  // Remove context card
-  const card = document.querySelector('.matrix-context-card');
-  if (card) card.remove();
-
-  // Re-apply matrix cell focus if set
-  updateMatrixCellFocus();
-}
-
-// Make function globally available
-window.switchToMatrixTab = switchToMatrixTab;
-
-function getHeatClass(value) {
-  if (value <= 5) return 'heat-0';
-  if (value <= 10) return 'heat-1';
-  if (value <= 20) return 'heat-2';
-  if (value <= 30) return 'heat-3';
-  if (value <= 40) return 'heat-4';
-  if (value <= 50) return 'heat-5';
-  if (value <= 60) return 'heat-6';
-  if (value <= 70) return 'heat-7';
-  if (value <= 80) return 'heat-8';
-  if (value <= 90) return 'heat-9';
-  return 'heat-10';
-}
-
-// Threat landscape heat class - inverted coloring (higher = more danger = redder)
-// Values can exceed 100% since multiple opponents can have different hand types
-function getThreatHeatClass(value) {
-  // Low threat (green) to high threat (red)
-  if (value <= 5) return 'threat-0';   // Very rare - green
-  if (value <= 15) return 'threat-1';
-  if (value <= 25) return 'threat-2';
-  if (value <= 35) return 'threat-3';
-  if (value <= 45) return 'threat-4';  // Yellow zone
-  if (value <= 55) return 'threat-5';
-  if (value <= 65) return 'threat-6';
-  if (value <= 75) return 'threat-7';  // Orange zone
-  if (value <= 85) return 'threat-8';
-  if (value <= 95) return 'threat-9';
-  return 'threat-10';  // Very common threat - red
-}
-
-// ============ SAVED SIMULATIONS ============
-
-async function loadSavedSimulations() {
-  const savedList = document.getElementById('saved-list');
-  let allSimulations = [];
-
-  // Try loading from API (legacy server-stored simulations)
-  try {
-    const response = await fetch('/api/simulations');
-    const apiSimulations = await response.json();
-    allSimulations = apiSimulations.map(sim => ({
-      ...sim,
-      source: 'server',
-      id: sim.filename
-    }));
-  } catch (error) {
-    console.log('No server simulations available (expected in static deployment)');
-  }
-
-  // Load from IndexedDB (local simulations)
-  await loadSavedSimulationsFromDB(allSimulations);
-}
-
-async function loadSavedSimulationsFromDB(existingSimulations = []) {
-  const savedList = document.getElementById('saved-list');
-
-  try {
-    // Get local simulations from DataManager
-    let localSims = [];
-    if (typeof DataManager !== 'undefined') {
-      localSims = await DataManager.listUserSimulations();
-    }
-
-    // Combine with any server simulations
-    const allSimulations = [
-      ...existingSimulations,
-      ...localSims.map(sim => ({
-        ...sim,
-        source: 'local',
-        game: sim.variant,
-        players: sim.playerCount
-      }))
-    ];
-
-    if (allSimulations.length === 0) {
-      savedList.innerHTML = `
-        <p class="loading">No saved simulations yet.</p>
-        <p class="loading" style="font-size: 0.9rem; color: var(--text-muted);">
-          Run a simulation in the Matrix tab, then click 💾 Save to store it locally.
-        </p>`;
-      return;
-    }
-
-    // Sort by creation date (newest first)
-    allSimulations.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    savedList.innerHTML = '';
-    allSimulations.slice(0, 20).forEach(sim => {
-      const item = document.createElement('div');
-      item.className = 'saved-item';
-      const sourceIcon = sim.source === 'local' ? '💾' : '☁️';
-      const gameName = (sim.game || sim.variant || 'unknown').toUpperCase();
-      const players = sim.players || sim.playerCount || '?';
-      const iterations = (sim.iterations || 0).toLocaleString();
-      const date = new Date(sim.createdAt).toLocaleDateString();
-
-      item.innerHTML = `
-        <div class="info">
-          <span class="name">${sourceIcon} ${gameName} - ${players} Players</span>
-          <span class="meta">${iterations} iterations • ${date}</span>
-        </div>
-        <div class="actions">
-          <button class="action-btn" onclick="viewSavedSimulation('${sim.id}', '${sim.source}')">View</button>
-          <button class="action-btn delete" onclick="deleteSimulation('${sim.id}', '${sim.source}')">🗑</button>
-        </div>
-      `;
-      savedList.appendChild(item);
-    });
-
-    // Add storage usage info
-    if (typeof DataManager !== 'undefined') {
-      const usage = await DataManager.getUserStorageUsage();
-      const quota = await DataManager.estimateStorageQuota();
-      if (usage && quota) {
-        const usageDiv = document.createElement('div');
-        usageDiv.className = 'storage-info';
-        usageDiv.innerHTML = `
-          <span style="color: var(--text-muted); font-size: 0.8rem;">
-            Local storage: ${usage.totalSizeMB} MB used of ${quota.availableMB} MB available
-          </span>
-        `;
-        savedList.appendChild(usageDiv);
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load local simulations:', error);
-  }
-}
-
-async function viewSavedSimulation(id, source = 'server') {
-  try {
-    let data;
-
-    if (source === 'local' && typeof DataManager !== 'undefined') {
-      data = await DataManager.getUserSimulation(id);
-    } else {
-      const response = await fetch(`/api/simulations/${id}`);
-      data = await response.json();
-    }
-
-    if (!data) {
-      alert('Simulation not found');
-      return;
-    }
-
-    // Switch to matrix tab and display
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('[data-tab="matrix"]').classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.getElementById('matrix-tab').classList.add('active');
-
-    displayMatrix(Array.isArray(data) ? data[0] : data);
-  } catch (error) {
-    console.error('Failed to load simulation:', error);
-    alert('Failed to load simulation');
-  }
-}
-
-async function deleteSimulation(id, source = 'server') {
-  if (!confirm('Delete this simulation?')) return;
-
-  try {
-    if (source === 'local' && typeof DataManager !== 'undefined') {
-      await DataManager.deleteUserSimulation(id);
-    } else {
-      await fetch(`/api/simulations/${id}`, { method: 'DELETE' });
-    }
-    loadSavedSimulations();
-  } catch (error) {
-    console.error('Failed to delete:', error);
-    alert('Failed to delete simulation');
-  }
-}
-
-// Refresh saved list
-document.getElementById('refresh-saved')?.addEventListener('click', loadSavedSimulations);
-
-// ============ STRATEGY SYSTEM ============
-
-function getHandKey() {
-  const rankChar = getRankChar(state.rank);
-  if (state.structure === 'any') return 'any:any';
-  if (state.structure === 'bway') return 'bway:any';
-  if (state.structure === 'dpair') return 'dpair:any';
-  return `${state.structure}:${rankChar}`;
-}
-
-function calculateHandScore() {
-  const handKey = getHandKey();
-
-  // Get base strength
-  let baseScore = STRATEGY_CONFIG.handStrength[handKey] ||
-                  STRATEGY_CONFIG.handStrength[`${state.structure}:any`] || 40;
-
-  // Apply rank modifier
-  if (state.rankModifier === '+') baseScore += 8;  // "or better" adds value
-  if (state.rankModifier === '-') baseScore -= 10; // "or worse" reduces value
-
-  // Apply suitedness bonus
-  baseScore += STRATEGY_CONFIG.suitBonus[state.suitedness] || 0;
-
-  // Apply position modifier
-  baseScore += STRATEGY_CONFIG.positionMod[state.position] || 0;
-
-  // Apply multiway penalty for non-premium hands
-  if (state.opponents >= 3) {
-    const nutKey = `${handKey}:${state.suitedness}`;
-    const nutPot = STRATEGY_CONFIG.nutPotential[nutKey] || 50;
-    if (nutPot < 70) {
-      baseScore -= (state.opponents - 2) * 5;
-    }
-  }
-
-  return Math.max(0, Math.min(100, baseScore));
-}
-
-function getRecommendation(score) {
-  const threshold = STRATEGY_CONFIG.styleThreshold[state.style] || 55;
-
-  if (score >= threshold + 25) return { action: 'RAISE', class: 'rec-raise', text: 'Premium hand, raise for value' };
-  if (score >= threshold + 10) return { action: 'RAISE', class: 'rec-raise', text: 'Strong hand, raise in position' };
-  if (score >= threshold) return { action: 'CALL', class: 'rec-call', text: 'Playable, call or raise situationally' };
-  if (score >= threshold - 10) return { action: 'SITUATIONAL', class: 'rec-situational', text: 'Marginal, position and reads matter' };
-  return { action: 'FOLD', class: 'rec-fold', text: 'Below threshold for your style' };
-}
-
-function getNutPotential() {
-  const handKey = getHandKey();
-  const nutKey = `${handKey}:${state.suitedness}`;
-
-  // Try exact match first
-  let nutPot = STRATEGY_CONFIG.nutPotential[nutKey];
-
-  // Fall back to structure defaults
-  if (nutPot === undefined) {
-    if (state.structure === 'pair') {
-      nutPot = state.suitedness === 'ds' ? 70 : (state.suitedness === 'ss' ? 55 : 40);
-      // Adjust for pair rank
-      nutPot += Math.max(0, (state.rank - 10) * 3);
-    } else if (state.structure === 'run') {
-      nutPot = state.suitedness === 'ds' ? 65 : 50;
-      nutPot += Math.max(0, (state.rank - 8) * 4);
-    } else {
-      nutPot = 50;
-    }
-  }
-
-  return Math.min(100, nutPot);
-}
-
-function getMultiwayViability() {
-  const nutPot = getNutPotential();
-  let viability = nutPot;
-
-  // Premium pairs lose viability multiway (they need to improve)
-  if (state.structure === 'pair' && state.rank >= 12) {
-    viability -= 15;
-  }
-
-  // Rundowns gain viability multiway (better implied odds)
-  if (state.structure === 'run') {
-    viability += 10;
-  }
-
-  // Double-suited adds multiway value
-  if (state.suitedness === 'ds') {
-    viability += 10;
-  }
-
-  // Reduce for each extra opponent beyond 2
-  if (state.opponents > 2) {
-    viability -= (state.opponents - 2) * 3;
-  }
-
-  return Math.max(0, Math.min(100, viability));
-}
-
-function getStrategyWarnings() {
-  const warnings = [];
-  const nutPot = getNutPotential();
-
-  // Multiway with low nut potential
-  if (state.opponents >= 4 && nutPot < 60) {
-    warnings.push('⚠️ Low nut potential in multiway pot - proceed with caution');
-  }
-
-  // Second-nut flush danger
-  if (state.structure === 'pair' && state.suitedness !== 'ds' && state.rank < 14) {
-    if (state.opponents >= 3) {
-      warnings.push('⚠️ Without nut flush potential, flush draws can be costly multiway');
-    }
-  }
-
-  // Naked aces warning
-  if (state.structure === 'pair' && state.rank === 14 && state.opponents >= 4) {
-    warnings.push('⚠️ Naked Aces rarely win multiway - need set or nut flush on flop');
-  }
-
-  // Low rundown warning
-  if (state.structure === 'run' && state.rank <= 8) {
-    warnings.push('⚠️ Low rundowns often make non-nut straights - be ready to fold');
-  }
-
-  // Rainbow hands multiway
-  if (state.suitedness === 'r' && state.opponents >= 3) {
-    warnings.push('⚠️ Rainbow hands lose equity multiway without flush potential');
-  }
-
-  // Out of position
-  if (state.position === 'UTG' || state.position === 'SB') {
-    const score = calculateHandScore();
-    if (score < 70) {
-      warnings.push('⚠️ Playing OOP with marginal hand - tighten up or be prepared to check/fold');
-    }
-  }
-
-  return warnings;
-}
-
-function updateStrategyInsight() {
-  const contextEl = document.getElementById('insight-context');
-  const badgeEl = document.getElementById('rec-badge');
-  const textEl = document.getElementById('rec-text');
-  const nutBarEl = document.getElementById('nut-potential-bar');
-  const nutValEl = document.getElementById('nut-potential-val');
-  const multiBarEl = document.getElementById('multiway-bar');
-  const multiValEl = document.getElementById('multiway-val');
-  const warningsEl = document.getElementById('insight-warnings');
-
-  if (!contextEl) return;
-
-  // Update context
-  const styleNames = { rock: 'Rock', tag: 'TAG', lag: 'LAG' };
-  contextEl.textContent = `${styleNames[state.style]} @ ${state.position} (${state.opponents + 1}-handed table)`;
-
-  // Calculate recommendation
-  const score = calculateHandScore();
-  const rec = getRecommendation(score);
-
-  // Update recommendation
-  badgeEl.textContent = rec.action;
-  badgeEl.className = `rec-badge ${rec.class}`;
-  textEl.textContent = rec.text;
-
-  // Update nut potential
-  const nutPot = getNutPotential();
-  nutBarEl.style.width = `${nutPot}%`;
-  nutValEl.textContent = nutPot >= 80 ? 'High' : (nutPot >= 55 ? 'Medium' : 'Low');
-
-  // Update multiway viability
-  const multiway = getMultiwayViability();
-  multiBarEl.style.width = `${multiway}%`;
-  multiValEl.textContent = multiway >= 70 ? 'Strong' : (multiway >= 45 ? 'Medium' : 'Weak');
-
-  // Update warnings
-  const warnings = getStrategyWarnings();
-  if (warnings.length > 0) {
-    warningsEl.innerHTML = warnings.map(w =>
-      `<div class="insight-warning"><span class="warn-icon">${w.slice(0, 2)}</span><span>${w.slice(3)}</span></div>`
-    ).join('');
-  } else {
-    warningsEl.innerHTML = '';
-  }
-}
-
-function updateMultiwayAlert() {
-  const alertEl = document.getElementById('multiway-alert');
-  if (!alertEl) return;
-
-  alertEl.style.display = state.opponents >= 4 ? 'flex' : 'none';
-}
-
-function updatePresetRecommendations() {
-  const presets = document.querySelectorAll('.preset-chip');
-
-  presets.forEach(preset => {
-    const query = preset.dataset.query;
-
-    // Save current state
-    const savedState = { ...state };
-
-    // Apply preset temporarily
-    applyPresetSilent(query);
-
-    // Calculate score
-    const score = calculateHandScore();
-    const threshold = STRATEGY_CONFIG.styleThreshold[state.style] || 55;
-
-    // Restore state
-    Object.assign(state, savedState);
-
-    // Update classes
-    preset.classList.remove('recommended', 'not-recommended');
-    if (score >= threshold + 10) {
-      preset.classList.add('recommended');
-    } else if (score < threshold - 5) {
-      preset.classList.add('not-recommended');
-    }
-  });
-}
-
-function applyPresetSilent(queryStr) {
-  // Parse query string and update state without triggering UI updates
-  const parts = queryStr.split(':');
-
-  state.structure = parts[0];
-
-  if (parts[1]) {
-    const rankPart = parts[1];
-    if (rankPart.endsWith('+')) {
-      state.rankModifier = '+';
-      state.rank = parseRankChar(rankPart.slice(0, -1));
-    } else if (rankPart.endsWith('-')) {
-      state.rankModifier = '-';
-      state.rank = parseRankChar(rankPart.slice(0, -1));
-    } else if (rankPart === 'any') {
-      state.rank = 14;
-      state.rankModifier = '=';
-    } else {
-      state.rankModifier = '=';
-      state.rank = parseRankChar(rankPart.charAt(0));
-    }
-  }
-
-  const suitPart = parts.find(p => ['ds', 'ss', 'r'].includes(p)) || 'any';
-  state.suitedness = suitPart;
-
-  const sidePart = parts.find(p => ['conn', 'bway', 'wheel'].includes(p)) || 'any';
-  state.sideCards = sidePart;
-}
-
-// ============ AI COACH SYSTEM ============
-
-const AICoach = {
-  provider: localStorage.getItem('ai-provider') || 'gemini',
-  apiKey: localStorage.getItem('ai-api-key') || '',
-  conversationHistory: [],
-
-  // Check if AI is configured
-  isConfigured: function() {
-    return this.apiKey && this.apiKey.length > 10;
-  },
-
-  // Save settings
-  saveSettings: function(provider, apiKey) {
-    this.provider = provider;
-    this.apiKey = apiKey;
-    localStorage.setItem('ai-provider', provider);
-    localStorage.setItem('ai-api-key', apiKey);
-  },
-
-  // Build system prompt with poker expertise
-  buildSystemPrompt: function(context) {
-    // Build simulation data section if available
-    let simulationSection = '';
-    if (context.simulationData && context.simulationData.totalHands) {
-      simulationSection = `
-MONTE CARLO SIMULATION RESULTS (${context.simulationData.dataSource}):
-- Overall Win Rate: ${context.simulationData.overallWinRate}
-- Hands Simulated: ${context.simulationData.totalHands?.toLocaleString()}
-
-Hand Type Win Rates (from simulation):
-${context.simulationData.handTypeStatistics?.map(ht =>
-  `  ${ht.hand}: ${ht.winRate} win rate (occurred ${ht.frequency} of hands)`
-).join('\n') || 'No data'}
-
-${context.simulationData.threatLandscape ? `
-THREAT LANDSCAPE (what hands are your opponents likely to have?):
-These percentages show how often at least one opponent has each hand type when YOU have a specific hand.
-Higher % = more common threat. Values can exceed 100% because multiple opponents can have different hands.
-
-${Object.entries(context.simulationData.threatLandscape).map(([yourHand, threats]) =>
-  `  When you have ${yourHand}:\n${threats.map(t => `    - ${t.oppHand}: ${t.threatPct}% of hands (${t.threatPct > 70 ? 'VERY COMMON' : t.threatPct > 40 ? 'COMMON' : t.threatPct > 15 ? 'moderate' : 'rare'})`).join('\n')}`
-).join('\n')}
-
-KEY INSIGHT: Use this to assess your vulnerability. If 80%+ of hands have opponents with Two Pair or better when you have One Pair, your hand is very vulnerable!` : ''}
-`;
-    } else {
-      simulationSection = `
-NOTE: No simulation has been run yet. The statistics below are mathematical fundamentals.
-Run a simulation to get empirical data for this specific scenario.
-`;
-    }
-
-    return `You are an expert PLO (Pot-Limit Omaha) poker coach helping a player understand strategic decisions. You build credibility by citing specific statistics.
-
-CURRENT SCENARIO:
-- Hand: ${context.hand.structure} ${context.hand.rankName} ${context.hand.suitednessName}
-- Position: ${context.situation.positionName} (${context.situation.position})
-- Table Size: ${context.situation.opponents + 1} players (${context.situation.opponents} opponents)
-- Playing Style: ${context.situation.styleName}
-${simulationSection}
-CRITICAL DISTINCTION - TABLE SIZE VS POT PARTICIPANTS:
-The simulation data is based on ${context.situation.opponents + 1}-handed play (table size), NOT opponents actually in the pot.
-- "Table size" = total players dealt cards
-- "Opponents in pot" = players who haven't folded (varies hand-to-hand)
-- POSITION determines how many players will likely enter the pot:
-  * UTG/EP: Expect 3-5 callers on average at full table; raise big to thin the field
-  * MP: Expect 2-4 callers; can open slightly wider
-  * CO: Expect 1-3 callers; position advantage compensates
-  * BTN: Expect 1-2 callers (blinds); widest opening range, best position postflop
-  * SB: Awkward postflop; play tight or 3-bet to play heads-up
-  * BB: Already invested; defend vs steals, but position disadvantage postflop
-
-HAND NOTATION (the -/=/+ settings in the UI):
-- Minus (-): Kicker is LOWER than main rank (e.g., AA with 7-6 kickers)
-- Equal (=): Kicker is SIMILAR to main rank (e.g., AA with Q-J kickers)
-- Plus (+): Kicker is CONNECTED/suited with main rank (e.g., AA with A-K suited)
-Current hand uses: ${context.hand.structure} structure with ${context.hand.suitednessName} suitedness
-
-POSITIONAL BETTING STRATEGY:
-PREFLOP by position at ${context.situation.opponents + 1}-handed:
-- UTG/EP (${context.situation.position === 'UTG' ? 'YOUR POSITION' : ''}): Raise 3-4x to fold out speculative hands. Only premium holdings.
-- MP (${context.situation.position === 'MP' ? 'YOUR POSITION' : ''}): Can open slightly wider. Raise to isolate.
-- CO (${context.situation.position === 'CO' ? 'YOUR POSITION' : ''}): Attack blinds. 3-bet light against late position opens.
-- BTN (${context.situation.position === 'BTN' ? 'YOUR POSITION' : ''}): Widest range. Position postflop is huge edge.
-- SB (${context.situation.position === 'SB' ? 'YOUR POSITION' : ''}): 3-bet or fold. Completing is usually -EV.
-- BB (${context.situation.position === 'BB' ? 'YOUR POSITION' : ''}): Defend wider vs steals, tighter vs early raises.
-
-POSTFLOP POSITIONAL CONSIDERATIONS:
-- IN POSITION: Can control pot size, see opponent actions first, bluff more effectively
-- OUT OF POSITION: Must play more straightforwardly, check-raise or check-fold more often
-- MULTIWAY: Bluff less, value bet thinner, need stronger made hands
-- HEADS-UP: Can leverage position and aggression more
-
-POKER MATH FUNDAMENTALS (always true):
-${Object.entries(context.statistics).filter(([k]) => k !== 'dataNote').map(([k, v]) => `- ${k}: ${JSON.stringify(v)}`).join('\n')}
-
-OUTS REFERENCE:
-- Flush draw: 9 outs (~19% turn, ~35% turn+river)
-- Open-ended straight: 8 outs (~17% turn, ~31% turn+river)
-- Gutshot: 4 outs (~8.5% turn, ~17% turn+river)
-- Set (from pair): 2 outs (~4% turn, ~8.5% turn+river)
-- Wrap (13 outs): ~28% turn, ~50% turn+river
-- Big wrap (16+ outs): ~34% turn, ~57% turn+river
-
-Quick rule: Multiply outs by 2 for turn odds, by 4 for turn+river (rough approximation)
-
-ASSESSMENT:
-- Strengths: ${context.assessment.strengths.join(', ') || 'None identified'}
-- Warnings: ${context.assessment.warnings.join(', ') || 'None'}
-- Multiway Advice: ${context.assessment.multiwayAdvice}
-
-YOUR ROLE:
-1. ALWAYS cite specific numbers from the simulation results when available
-2. Distinguish between simulation data (empirical) and poker math (theoretical)
-3. Explain the WHY behind recommendations using these statistics
-4. When discussing odds, cite the exact percentages and outs
-5. Answer follow-up questions about post-flop play, board textures, opponent ranges
-6. ALWAYS clarify table size vs expected opponents in pot based on position
-7. Give position-specific preflop and postflop advice
-
-CREDIBILITY RULES:
-- Lead with simulation statistics when available - these are from ${context.simulationData?.iterations?.toLocaleString() || 'N/A'} actual hands
-- Use poker math fundamentals to explain concepts
-- Be specific: "With 9 flush outs, you have a 35% chance to hit by the river"
-- Explain edge cases and adjustments (blockers, card removal effects)
-- When discussing multiway pots, note that the simulation assumes all ${context.situation.opponents + 1} players see the flop - actual pots may be smaller
-
-STYLE:
-- Conversational but authoritative
-- Use poker terminology, explain jargon naturally
-- Give concrete examples from the current scenario
-- Be direct - players want actionable insight`;
-  },
-
-  // Send message to AI
-  sendMessage: async function(userMessage, context) {
-    const systemPrompt = this.buildSystemPrompt(context);
-
-    // Add user message to history
-    this.conversationHistory.push({ role: 'user', content: userMessage });
-
-    try {
-      if (this.provider === 'anthropic') {
-        return await this.callAnthropic(systemPrompt);
-      } else if (this.provider === 'gemini') {
-        return await this.callGemini(systemPrompt);
-      } else if (this.provider === 'groq') {
-        return await this.callGroq(systemPrompt);
-      } else {
-        return await this.callOpenAI(systemPrompt);
-      }
-    } catch (error) {
-      console.error('AI API error:', error);
-      throw error;
-    }
-  },
-
-  // Call Anthropic API
-  callAnthropic: async function(systemPrompt) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': this.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: this.conversationHistory
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'API request failed');
-    }
-
-    const data = await response.json();
-    const assistantMessage = data.content[0].text;
-
-    // Add assistant response to history
-    this.conversationHistory.push({ role: 'assistant', content: assistantMessage });
-
-    return assistantMessage;
-  },
-
-  // Call OpenAI API
-  callOpenAI: async function(systemPrompt) {
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...this.conversationHistory
-    ];
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: messages,
-        max_tokens: 1024
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'API request failed');
-    }
-
-    const data = await response.json();
-    const assistantMessage = data.choices[0].message.content;
-
-    // Add assistant response to history
-    this.conversationHistory.push({ role: 'assistant', content: assistantMessage });
-
-    return assistantMessage;
-  },
-
-  // Call Google Gemini API (free tier available)
-  callGemini: async function(systemPrompt) {
-    // Convert conversation history to Gemini format
-    const contents = this.conversationHistory.map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: contents,
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          generationConfig: { maxOutputTokens: 1024 }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Gemini API request failed');
-    }
-
-    const data = await response.json();
-    const assistantMessage = data.candidates[0].content.parts[0].text;
-
-    // Add assistant response to history
-    this.conversationHistory.push({ role: 'assistant', content: assistantMessage });
-
-    return assistantMessage;
-  },
-
-  // Call Groq API (free tier available, very fast)
-  callGroq: async function(systemPrompt) {
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      ...this.conversationHistory
-    ];
-
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: messages,
-        max_tokens: 1024
-      })
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Groq API request failed');
-    }
-
-    const data = await response.json();
-    const assistantMessage = data.choices[0].message.content;
-
-    // Add assistant response to history
-    this.conversationHistory.push({ role: 'assistant', content: assistantMessage });
-
-    return assistantMessage;
-  },
-
-  // Test connection
-  testConnection: async function() {
-    const testPrompt = 'Reply with just "Connected successfully" to confirm the API is working.';
-    this.conversationHistory = [{ role: 'user', content: testPrompt }];
-
-    try {
-      const systemPrompt = 'You are a helpful assistant. Reply briefly.';
-      if (this.provider === 'anthropic') {
-        await this.callAnthropic(systemPrompt);
-      } else if (this.provider === 'gemini') {
-        await this.callGemini(systemPrompt);
-      } else if (this.provider === 'groq') {
-        await this.callGroq(systemPrompt);
-      } else {
-        await this.callOpenAI(systemPrompt);
-      }
-      this.conversationHistory = []; // Clear test messages
-      return { success: true };
-    } catch (error) {
-      this.conversationHistory = [];
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Clear conversation
-  clearConversation: function() {
-    this.conversationHistory = [];
-  }
-};
-
-// Initialize AI UI
-function initAICoach() {
-  const settingsBtn = document.getElementById('settings-btn');
-  const settingsModal = document.getElementById('settings-modal');
-  const closeSettings = document.getElementById('close-settings');
-  const cancelSettings = document.getElementById('cancel-settings');
-  const saveSettings = document.getElementById('save-settings');
-  const testConnection = document.getElementById('test-connection');
-  const toggleVisibility = document.getElementById('toggle-key-visibility');
-  const providerSelect = document.getElementById('ai-provider');
-  const apiKeyInput = document.getElementById('ai-api-key');
-  const providerHint = document.getElementById('provider-hint');
-  const connectionStatus = document.getElementById('connection-status');
-
-  const explainBtn = document.getElementById('explain-btn');
-  const aiPanel = document.getElementById('ai-panel');
-  const closeAiPanel = document.getElementById('close-ai-panel');
-  const newChat = document.getElementById('new-chat');
-  const aiMessages = document.getElementById('ai-messages');
-  const aiInput = document.getElementById('ai-input');
-  const sendAiMessage = document.getElementById('send-ai-message');
-  const noKeyPrompt = document.getElementById('no-key-prompt');
-  const openSettingsFromPrompt = document.getElementById('open-settings-from-prompt');
-
-  // Load saved settings
-  if (AICoach.provider) providerSelect.value = AICoach.provider;
-  if (AICoach.apiKey) apiKeyInput.value = AICoach.apiKey;
-
-  // Settings modal handlers
-  settingsBtn?.addEventListener('click', () => {
-    settingsModal.style.display = 'flex';
-  });
-
-  [closeSettings, cancelSettings].forEach(btn => {
-    btn?.addEventListener('click', () => {
-      settingsModal.style.display = 'none';
-    });
-  });
-
-  settingsModal?.addEventListener('click', (e) => {
-    if (e.target === settingsModal) settingsModal.style.display = 'none';
-  });
-
-  // Provider change updates hint
-  providerSelect?.addEventListener('change', () => {
-    const hints = {
-      anthropic: 'Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>',
-      openai: 'Get your key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>',
-      gemini: '🆓 Free tier! Get key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>',
-      groq: '🆓 Free tier! Get key at <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a>'
+// ── Presets for Study Mode ──
+const C = (rank, suit) => ({ rank, suit });
+const PRESETS = [
+  { id: 'aads', name: 'Aces, double-suited', cards: [C('A','s'), C('A','h'), C('K','s'), C('Q','h')] },
+  { id: 'bwds', name: 'Broadway, DS', cards: [C('A','s'), C('K','s'), C('Q','h'), C('J','h')] },
+  { id: 'rundown', name: 'Rundown 9876', cards: [C('9','s'), C('8','h'), C('7','s'), C('6','h')] },
+  { id: 'sa', name: 'Suited ace + danglers', cards: [C('A','s'), C('K','s'), C('8','d'), C('4','c')] },
+  { id: 'kkqq', name: 'Kings & Queens', cards: [C('K','s'), C('K','h'), C('Q','s'), C('Q','h')] },
+  { id: 'trap', name: 'Aces, dry (trap)', cards: [C('A','s'), C('A','d'), C('7','c'), C('2','h')] },
+];
+
+// ── Journal Seed Data ──
+const DAY = 86400000;
+const NOW = Date.now();
+function at(daysAgo, h, m) { const d = new Date(NOW - daysAgo * DAY); d.setHours(h, m, 0, 0); return d.getTime(); }
+const SESSIONS = [
+  { id: 's1', label: 'Aria 2/5 NL Omaha', venue: 'Live · 2 hr', ts: at(0, 21, 30) },
+  { id: 's2', label: 'Home game PLO', venue: 'Live · 4 hr', ts: at(3, 23, 10) },
+  { id: 's3', label: 'Bellagio 5/10', venue: 'Live · 3 hr', ts: at(13, 1, 20) },
+];
+const SEED_HANDS = [
+  { id:'h1', s:'s1', ts:at(0,21,5), hole:[C('A','s'),C('A','h'),C('K','s'),C('Q','h')], board:[C('A','d'),C('7','s'),C('2','c'),C('9','h'),C('3','d')], advised:'RAISE', size:'$175', took:'RAISE', equity:71, conf:92, result:'win', amt:340, tags:['#value','#set'], note:'Flopped top set, got it in vs two pair. Textbook.' },
+  { id:'h2', s:'s1', ts:at(0,20,40), hole:[C('J','s'),C('T','s'),C('9','h'),C('8','h')], board:[C('Q','s'),C('7','d'),C('2','c')], advised:'RAISE', size:'$60', took:'CALL', equity:58, conf:74, result:'loss', amt:-60, tags:['#draw'], note:'Wrapped + flush draw, should have raised.' },
+  { id:'h3', s:'s1', ts:at(0,20,12), hole:[C('A','c'),C('A','d'),C('8','s'),C('3','h')], board:[C('K','s'),C('Q','d'),C('J','c')], advised:'FOLD', size:null, took:'FOLD', equity:31, conf:81, result:'win', amt:0, tags:['#discipline'], note:'Dry aces on broadway board. Easy fold.' },
+  { id:'h4', s:'s1', ts:at(0,19,50), hole:[C('K','s'),C('K','h'),C('Q','s'),C('Q','h')], board:[C('K','d'),C('5','s'),C('5','h'),C('2','d')], advised:'RAISE', size:'$220', took:'RAISE', equity:84, conf:95, result:'win', amt:510, tags:['#value','#boat'], note:'' },
+  { id:'h5', s:'s2', ts:at(3,22,50), hole:[C('9','s'),C('8','s'),C('7','h'),C('6','h')], board:[C('T','s'),C('5','d'),C('4','c'),C('K','s')], advised:'RAISE', size:'$45', took:'RAISE', equity:62, conf:70, result:'win', amt:120, tags:['#draw','#bluff'], note:'Double-suited rundown, semi-bluffed turn.' },
+  { id:'h6', s:'s2', ts:at(3,22,20), hole:[C('A','s'),C('K','d'),C('7','c'),C('2','h')], board:[C('Q','s'),C('9','d'),C('4','c')], advised:'FOLD', size:null, took:'CALL', equity:28, conf:77, result:'loss', amt:-85, tags:['#leak'], note:'Called with one pair and no draw.' },
+  { id:'h7', s:'s2', ts:at(3,21,35), hole:[C('A','h'),C('A','s'),C('J','h'),C('T','s')], board:[C('J','d'),C('T','c'),C('3','h'),C('3','s'),C('K','h')], advised:'CALL', size:'$90', took:'RAISE', equity:52, conf:63, result:'loss', amt:-240, tags:['#thin'], note:'Overplayed aces-up into a boat.' },
+  { id:'h8', s:'s3', ts:at(13,1,5), hole:[C('A','s'),C('K','s'),C('Q','d'),C('J','d')], board:[C('T','s'),C('9','s'),C('2','h')], advised:'RAISE', size:'$120', took:'RAISE', equity:78, conf:88, result:'win', amt:430, tags:['#nuts','#draw'], note:'Broadway wrap + nut flush draw.' },
+  { id:'h9', s:'s3', ts:at(13,0,40), hole:[C('K','c'),C('K','d'),C('6','s'),C('2','h')], board:[C('A','s'),C('A','d'),C('8','c')], advised:'FOLD', size:null, took:'FOLD', equity:22, conf:90, result:'win', amt:0, tags:['#discipline'], note:'' },
+  { id:'h10', s:'s3', ts:at(13,0,10), hole:[C('Q','s'),C('Q','h'),C('J','s'),C('9','h')], board:[C('J','c'),C('9','d'),C('4','s'),C('Q','h')], advised:'RAISE', size:'$160', took:'RAISE', equity:81, conf:90, result:'win', amt:295, tags:['#boat','#value'], note:'Turned top boat.' },
+];
+const ACT_COLOR = { RAISE: 'var(--pk-raise)', CALL: 'var(--pk-call)', FOLD: 'var(--pk-fold)' };
+const ACT_BG = { RAISE: 'rgba(245,158,11,.16)', CALL: 'rgba(59,130,246,.16)', FOLD: 'rgba(239,68,68,.16)' };
+
+// ── Coach Providers ──
+const PROVIDERS = [
+  { id: 'groq', name: 'Groq', model: 'llama-3.3-70b', badge: 'G', color: '#f55036' },
+  { id: 'openai', name: 'OpenAI', model: 'gpt-4o', badge: 'AI', color: '#10a37f' },
+  { id: 'anthropic', name: 'Anthropic', model: 'claude-3.5', badge: 'A', color: '#d97757' },
+  { id: 'gemini', name: 'Gemini', model: 'gemini-2.0', badge: 'G', color: '#4285f4' },
+];
+
+// ── Coach Conversation Builder ──
+function buildConversation(context) {
+  if (context && context.kind === 'matrix') {
+    const cat = context.category, ahead = Math.round(context.ahead);
+    return {
+      opener: `You're studying ${cat}. Against ${context.opp} opponents you're ahead about ${ahead}% of the time — want to know what threatens it?`,
+      qa: [
+        { q: `What beats a ${cat.toLowerCase()}?`, a: `Only a few holdings: a higher ${cat.toLowerCase()}, a full house, quads, or a straight flush.` },
+        { q: 'Should I bet or check?', a: `With ${ahead}% ahead you're value-betting most rivers, but size down on paired boards.` },
+        { q: 'Which turn cards scare me?', a: 'Any card that pairs the board or completes an obvious draw.' },
+        { q: 'How do I play vs a raise?', a: 'A raise here is rarely a bluff in PLO. Without the nut version, fold.' },
+      ],
     };
-    providerHint.innerHTML = hints[providerSelect.value];
-  });
-
-  // Toggle password visibility
-  toggleVisibility?.addEventListener('click', () => {
-    apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
-  });
-
-  // Test connection
-  testConnection?.addEventListener('click', async () => {
-    connectionStatus.textContent = 'Testing...';
-    connectionStatus.className = 'connection-status';
-
-    AICoach.provider = providerSelect.value;
-    AICoach.apiKey = apiKeyInput.value;
-
-    const result = await AICoach.testConnection();
-
-    if (result.success) {
-      connectionStatus.textContent = '✓ Connected!';
-      connectionStatus.className = 'connection-status success';
-    } else {
-      connectionStatus.textContent = '✗ ' + result.error;
-      connectionStatus.className = 'connection-status error';
-    }
-  });
-
-  // Save settings
-  saveSettings?.addEventListener('click', () => {
-    AICoach.saveSettings(providerSelect.value, apiKeyInput.value);
-    settingsModal.style.display = 'none';
-    connectionStatus.textContent = '';
-  });
-
-  // Explain button
-  explainBtn?.addEventListener('click', () => {
-    if (!AICoach.isConfigured()) {
-      noKeyPrompt.style.display = 'block';
-      return;
-    }
-
-    noKeyPrompt.style.display = 'none';
-    aiPanel.style.display = 'flex';
-    AICoach.clearConversation();
-    aiMessages.innerHTML = '';
-
-    // Send initial explanation request
-    sendExplanationRequest();
-  });
-
-  // Close AI panel
-  closeAiPanel?.addEventListener('click', () => {
-    aiPanel.style.display = 'none';
-  });
-
-  // New chat
-  newChat?.addEventListener('click', () => {
-    AICoach.clearConversation();
-    aiMessages.innerHTML = '';
-    sendExplanationRequest();
-  });
-
-  // Send message
-  const sendMessage = async () => {
-    const message = aiInput.value.trim();
-    if (!message) return;
-
-    aiInput.value = '';
-    addMessage('user', message);
-    await getAIResponse(message);
+  }
+  const adv = context && context.cards ? advise(context.cards) : null;
+  return {
+    opener: adv ? `Let's look at this hand. This is a ${adv.action.toLowerCase()} — what do you want to dig into?` : 'Ask me anything about this spot.',
+    qa: [
+      { q: 'Why this sizing?', a: 'A 3.5bb raise keeps worse hands in while building a pot you\'ll often win.' },
+      { q: 'What if the flop is monotone?', a: 'Monotone flops cut your equity hard unless you hold the matching suit. Slow down.' },
+      { q: 'How does position change this?', a: 'In position you can flat more and realize equity; out of position tighten up.' },
+      { q: 'Worst turn cards for me?', a: 'Cards that complete obvious straights or pair the board are the worst.' },
+    ],
   };
-
-  sendAiMessage?.addEventListener('click', sendMessage);
-  aiInput?.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-  });
-
-  // Open settings from no-key prompt
-  openSettingsFromPrompt?.addEventListener('click', () => {
-    noKeyPrompt.style.display = 'none';
-    settingsModal.style.display = 'flex';
-  });
-
-  // Close no-key prompt when clicking outside
-  document.addEventListener('click', (e) => {
-    if (noKeyPrompt.style.display === 'block' &&
-        !noKeyPrompt.contains(e.target) &&
-        e.target !== explainBtn) {
-      noKeyPrompt.style.display = 'none';
-    }
-  });
 }
 
-// Get simulation data for AI context - uses current matrix data or falls back to bundled data
-function getSimulationDataForAI() {
-  // First choice: current matrix data from a running simulation
-  if (window.currentMatrixData) {
-    return { data: window.currentMatrixData, source: 'simulation' };
-  }
+// ── Walkthrough Steps ──
+const WT_STEPS = [
+  { spot: { top: '62%', left: '2%', width: '96%', height: '30%' }, tipTop: '32%',
+    title: 'Enter your cards', body: "Tap a rank, then a suit to deal your four hole cards — two taps each, all within your thumb's reach." },
+  { spot: { top: '14%', left: '28%', width: '44%', height: '20%', radius: '50%' }, tipTop: '38%',
+    title: 'Your read appears instantly', body: 'The moment all four cards are in, your RAISE / CALL / FOLD, sizing and equity show up right here.' },
+  { spot: { top: '14%', left: '5%', width: '90%', height: '36%' }, tipTop: '54%',
+    title: 'Swipe up to save', body: 'Got a hand worth remembering? Swipe up on the result to log it to your Journal in one gesture.' },
+];
 
-  // Fallback: bundled Tier 1 data for current player count
-  if (window.bundledData && window.bundledData.byPlayerCount) {
-    const playerCount = state.opponents + 1; // opponents + hero
-    const bundledForPlayers = window.bundledData.byPlayerCount[playerCount];
-    if (bundledForPlayers) {
-      return {
-        data: {
-          statistics: bundledForPlayers,
-          metadata: {
-            variant: window.bundledData.variant,
-            playerCount: playerCount,
-            iterations: window.bundledData.iterationsPerConfig
-          }
-        },
-        source: 'bundled'
+// ============================================================
+// DOM helpers
+// ============================================================
+const $ = id => document.getElementById(id);
+const h = (tag, cls, html, attrs) => {
+  const el = document.createElement(tag);
+  if (cls) el.className = cls;
+  if (html != null) el.innerHTML = html;
+  if (attrs) Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k.startsWith('on')) el[k] = v;
+    else el.setAttribute(k, v);
+  });
+  return el;
+};
+const show = el => el && el.classList.remove('hidden');
+const hide = el => el && el.classList.add('hidden');
+
+function miniCardHTML(rank, suit, w = 22, h = 31) {
+  const s = SUIT[suit];
+  return `<div class="pk-mini" style="width:${w}px;height:${h}px"><span style="font-size:13px;color:${s.c}">${rank}</span><span style="font-size:11px;color:${s.c}">${s.g}</span></div>`;
+}
+
+function faceCardHTML(rank, suit, w, ht) {
+  const fs = FACE_SUIT[suit];
+  return `<div class="pk-card face" style="width:${w}px;height:${ht}px">
+    <span class="corner" style="color:${fs.c}"><span class="r">${rank}</span><span class="s">${fs.g}</span></span>
+    <span class="pip" style="color:${fs.c}">${fs.g}</span>
+    <span class="corner br" style="color:${fs.c}"><span class="r">${rank}</span><span class="s">${fs.g}</span></span></div>`;
+}
+
+function chipCardHTML(rank, suit, w, ht) {
+  const s = SUIT[suit];
+  return `<div class="pk-card chip" style="width:${w}px;height:${ht}px">
+    <span class="r" style="color:${s.c}">${rank}</span><span class="s" style="color:${s.c}">${s.g}</span></div>`;
+}
+
+// ============================================================
+// Persistent State (localStorage)
+// ============================================================
+function load(key, fallback) {
+  try { const v = localStorage.getItem(key); return v != null ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+const state = {
+  tab: 'play',
+  mode: load('pk-play-mode', 'starter'),
+  situation: load('pk-situation', { pos: 'BTN', players: 6, style: 'TAG' }),
+  cards: load('pk-cards', []),
+  armed: null,       // selected rank awaiting suit
+  savedHands: load('pk-journal-saved', []),
+  onboarded: load('pk-onboarded', false),
+  wtStep: -1,
+  // study
+  studySub: load('pk-study-sub', 'scenarios'),
+  studyPreset: 0,
+  matrixHand: 5,
+  customOpts: { suited: 'double', struct: 'pair', hi: 'high' },
+  // journal
+  journalStore: load('pk-journal', { deleted: [], notes: {} }),
+  journalExpanded: null,
+  jFilterDate: 'all', jFilterResult: 'all', jFilterAction: 'all', jFilterOpen: null,
+  // coach
+  coachOpen: false,
+  coachContext: null,
+  byok: load('pk-byok', null),
+  coachProvider: 'groq',
+  coachMsgs: [],
+  coachUsed: new Set(),
+  coachConvo: null,
+};
+
+function persist() {
+  save('pk-play-mode', state.mode);
+  save('pk-situation', state.situation);
+  save('pk-cards', state.cards);
+  save('pk-journal-saved', state.savedHands);
+  save('pk-study-sub', state.studySub);
+  save('pk-journal', state.journalStore);
+}
+
+// ============================================================
+// Toast
+// ============================================================
+let toastTimer;
+function showToast(text) {
+  const el = $('toast'), txt = $('toast-text');
+  txt.textContent = text;
+  show(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => hide(el), 1900);
+}
+
+// ============================================================
+// Tab Switching
+// ============================================================
+function switchTab(tab) {
+  state.tab = tab;
+  ['play', 'study', 'journal'].forEach(t => {
+    const pane = $('pane-' + t);
+    if (t === tab) { pane.removeAttribute('hidden'); pane.classList.remove('hidden'); }
+    else { pane.setAttribute('hidden', ''); pane.classList.add('hidden'); }
+  });
+  document.querySelectorAll('#tabbar .pk-tab').forEach(el => {
+    el.classList.toggle('on', el.dataset.tab === tab);
+  });
+  if (tab === 'study') renderStudy();
+  if (tab === 'journal') renderJournal();
+}
+
+// ============================================================
+// Situation Sheet
+// ============================================================
+function renderSituationSheet() {
+  const positions = ['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'];
+  const players = [2, 3, 4, 5, 6, 9];
+  const styles = ['Nit', 'Reg', 'TAG', 'LAG', 'Fish'];
+
+  function renderPicks(containerId, opts, key) {
+    const el = $(containerId);
+    el.innerHTML = '';
+    opts.forEach(o => {
+      const chip = h('div', 'pk-pchip' + (String(state.situation[key]) === String(o) ? ' on' : ''), String(o));
+      chip.onclick = () => {
+        state.situation[key] = o;
+        persist();
+        renderSituationSheet();
+        updateContextLabels();
       };
+      el.appendChild(chip);
+    });
+  }
+
+  renderPicks('sit-positions', positions, 'pos');
+  renderPicks('sit-players', players, 'players');
+  renderPicks('sit-styles', styles, 'style');
+}
+
+function updateContextLabels() {
+  $('ctx-pos').textContent = state.situation.pos;
+  $('ctx-players').textContent = state.situation.players;
+  $('ctx-style').textContent = state.situation.style;
+  if ($('study-ctx-pos')) {
+    $('study-ctx-pos').textContent = state.situation.pos;
+    $('study-ctx-players').textContent = state.situation.players;
+    $('study-ctx-style').textContent = state.situation.style;
+  }
+}
+
+// ============================================================
+// PLAY MODE — Shared logic
+// ============================================================
+const FAN = [{ rot: -12, x: -60, y: 14 }, { rot: -4, x: -21, y: 2 }, { rot: 4, x: 21, y: 2 }, { rot: 12, x: 60, y: 14 }];
+
+function usedSet() { return new Set(state.cards.map(c => c.rank + c.suit)); }
+
+function placeCard(suit) {
+  if (!state.armed || state.cards.length >= 4) return;
+  const used = usedSet();
+  if (used.has(state.armed + suit)) { state.armed = null; return; }
+  state.cards.push({ rank: state.armed, suit });
+  state.armed = null;
+  persist();
+  renderPlay();
+}
+
+function removeCardAt(i) {
+  state.cards.splice(i, 1);
+  persist();
+  renderPlay();
+}
+
+function newHand() {
+  state.cards = [];
+  state.armed = null;
+  persist();
+  renderPlay();
+}
+
+function saveCurrentHand() {
+  if (state.cards.length !== 4) return;
+  const adv = advise(state.cards);
+  const entry = {
+    id: 'u' + Date.now(), s: 'live', ts: Date.now(),
+    hole: state.cards.slice(), board: [],
+    advised: adv.action, size: adv.sizing ? adv.sizing.to : null,
+    took: adv.action, equity: adv.equity, conf: adv.confidence,
+    result: 'pending', amt: 0, tags: [], note: ''
+  };
+  state.savedHands.unshift(entry);
+  persist();
+  showToast('Saved to Journal');
+}
+
+// ============================================================
+// PLAY MODE — Render
+// ============================================================
+function renderPlay() {
+  const isExpert = state.mode === 'expert';
+  const seg = $('play-seg');
+  seg.classList.toggle('expert', isExpert);
+  $('btn-starter').classList.toggle('on', !isExpert);
+  $('btn-expert').classList.toggle('on', isExpert);
+
+  if (isExpert) {
+    hide($('view-starter'));
+    show($('view-expert'));
+    renderExpert();
+  } else {
+    show($('view-starter'));
+    hide($('view-expert'));
+    renderStarter();
+  }
+}
+
+// ── Starter View ──
+function renderStarter() {
+  const cards = state.cards;
+  const adv = advise(cards);
+  const ready = cards.length === 4;
+  const used = usedSet();
+
+  // ring
+  const ring = $('starter-ring');
+  const inner = $('starter-ring-inner');
+  const pct = cards.length ? adv.equity : 0;
+  ring.style.width = ring.style.height = (ready ? 168 : 120) + 'px';
+  ring.style.background = `conic-gradient(${cards.length ? adv.color : 'rgba(255,255,255,.1)'} 0 ${pct}%, rgba(255,255,255,.07) ${pct}% 100%)`;
+  inner.style.inset = (ready ? 15 : 12) + 'px';
+
+  if (ready) {
+    inner.innerHTML = `<div class="mono" style="color:${adv.color};font-weight:800;font-size:28px;letter-spacing:.03em">${adv.action}</div>
+      <div class="mono" style="font-size:13px;color:var(--pk-ink2);margin-top:2px">${adv.equity}% equity</div>`;
+  } else {
+    inner.innerHTML = `<div class="pk-eyebrow">Equity</div>
+      <div class="mono" style="font-size:26px;font-weight:700;color:${cards.length ? 'var(--pk-ink)' : 'var(--pk-ink3)'};margin-top:3px">${cards.length ? '~' + adv.equity + '%' : '—'}</div>`;
+  }
+
+  // details (sizing + confidence)
+  const details = $('starter-details');
+  if (ready) {
+    show(details);
+    const pill = $('starter-sizing');
+    if (adv.sizing) {
+      pill.style.display = '';
+      pill.style.background = 'rgba(245,158,11,.16)';
+      pill.style.border = '1px solid rgba(245,158,11,.45)';
+      pill.style.color = adv.color;
+      pill.textContent = adv.action === 'RAISE' ? 'to ' + adv.sizing.to + ' · ' + adv.sizing.bb : adv.sizing.to + ' to call';
+    } else {
+      pill.style.display = 'none';
+    }
+    $('starter-conf').textContent = adv.confidence + '%';
+    $('starter-conf-mark').style.left = adv.confidence + '%';
+  } else {
+    hide(details);
+  }
+
+  // fan
+  const fan = $('starter-fan');
+  fan.style.height = (ready ? 134 : 124) + 'px';
+  fan.style.marginTop = (ready ? 16 : 18) + 'px';
+  fan.innerHTML = '';
+  FAN.forEach((f, i) => {
+    const c = cards[i];
+    const next = !c && i === cards.length;
+    const wrap = h('div', 'pk-fan-card', null, {
+      style: { transformOrigin: 'center bottom', transform: `translateX(-50%) translateX(${f.x}px) translateY(${f.y}px) rotate(${f.rot}deg)` }
+    });
+    if (c) {
+      wrap.innerHTML = faceCardHTML(c.rank, c.suit, 84, 118);
+      wrap.onclick = () => removeCardAt(i);
+    } else {
+      wrap.innerHTML = `<div class="pk-slot${next ? ' next' : ''}" style="width:84px;height:118px;font-size:20px">${next ? '+' : ''}</div>`;
+    }
+    fan.appendChild(wrap);
+  });
+
+  // sheets
+  if (ready) {
+    hide($('starter-picker'));
+    show($('starter-result'));
+    $('starter-reason').textContent = reasonText(cards, adv);
+  } else {
+    show($('starter-picker'));
+    hide($('starter-result'));
+    renderStarterKeypad();
+  }
+}
+
+function renderStarterKeypad() {
+  const used = usedSet();
+  const pad = $('starter-rankpad');
+  pad.innerHTML = '';
+  RANKS.forEach(r => {
+    const key = h('div', 'pk-key' + (state.armed === r ? ' on' : ''), r, { style: { height: '44px' } });
+    key.onclick = () => { state.armed = r; renderStarterKeypad(); };
+    pad.appendChild(key);
+  });
+  const clearKey = h('div', 'pk-key util', 'clear all', { style: { height: '44px', gridColumn: 'span 2', gap: '6px' } });
+  clearKey.onclick = newHand;
+  pad.appendChild(clearKey);
+
+  $('starter-suit-label').textContent = '2 · Suit' + (state.armed ? ' for ' + state.armed : '');
+
+  const suitrow = $('starter-suitrow');
+  suitrow.innerHTML = '';
+  Object.entries(SUIT).forEach(([k, v]) => {
+    const dead = !state.armed || used.has(state.armed + k) || state.cards.length >= 4;
+    const btn = h('div', 'pk-suitkey' + (dead ? ' dead' : ''), v.g, { style: { color: v.c } });
+    btn.onclick = () => placeCard(k);
+    suitrow.appendChild(btn);
+  });
+}
+
+// ── Expert View ──
+function renderExpert() {
+  const cards = state.cards;
+  const adv = advise(cards);
+  const ready = cards.length === 4;
+  const used = usedSet();
+
+  // strip
+  const strip = $('expert-strip');
+  if (ready) {
+    const map = { RAISE: ['rgba(245,158,11,.22)', 'rgba(245,158,11,.5)'], CALL: ['rgba(59,130,246,.2)', 'rgba(59,130,246,.45)'], FOLD: ['rgba(239,68,68,.2)', 'rgba(239,68,68,.45)'] };
+    const [bg, bd] = map[adv.action] || map.FOLD;
+    strip.innerHTML = `<div class="pk-badge pk-fade" style="background:linear-gradient(120deg,${bg},rgba(255,255,255,.02));border:1px solid ${bd}">
+      <div class="act" style="font-size:25px;color:${adv.color}">${adv.action}</div>
+      <div class="size">${adv.sizing ? `<div class="mono" style="font-size:19px;color:var(--pk-ink)">${adv.sizing.to}</div><div class="pk-eyebrow">${adv.sizing.bb}</div>` : '<div class="pk-eyebrow">no bet</div>'}</div></div>`;
+  } else {
+    const tintBg = adv.action === 'RAISE' ? 'rgba(245,158,11,.16)' : adv.action === 'CALL' ? 'rgba(59,130,246,.16)' : 'rgba(239,68,68,.16)';
+    strip.innerHTML = `<div style="background:var(--pk-surface);border:1px solid var(--pk-line);border-radius:14px;padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:9px">
+        <span class="pk-eyebrow">${cards.length ? 'Live read · forming' : 'Enter your hand'}</span>
+        ${cards.length > 0 ? `<span class="mono" style="font-size:11px;background:${tintBg};color:${adv.color};font-weight:700;padding:3px 9px;border-radius:7px">${adv.action}?</span>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="mono" style="font-size:28px;font-weight:700;color:${cards.length ? 'var(--pk-ink)' : 'var(--pk-ink3)'}">${cards.length ? '~' + adv.equity : '—'}<span style="font-size:15px;color:var(--pk-ink3)">%</span></div>
+        <div class="pk-progress" style="flex:1"><i style="width:${cards.length ? adv.equity : 0}%;background:${adv.color}"></i></div>
+      </div></div>`;
+  }
+
+  // stat chips
+  const stats = $('expert-stats');
+  stats.innerHTML = '';
+  [['Equity', ready ? adv.equity + '%' : '—', 'var(--pk-teal)'], ['Pot odds', ready ? adv.potOdds : '—', 'var(--pk-ink)'], ['Confidence', ready ? adv.confidence + '%' : '—', 'var(--pk-ink)']].forEach(([l, val, c]) => {
+    stats.innerHTML += `<div class="pk-stat-chip"><div class="pk-eyebrow label">${l}</div><div class="value" style="color:${ready ? c : 'var(--pk-ink3)'}">${val}</div></div>`;
+  });
+
+  // card track
+  const track = $('expert-track');
+  track.innerHTML = '<span class="pk-eyebrow" style="width:30px">Hand</span>';
+  for (let i = 0; i < 4; i++) {
+    const c = cards[i];
+    const next = !c && i === cards.length;
+    if (c) {
+      const el = h('div', '', chipCardHTML(c.rank, c.suit, 48, 66));
+      el.firstChild.style.fontSize = '17px';
+      el.onclick = () => removeCardAt(i);
+      track.appendChild(el);
+    } else {
+      track.innerHTML += `<div class="pk-slot${next ? ' next' : ''}" style="width:48px;height:66px;font-size:14px">${next ? '+' : i + 1}</div>`;
     }
   }
+  track.innerHTML += '<div style="flex:1"></div>';
+  if (cards.length > 0) {
+    const undo = h('div', '', `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 3L3 7l4 4M3 7h7a3 3 0 010 6" stroke-linecap="round" stroke-linejoin="round"/></svg>`, {
+      style: { width: '40px', height: '40px', borderRadius: '11px', background: 'var(--pk-surface2)', border: '1px solid var(--pk-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pk-ink2)', cursor: 'pointer' }
+    });
+    undo.onclick = () => { state.cards.pop(); state.armed = null; persist(); renderPlay(); };
+    track.appendChild(undo);
+  }
 
-  return { data: null, source: 'none' };
-}
+  // reason
+  if (ready) { show($('expert-reason-wrap')); $('expert-reason').textContent = reasonText(cards, adv); }
+  else hide($('expert-reason-wrap'));
 
-function sendExplanationRequest() {
-  const simInfo = getSimulationDataForAI();
-  const context = PokerStats.buildAIContext(state, simInfo.data);
+  // save
+  if (ready) show($('expert-save-wrap')); else hide($('expert-save-wrap'));
 
-  // Add data source info to context
-  context.dataSource = simInfo.source;
+  // keypad
+  const pad = $('expert-rankpad');
+  pad.innerHTML = '';
+  RANKS.forEach(r => {
+    const key = h('div', 'pk-key' + (state.armed === r ? ' on' : ''), r, { style: { height: '40px', fontSize: '16px' } });
+    key.onclick = () => { state.armed = r; renderExpert(); };
+    pad.appendChild(key);
+  });
+  const bksp = h('div', 'pk-key util', '⌫', { style: { height: '40px' } });
+  bksp.onclick = () => { state.cards.pop(); state.armed = null; persist(); renderPlay(); };
+  pad.appendChild(bksp);
 
-  const initialPrompt = `I'm looking at ${context.hand.structure} ${context.hand.rankName} ${context.hand.suitednessName} in ${context.situation.positionName} at a ${context.situation.opponents + 1}-handed table, playing a ${context.situation.styleName} style.
-
-Please explain:
-1. Whether this is a playable hand and why
-2. The key statistics I should know (set probability, flush draw odds, etc.)
-3. What I should look for on the flop
-4. Any warnings or considerations for this specific situation`;
-
-  addMessage('user', `Explain this hand: ${context.hand.rankName} ${context.hand.suitednessName}`);
-  getAIResponse(initialPrompt);
-}
-
-function addMessage(role, content) {
-  const aiMessages = document.getElementById('ai-messages');
-  const messageDiv = document.createElement('div');
-  messageDiv.className = `ai-message ${role}`;
-
-  // Simple markdown-like formatting
-  let formattedContent = content
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>')
-    .replace(/^- /gm, '• ');
-
-  messageDiv.innerHTML = `<div class="ai-message-content">${formattedContent}</div>`;
-  aiMessages.appendChild(messageDiv);
-  aiMessages.scrollTop = aiMessages.scrollHeight;
-}
-
-function addLoadingMessage() {
-  const aiMessages = document.getElementById('ai-messages');
-  const loadingDiv = document.createElement('div');
-  loadingDiv.className = 'ai-message assistant';
-  loadingDiv.id = 'ai-loading';
-  loadingDiv.innerHTML = '<div class="ai-loading">Thinking</div>';
-  aiMessages.appendChild(loadingDiv);
-  aiMessages.scrollTop = aiMessages.scrollHeight;
-}
-
-function removeLoadingMessage() {
-  const loading = document.getElementById('ai-loading');
-  if (loading) loading.remove();
-}
-
-async function getAIResponse(message) {
-  const simInfo = getSimulationDataForAI();
-  const context = PokerStats.buildAIContext(state, simInfo.data);
-  context.dataSource = simInfo.source;
-
-  addLoadingMessage();
-
-  try {
-    const response = await AICoach.sendMessage(message, context);
-    removeLoadingMessage();
-    addMessage('assistant', response);
-  } catch (error) {
-    removeLoadingMessage();
-    addMessage('assistant', `Error: ${error.message}. Please check your API key in settings.`);
+  // suit area
+  const suitarea = $('expert-suitarea');
+  if (state.armed) {
+    suitarea.innerHTML = `<div class="pk-fade" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--pk-teal-dim);border:1px solid var(--pk-teal);border-radius:11px">
+      <span class="mono" style="font-size:13px;color:var(--pk-teal);font-weight:700;flex:0 0 auto">${state.armed} +</span>
+      ${Object.entries(SUIT).map(([k, v]) => {
+        const dead = used.has(state.armed + k) || cards.length >= 4;
+        return `<div data-suit="${k}" style="flex:1;text-align:center;font-size:21px;color:${v.c};padding:5px 0;border-radius:8px;background:rgba(0,0,0,.2);cursor:pointer;opacity:${dead ? .28 : 1};pointer-events:${dead ? 'none' : 'auto'}">${v.g}</div>`;
+      }).join('')}</div>`;
+    suitarea.querySelectorAll('[data-suit]').forEach(el => {
+      el.onclick = () => placeCard(el.dataset.suit);
+    });
+  } else {
+    suitarea.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:44px;border:1px dashed var(--pk-line2);border-radius:11px;color:var(--pk-ink3);font-size:12px" class="mono">pick a rank, then its suit</div>`;
   }
 }
 
-// Initialize help modal for matrix
-function initHelpModal() {
-  const helpModal = document.getElementById('help-modal');
-  const closeHelp = document.getElementById('close-help');
-  const closeHelpBtn = document.getElementById('close-help-btn');
+// ============================================================
+// STUDY MODE — Render
+// ============================================================
+function renderStudy() {
+  const seg = $('study-seg');
+  const isMat = state.studySub === 'matrix';
+  seg.classList.toggle('matrix', isMat);
+  $('btn-scenarios').classList.toggle('on', !isMat);
+  $('btn-matrix').classList.toggle('on', isMat);
+  if (isMat) { hide($('study-scenarios')); show($('study-matrix')); renderMatrix(); }
+  else { show($('study-scenarios')); hide($('study-matrix')); renderScenarios(); }
+  updateContextLabels();
+}
 
-  // Close help modal handlers
-  [closeHelp, closeHelpBtn].forEach(btn => {
-    btn?.addEventListener('click', () => {
-      helpModal.style.display = 'none';
+function renderScenarios() {
+  const presetsEl = $('study-presets');
+  presetsEl.innerHTML = '';
+  PRESETS.forEach((p, idx) => {
+    const pa = advise(p.cards);
+    const on = state.studyPreset === idx;
+    const el = h('div', 'st-preset' + (on ? ' on' : ''));
+    el.innerHTML = `<div class="pcards">${p.cards.map(c => miniCardHTML(c.rank, c.suit, 24, 33)).join('')}</div>
+      <div class="pname">${p.name}</div>
+      <div class="pmeta"><span class="st-dots">${[0,1,2,3,4].map(i => `<i class="${i < Math.round(pa.playability / 20) ? 'on' : ''}"></i>`).join('')}</span><span class="mono" style="font-size:10px;color:var(--pk-ink3);margin-left:auto">${pa.playability}</span></div>`;
+    el.onclick = () => { state.studyPreset = idx; renderScenarios(); };
+    presetsEl.appendChild(el);
+  });
+
+  // insight
+  const sel = PRESETS[state.studyPreset];
+  const adv = advise(sel.cards);
+  $('study-insight-name').textContent = sel.name;
+
+  const insightEl = $('study-insight');
+  const nut = Math.max(1, Math.min(4, Math.round(adv.playability / 25)));
+  const bgMap = { RAISE: 'linear-gradient(120deg,rgba(245,158,11,.2),rgba(245,158,11,.04))', CALL: 'linear-gradient(120deg,rgba(59,130,246,.18),rgba(59,130,246,.04))', FOLD: 'linear-gradient(120deg,rgba(239,68,68,.18),rgba(239,68,68,.04))' };
+  const bdMap = { RAISE: 'rgba(245,158,11,.45)', CALL: 'rgba(59,130,246,.4)', FOLD: 'rgba(239,68,68,.4)' };
+
+  insightEl.innerHTML = `
+    <div class="pk-badge" style="background:${bgMap[adv.action]};border:1px solid ${bdMap[adv.action]}">
+      <div><div class="act" style="font-size:26px;color:${adv.color}">${adv.action}</div>
+        <div style="font-size:12.5px;color:var(--pk-ink2);margin-top:3px;max-width:200px;line-height:1.35">${reasonText(sel.cards, adv)}</div></div>
+      <div class="size">${adv.sizing ? `<div class="mono" style="font-size:20px;color:var(--pk-ink)">${adv.sizing.to}</div><div class="pk-eyebrow">${adv.sizing.bb}</div>` : '<div class="pk-eyebrow">no bet</div>'}</div>
+    </div>
+    <div class="st-metric"><div class="top"><span class="pk-eyebrow">Playability</span><span class="mono" style="font-size:13px;color:var(--pk-teal);font-weight:700">${adv.playability}/100</span></div>
+      <div class="st-bar"><i style="width:${adv.playability}%;background:var(--pk-teal)"></i></div></div>
+    <div class="st-metric"><div class="top"><span class="pk-eyebrow">Nut potential</span><span class="mono" style="font-size:12px;color:var(--pk-ink2)">${['low','fair','strong','elite'][nut-1]}</span></div>
+      <div class="st-nut">${[0,1,2,3].map(i => `<i class="${i < nut ? 'on' : ''}"></i>`).join('')}</div></div>
+    <div class="pk-btn" id="study-ask-coach" style="margin-top:16px;background:var(--pk-surface2)">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6L8 1z" fill="var(--pk-teal)"/></svg>
+      Ask the Coach about this hand</div>`;
+
+  $('study-ask-coach').onclick = () => openCoach({ kind: 'hand', name: sel.name, cards: sel.cards });
+}
+
+function renderMatrix() {
+  const hand = state.matrixHand;
+  const opp = Math.max(1, (state.situation.players || 6) - 1);
+  const data = rowData(hand, opp);
+  const cat = HAND_CATS[hand];
+
+  $('matrix-hand-name').textContent = cat.name;
+  $('matrix-ahead-pct').textContent = Math.round(data.ahead) + '%';
+  $('matrix-ahead-pct').style.color = data.ahead >= 60 ? 'var(--pk-bet)' : data.ahead >= 40 ? 'var(--pk-raise)' : 'var(--pk-fold)';
+  $('matrix-ahead-mark').style.left = data.ahead + '%';
+  $('matrix-beat-pct').textContent = Math.round(data.beat) + '% beaten';
+  $('matrix-opp-count').textContent = 'vs ' + opp + ' opp';
+
+  // minimap
+  const mm = $('matrix-minimap');
+  mm.innerHTML = '';
+  const reversed = HAND_CATS.slice().reverse();
+  reversed.forEach((rc, ri) => {
+    const myCat = 8 - ri;
+    const label = h('div', 'st-rowlabel' + (myCat === hand ? ' on' : ''), rc.short);
+    label.onclick = () => { state.matrixHand = myCat; renderMatrix(); };
+    mm.appendChild(label);
+    const grid = h('div', 'st-mmgrid');
+    HAND_CATS.forEach((oc, ci) => {
+      const oc2 = outcome(myCat, ci);
+      const cell = h('i', '', null, {
+        style: {
+          background: OUTCOME_COLOR[oc2],
+          opacity: myCat === hand ? '1' : '0.34',
+          outline: myCat === hand ? '1.5px solid var(--pk-ink)' : 'none',
+          outlineOffset: '-1px'
+        }
+      });
+      cell.onclick = () => { state.matrixHand = myCat; renderMatrix(); };
+      grid.appendChild(cell);
+    });
+    mm.appendChild(grid);
+  });
+  // bottom axis labels
+  mm.appendChild(h('div')); // spacer
+  const axisGrid = h('div', 'st-mmgrid', null, { style: { marginTop: '2px' } });
+  HAND_CATS.forEach(c => {
+    axisGrid.innerHTML += `<span style="font-family:var(--pk-mono);font-size:6.5px;color:var(--pk-ink3);text-align:center">${c.short.slice(0, 2)}</span>`;
+  });
+  mm.appendChild(axisGrid);
+
+  // threats
+  const threats = $('matrix-threats');
+  threats.innerHTML = '';
+  data.rows.forEach(r => {
+    threats.innerHTML += `<div class="st-threat${r.outcome === 'win' ? ' win' : ''}">
+      <span class="tn" style="color:${r.outcome === 'lose' ? 'var(--pk-fold)' : r.outcome === 'tie' ? 'var(--pk-raise)' : 'var(--pk-ink3)'}">${r.label}</span>
+      <div class="track"><div class="fill" style="width:${Math.max(3, Math.min(100, r.pct * 1.4))}%;background:${r.color}"></div></div>
+      <span class="pct" style="color:${r.outcome === 'win' ? 'var(--pk-ink3)' : 'var(--pk-ink)'}">${r.pct < 1 ? r.pct.toFixed(1) : Math.round(r.pct)}%</span></div>`;
+  });
+}
+
+// ============================================================
+// JOURNAL MODE — Render
+// ============================================================
+function fmtTime(ts) {
+  const d = new Date(ts);
+  let hr = d.getHours(), m = d.getMinutes();
+  const ap = hr >= 12 ? 'PM' : 'AM';
+  hr = hr % 12 || 12;
+  return hr + ':' + String(m).padStart(2, '0') + ' ' + ap;
+}
+function fmtSession(ts) {
+  const d = new Date(ts), diff = Math.floor((NOW - ts) / DAY);
+  const wk = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+  if (diff <= 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7) return wk;
+  return wk + ' · ' + (d.getMonth() + 1) + '/' + d.getDate();
+}
+function money(n) { return (n > 0 ? '+$' : n < 0 ? '−$' : '$') + Math.abs(n); }
+
+function renderJournal() {
+  const store = state.journalStore;
+  const saved = state.savedHands || [];
+  const liveSession = saved.length ? [{ id: 'live', label: 'This session', venue: 'live · just now', ts: NOW }] : [];
+  const allSessions = [...liveSession, ...SESSIONS];
+  const allHands = [...saved, ...SEED_HANDS];
+
+  $('jr-session-count').textContent = allSessions.length;
+
+  // filters
+  renderJournalFilters();
+
+  // filter hands
+  const visible = allHands.filter(hand => {
+    if (store.deleted.includes(hand.id)) return false;
+    if (state.jFilterDate !== 'all') {
+      const diff = (NOW - hand.ts) / DAY;
+      if (state.jFilterDate === 'today' && diff > 1) return false;
+      if (state.jFilterDate === 'week' && diff > 7) return false;
+      if (state.jFilterDate === 'month' && diff > 31) return false;
+    }
+    if (state.jFilterResult !== 'all') {
+      if (state.jFilterResult === 'win' && hand.amt <= 0) return false;
+      if (state.jFilterResult === 'loss' && hand.amt >= 0) return false;
+    }
+    if (state.jFilterAction !== 'all' && hand.took !== state.jFilterAction) return false;
+    return true;
+  });
+
+  const grouped = allSessions.map(se => ({ se, hands: visible.filter(hand => hand.s === se.id) })).filter(g => g.hands.length);
+  const totalNet = visible.reduce((a, hand) => a + hand.amt, 0);
+
+  const scroll = $('jr-scroll');
+  if (!grouped.length) {
+    scroll.innerHTML = `<div class="jr-empty">
+      <div class="ic"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pk-ink3)" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3" stroke-linecap="round"/></svg></div>
+      <div class="t">No hands match</div>
+      <div class="s">${store.deleted.length >= allHands.length ? 'Save your first hand from the Advisor.' : 'Try clearing a filter to see more.'}</div></div>`;
+    return;
+  }
+
+  scroll.innerHTML = '';
+  grouped.forEach(({ se, hands }) => {
+    const net = hands.reduce((a, hand) => a + hand.amt, 0);
+    const wins = hands.filter(hand => hand.amt > 0).length;
+    const losses = hands.filter(hand => hand.amt < 0).length;
+    const followed = hands.filter(hand => hand.advised === hand.took).length;
+    const live = se.id === 'live';
+
+    // session header
+    const sesh = h('div', 'jr-sesh');
+    sesh.innerHTML = `<div><div class="sl">${live ? '<span style="color:var(--pk-teal)">● </span>' : ''}${fmtSession(se.ts)} · ${se.label}</div></div>
+      ${!live ? `<span class="net" style="color:${net > 0 ? 'var(--pk-bet)' : net < 0 ? 'var(--pk-fold)' : 'var(--pk-ink3)'}">${money(net)}</span>` : ''}`;
+    scroll.appendChild(sesh);
+
+    const sstat = h('div', 'jr-sstat');
+    sstat.textContent = live
+      ? hands.length + ' saved · in progress · ' + se.venue
+      : hands.length + ' hands · ' + wins + 'W ' + losses + 'L · followed coach ' + followed + '/' + hands.length + ' · ' + se.venue;
+    scroll.appendChild(sstat);
+
+    hands.forEach(hand => {
+      const expanded = state.journalExpanded === hand.id;
+      const diverged = hand.advised !== hand.took;
+      const noteVal = store.notes[hand.id] != null ? store.notes[hand.id] : hand.note;
+
+      const wrap = h('div', 'jr-rowwrap');
+      wrap.innerHTML = `<div class="jr-delzone"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><path d="M3 4h10M6 4V2.5h4V4M5 4l.7 9h4.6L11 4"/></svg>Delete</div>`;
+
+      const row = h('div', 'jr-row');
+      row.innerHTML = `<div class="jr-rtop">
+        <div class="jr-cards">${hand.hole.map(c => miniCardHTML(c.rank, c.suit)).join('')}</div>
+        <span class="jr-time">${fmtTime(hand.ts)}</span>
+        <span class="jr-badge" style="color:${ACT_COLOR[hand.advised]};background:${ACT_BG[hand.advised]}">${hand.advised}</span>
+        ${hand.result === 'pending'
+          ? '<span class="jr-amt" style="font-size:11px;color:var(--pk-teal);background:var(--pk-teal-dim);border:1px solid var(--pk-teal);border-radius:100px;padding:3px 9px">logged</span>'
+          : `<span class="jr-amt" style="color:${hand.amt > 0 ? 'var(--pk-bet)' : hand.amt < 0 ? 'var(--pk-fold)' : 'var(--pk-ink3)'}">${money(hand.amt)}</span>`}
+      </div>
+      <div class="jr-rmid">
+        ${hand.tags.slice(0, 2).map(t => `<span class="jr-tag">${t}</span>`).join('')}
+        ${diverged ? `<span class="jr-diverge"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v7M6 10.5v.5" stroke-linecap="round"/><circle cx="6" cy="6" r="5"/></svg>played ${hand.took.toLowerCase()}</span>` : ''}
+      </div>`;
+
+      if (expanded) {
+        row.innerHTML += `<div class="jr-exp">
+          <div class="jr-board">
+            <div class="jr-bgroup"><div class="gl">Hand</div><div class="jr-bcards">${hand.hole.map(c => chipCardHTML(c.rank, c.suit, 30, 42)).join('')}</div></div>
+            ${hand.board.length ? `<div class="jr-bgroup"><div class="gl">Board</div><div class="jr-bcards">${hand.board.map(c => chipCardHTML(c.rank, c.suit, 30, 42)).join('')}</div></div>` : ''}
+          </div>
+          <div class="jr-cmp">
+            <div class="jr-cmpcell"><div class="l">Coach advised</div><div class="v" style="color:${ACT_COLOR[hand.advised]}">${hand.advised}${hand.size ? ' ' + hand.size : ''}</div></div>
+            <div class="jr-cmpcell" ${diverged ? 'style="border-color:rgba(245,158,11,.4)"' : ''}><div class="l">You played</div><div class="v" style="color:${ACT_COLOR[hand.took]}">${hand.took}${diverged ? ' ⚠' : ' ✓'}</div></div>
+          </div>
+          <div class="jr-stats">
+            <span class="st">Equity <b>${hand.equity}%</b></span>
+            <span class="st">Confidence <b>${hand.conf}%</b></span>
+            <span class="st">Result <b style="color:${hand.result === 'pending' ? 'var(--pk-teal)' : hand.amt > 0 ? 'var(--pk-bet)' : hand.amt < 0 ? 'var(--pk-fold)' : 'var(--pk-ink2)'}">${hand.result === 'pending' ? 'open' : money(hand.amt)}</b></span>
+          </div>
+          <div class="jr-notelabel">Your note</div>
+          <textarea class="jr-note" data-hand-id="${hand.id}" placeholder="What did you learn from this hand?">${noteVal}</textarea>
+          <div class="jr-expacts">
+            <div class="pk-btn" data-replay="${hand.id}" style="flex:1;background:var(--pk-surface2);min-height:42px">↻ Replay in Advisor</div>
+          </div>
+        </div>`;
+      }
+
+      row.onclick = (e) => {
+        if (e.target.closest('.jr-note') || e.target.closest('.jr-expacts')) return;
+        state.journalExpanded = state.journalExpanded === hand.id ? null : hand.id;
+        renderJournal();
+      };
+
+      wrap.appendChild(row);
+
+      // delete zone click
+      wrap.querySelector('.jr-delzone').onclick = () => {
+        store.deleted.push(hand.id);
+        persist();
+        if (state.journalExpanded === hand.id) state.journalExpanded = null;
+        renderJournal();
+      };
+
+      scroll.appendChild(wrap);
     });
   });
 
-  // Close on backdrop click
-  helpModal?.addEventListener('click', (e) => {
-    if (e.target === helpModal) helpModal.style.display = 'none';
+  // total
+  scroll.innerHTML += `<div style="text-align:center;font-family:var(--pk-mono);font-size:11px;color:var(--pk-ink3);margin-top:16px">${visible.length} hands · net <b style="color:${totalNet >= 0 ? 'var(--pk-bet)' : 'var(--pk-fold)'}">${money(totalNet)}</b></div>`;
+
+  // note change listeners
+  scroll.querySelectorAll('.jr-note').forEach(el => {
+    el.addEventListener('input', e => {
+      store.notes[el.dataset.handId] = e.target.value;
+      persist();
+    });
   });
 
-  // Note: The help button in the matrix is wired up dynamically in displayMatrix
+  // replay listeners
+  scroll.querySelectorAll('[data-replay]').forEach(el => {
+    el.onclick = e => {
+      e.stopPropagation();
+      const hand = [...state.savedHands, ...SEED_HANDS].find(h => h.id === el.dataset.replay);
+      if (hand) {
+        state.cards = hand.hole.slice();
+        state.mode = 'starter';
+        persist();
+        switchTab('play');
+        renderPlay();
+        showToast('Loaded into Advisor');
+      }
+    };
+  });
 }
 
-// Open help modal (called from matrix help button)
-function openHelpModal() {
-  const helpModal = document.getElementById('help-modal');
-  if (helpModal) helpModal.style.display = 'flex';
-}
-window.openHelpModal = openHelpModal;
+function renderJournalFilters() {
+  const filtersEl = $('jr-filters');
+  filtersEl.innerHTML = '';
+  const filters = [
+    { key: 'date', label: 'All time', stateKey: 'jFilterDate', opts: [['all','All time'],['today','Today'],['week','This week'],['month','This month']] },
+    { key: 'res', label: 'Result', stateKey: 'jFilterResult', opts: [['all','Win & loss'],['win','Wins'],['loss','Losses']] },
+    { key: 'act', label: 'Action', stateKey: 'jFilterAction', opts: [['all','Any action'],['RAISE','Raised'],['CALL','Called'],['FOLD','Folded']] },
+  ];
 
-// Initialize on DOM load
+  filters.forEach(f => {
+    const val = state[f.stateKey];
+    const active = val !== 'all';
+    const isOpen = state.jFilterOpen === f.key;
+    const displayText = val === 'all' ? f.label : f.opts.find(o => o[0] === val)[1];
+
+    const pill = h('div', 'jr-fpill' + (active ? ' on' : '') + (isOpen ? ' open' : ''));
+    pill.innerHTML = `<span>${displayText}</span><span class="cv"><svg width="9" height="9" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 4l3.5 3.5L9 4"/></svg></span>`;
+
+    if (isOpen) {
+      const menu = h('div', 'jr-menu');
+      f.opts.forEach(([v, l]) => {
+        const item = h('div', 'jr-mitem' + (val === v ? ' on' : ''));
+        item.innerHTML = `${l}${val === v ? '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 7l3.5 3.5L12 4"/></svg>' : ''}`;
+        item.onclick = (e) => { e.stopPropagation(); state[f.stateKey] = v; state.jFilterOpen = null; renderJournal(); };
+        menu.appendChild(item);
+      });
+      pill.appendChild(menu);
+    }
+
+    pill.onclick = (e) => {
+      e.stopPropagation();
+      state.jFilterOpen = isOpen ? null : f.key;
+      renderJournalFilters();
+    };
+
+    filtersEl.appendChild(pill);
+  });
+}
+
+// ============================================================
+// AI COACH
+// ============================================================
+function openCoach(context) {
+  state.coachContext = context;
+  state.coachOpen = true;
+  state.coachConvo = buildConversation(context);
+  state.coachMsgs = [{ who: 'them', text: state.coachConvo.opener }];
+  state.coachUsed = new Set();
+  renderCoach();
+  show($('coach-sheet'));
+}
+
+function closeCoach() {
+  state.coachOpen = false;
+  hide($('coach-sheet'));
+}
+
+function renderCoach() {
+  const byok = state.byok;
+  const configured = !!(byok && (byok.configured || byok.skipped));
+
+  if (!configured) {
+    show($('coach-byok'));
+    hide($('coach-chat'));
+    renderByok();
+    return;
+  }
+
+  hide($('coach-byok'));
+  show($('coach-chat'));
+
+  // provider label
+  const prov = byok && byok.provider ? PROVIDERS.find(p => p.id === byok.provider) : null;
+  $('coach-provider-label').textContent = prov ? prov.name + ' · ' + prov.model : 'demo mode';
+
+  // context chip
+  const chipEl = $('coach-ctx-chip');
+  if (state.coachContext && state.coachContext.cards) {
+    chipEl.innerHTML = `<div style="display:flex;gap:3px">${state.coachContext.cards.map(c => miniCardHTML(c.rank, c.suit, 20, 28)).join('')}</div>
+      <span class="t"><b>${state.coachContext.name || 'Your hand'}</b></span>`;
+    show(chipEl);
+  } else if (state.coachContext && state.coachContext.kind === 'matrix') {
+    chipEl.innerHTML = `<span class="t">Holding <b>${state.coachContext.category}</b> · ${Math.round(state.coachContext.ahead)}% ahead</span>`;
+    show(chipEl);
+  } else {
+    hide(chipEl);
+  }
+
+  // thread
+  const thread = $('coach-thread');
+  thread.innerHTML = '';
+  state.coachMsgs.forEach(m => {
+    const el = h('div', 'co-msg ' + m.who, m.text);
+    thread.appendChild(el);
+  });
+  thread.scrollTop = thread.scrollHeight;
+
+  // suggestions
+  const suggestEl = $('coach-suggest');
+  suggestEl.innerHTML = '';
+  if (state.coachConvo) {
+    state.coachConvo.qa.filter(x => !state.coachUsed.has(x.q)).forEach(x => {
+      const chip = h('div', 'co-chip', x.q);
+      chip.onclick = () => sendCoachMsg(x.q);
+      suggestEl.appendChild(chip);
+    });
+  }
+}
+
+function renderByok() {
+  const grid = $('coach-provgrid');
+  grid.innerHTML = '';
+  PROVIDERS.forEach(p => {
+    const on = state.coachProvider === p.id;
+    const el = h('div', 'co-prov' + (on ? ' on' : ''));
+    el.innerHTML = `<span class="co-mono-badge" style="background:${p.color}">${p.badge}</span>
+      <span><span class="pn">${p.name}</span><br><span class="pd">${p.model}</span></span>`;
+    el.onclick = () => { state.coachProvider = p.id; renderByok(); };
+    grid.appendChild(el);
+  });
+}
+
+function sendCoachMsg(text) {
+  const t = (text || '').trim();
+  if (!t) return;
+  state.coachUsed.add(t);
+  state.coachMsgs.push({ who: 'me', text: t });
+
+  // find answer
+  const hit = state.coachConvo && state.coachConvo.qa.find(x => x.q === t);
+  const answer = hit ? hit.a : "Good question. In PLO the read comes down to nut potential and connectivity.";
+
+  renderCoach();
+
+  // typing indicator
+  const thread = $('coach-thread');
+  const typing = h('div', 'co-typing', '<i></i><i></i><i></i>');
+  thread.appendChild(typing);
+  thread.scrollTop = thread.scrollHeight;
+
+  setTimeout(() => {
+    typing.remove();
+    state.coachMsgs.push({ who: 'them', text: answer });
+    renderCoach();
+  }, 1050);
+}
+
+// ============================================================
+// WALKTHROUGH / ONBOARDING
+// ============================================================
+function renderWalkthrough() {
+  if (state.wtStep < 0 || state.wtStep >= WT_STEPS.length) {
+    hide($('walkthrough'));
+    return;
+  }
+  show($('walkthrough'));
+  const st = WT_STEPS[state.wtStep];
+  const spot = $('wt-spot');
+  Object.assign(spot.style, { top: st.spot.top, left: st.spot.left, width: st.spot.width, height: st.spot.height, borderRadius: (st.spot.radius || '18px') });
+  $('wt-tip').style.top = st.tipTop;
+  $('wt-step-label').textContent = 'Step ' + (state.wtStep + 1) + ' of ' + WT_STEPS.length;
+  $('wt-title').textContent = st.title;
+  $('wt-body').textContent = st.body;
+  $('wt-dots').innerHTML = WT_STEPS.map((_, i) => `<i class="${i === state.wtStep ? 'on' : ''}"></i>`).join('');
+  $('wt-next').textContent = state.wtStep === WT_STEPS.length - 1 ? 'Got it' : 'Next';
+}
+
+// ============================================================
+// INIT — Wire up all event listeners
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  initAICoach();
-  initHelpModal();
+
+  // Splash
+  if (state.onboarded) {
+    hide($('splash'));
+  }
+  $('splash-start').onclick = () => {
+    hide($('splash'));
+    state.cards = [];
+    state.mode = 'starter';
+    state.wtStep = 0;
+    persist();
+    renderPlay();
+    renderWalkthrough();
+  };
+
+  // Walkthrough
+  $('wt-next').onclick = () => {
+    state.wtStep++;
+    if (state.wtStep >= WT_STEPS.length) {
+      state.wtStep = -1;
+      state.onboarded = true;
+      save('pk-onboarded', true);
+    }
+    renderWalkthrough();
+  };
+  $('wt-skip').onclick = () => {
+    state.wtStep = -1;
+    state.onboarded = true;
+    save('pk-onboarded', true);
+    renderWalkthrough();
+  };
+
+  // Tab bar
+  document.querySelectorAll('#tabbar .pk-tab').forEach(tab => {
+    tab.onclick = () => switchTab(tab.dataset.tab);
+  });
+
+  // Play mode toggle
+  $('btn-starter').onclick = () => { state.mode = 'starter'; persist(); renderPlay(); };
+  $('btn-expert').onclick = () => { state.mode = 'expert'; persist(); renderPlay(); };
+
+  // Situation sheet
+  $('btn-situation-play').onclick = () => { renderSituationSheet(); show($('situation-sheet')); };
+  $('play-ctx').onclick = () => { renderSituationSheet(); show($('situation-sheet')); };
+  $('study-ctx').onclick = () => { renderSituationSheet(); show($('situation-sheet')); };
+  $('situation-sheet').onclick = () => hide($('situation-sheet'));
+  $('situation-done').onclick = () => hide($('situation-sheet'));
+
+  // Starter mode buttons
+  $('starter-clear').onclick = newHand;
+  $('starter-new').onclick = newHand;
+  $('starter-edit').onclick = () => { /* remove last card to go back to editing */ if (state.cards.length > 0) { state.cards.pop(); persist(); renderPlay(); } };
+  $('starter-save').onclick = saveCurrentHand;
+
+  // Expert mode buttons
+  $('expert-new').onclick = newHand;
+  $('expert-save').onclick = saveCurrentHand;
+
+  // Expert type input
+  $('expert-type-input').oninput = (e) => {
+    const val = e.target.value;
+    $('expert-type-clear').style.display = val ? '' : 'none';
+    if (val) {
+      state.cards = parseNotation(val);
+      persist();
+      renderExpert();
+    }
+  };
+  $('expert-type-clear').onclick = () => { $('expert-type-input').value = ''; $('expert-type-clear').style.display = 'none'; };
+
+  // Study mode
+  $('btn-scenarios').onclick = () => { state.studySub = 'scenarios'; persist(); renderStudy(); };
+  $('btn-matrix').onclick = () => { state.studySub = 'matrix'; persist(); renderStudy(); };
+  $('matrix-prev').onclick = () => { state.matrixHand = Math.max(0, state.matrixHand - 1); renderMatrix(); };
+  $('matrix-next').onclick = () => { state.matrixHand = Math.min(8, state.matrixHand + 1); renderMatrix(); };
+
+  // Study custom builder toggle
+  $('study-custom-hd').onclick = () => {
+    const el = $('study-custom');
+    const body = $('study-custom-body');
+    el.classList.toggle('open');
+    body.style.display = el.classList.contains('open') ? '' : 'none';
+    if (el.classList.contains('open') && !body.innerHTML) renderCustomBuilder();
+  };
+
+  // Coach
+  $('btn-coach-play').onclick = () => openCoach({ kind: 'play', cards: state.cards.length === 4 ? state.cards : undefined });
+  $('btn-coach-study').onclick = () => {
+    if (state.studySub === 'scenarios') {
+      const sel = PRESETS[state.studyPreset];
+      openCoach({ kind: 'hand', name: sel.name, cards: sel.cards });
+    } else {
+      const opp = Math.max(1, (state.situation.players || 6) - 1);
+      const d = rowData(state.matrixHand, opp);
+      openCoach({ kind: 'matrix', category: HAND_CATS[state.matrixHand].name, catIndex: state.matrixHand, ahead: d.ahead, beat: d.beat, opp });
+    }
+  };
+  $('coach-close').onclick = closeCoach;
+  $('coach-settings').onclick = () => { state.byok = null; save('pk-byok', null); renderCoach(); };
+  $('coach-send').onclick = () => { sendCoachMsg($('coach-input').value); $('coach-input').value = ''; };
+  $('coach-input').onkeydown = (e) => { if (e.key === 'Enter') { sendCoachMsg(e.target.value); e.target.value = ''; } };
+  $('coach-skip').onclick = () => { state.byok = { skipped: true }; save('pk-byok', state.byok); renderCoach(); };
+  $('coach-save-key').onclick = () => {
+    const key = $('coach-key-input').value.trim();
+    if (!key) return;
+    state.byok = { provider: state.coachProvider, key, configured: true };
+    save('pk-byok', state.byok);
+    renderCoach();
+  };
+  $('coach-key-input').oninput = () => {
+    const hasKey = $('coach-key-input').value.trim().length > 0;
+    $('coach-save-key').style.opacity = hasKey ? '1' : '0.45';
+    $('coach-save-key').style.pointerEvents = hasKey ? 'auto' : 'none';
+  };
+  $('coach-key-toggle').onclick = () => {
+    const inp = $('coach-key-input');
+    const showing = inp.type === 'text';
+    inp.type = showing ? 'password' : 'text';
+    $('coach-key-toggle').textContent = showing ? 'show' : 'hide';
+  };
+
+  // Close filters on outside click
+  document.addEventListener('click', () => { if (state.jFilterOpen) { state.jFilterOpen = null; renderJournalFilters(); } });
+
+  // Initial render
+  updateContextLabels();
+  renderPlay();
+
+  if (state.onboarded) {
+    renderWalkthrough(); // will hide if step < 0
+  }
 });
 
-// Make functions globally available
-window.viewSavedSimulation = viewSavedSimulation;
-window.deleteSimulation = deleteSimulation;
+// ============================================================
+// Study Custom Builder
+// ============================================================
+function renderCustomBuilder() {
+  const body = $('study-custom-body');
+  body.innerHTML = '';
+
+  const groups = [
+    ['Suitedness', [['double','Double'],['single','Single'],['rainbow','Rainbow']], 'suited'],
+    ['Structure', [['pair','Pair'],['nopair','No pair']], 'struct'],
+    ['High cards', [['high','High'],['mid','Mid'],['low','Low']], 'hi']
+  ];
+
+  groups.forEach(([lbl, opts, key]) => {
+    const row = h('div', 'st-optrow');
+    row.innerHTML = `<span class="pk-eyebrow">${lbl}</span>`;
+    const pick = h('div', 'pk-segpick', null, { style: { gridTemplateColumns: `repeat(${opts.length},1fr)` } });
+    opts.forEach(([v, l]) => {
+      const chip = h('div', 'pk-pchip' + (state.customOpts[key] === v ? ' on' : ''), l);
+      chip.onclick = () => {
+        state.customOpts[key] = v;
+        applyCustomHand();
+        renderCustomBuilder();
+      };
+      pick.appendChild(chip);
+    });
+    row.appendChild(pick);
+    body.appendChild(row);
+  });
+}
+
+function applyCustomHand() {
+  const { suited, struct, hi } = state.customOpts;
+  const pool = hi === 'high' ? ['A','K','Q','J'] : hi === 'mid' ? ['T','9','8','7'] : ['6','5','4','3'];
+  let cards;
+  if (struct === 'pair') cards = [C(pool[0],'s'), C(pool[0],'h'), C(pool[1],'s'), C(pool[2],'h')];
+  else cards = [C(pool[0],'s'), C(pool[1],'h'), C(pool[2],'s'), C(pool[3],'h')];
+  if (suited === 'single') cards = [C(cards[0].rank,'s'), C(cards[1].rank,'s'), C(cards[2].rank,'d'), C(cards[3].rank,'c')];
+  if (suited === 'rainbow') cards = [C(cards[0].rank,'s'), C(cards[1].rank,'h'), C(cards[2].rank,'d'), C(cards[3].rank,'c')];
+
+  // add as custom preset (temporary)
+  state.studyPreset = -1; // special custom index
+  // render with custom cards
+  const presetsEl = $('study-presets');
+  // We'll just update the insight directly
+  const adv = advise(cards);
+  $('study-insight-name').textContent = 'Custom hand';
+  renderCustomInsight(cards, adv);
+}
+
+function renderCustomInsight(cards, adv) {
+  const nut = Math.max(1, Math.min(4, Math.round(adv.playability / 25)));
+  const bgMap = { RAISE: 'linear-gradient(120deg,rgba(245,158,11,.2),rgba(245,158,11,.04))', CALL: 'linear-gradient(120deg,rgba(59,130,246,.18),rgba(59,130,246,.04))', FOLD: 'linear-gradient(120deg,rgba(239,68,68,.18),rgba(239,68,68,.04))' };
+  const bdMap = { RAISE: 'rgba(245,158,11,.45)', CALL: 'rgba(59,130,246,.4)', FOLD: 'rgba(239,68,68,.4)' };
+
+  $('study-insight').innerHTML = `
+    <div class="pk-badge" style="background:${bgMap[adv.action]};border:1px solid ${bdMap[adv.action]}">
+      <div><div class="act" style="font-size:26px;color:${adv.color}">${adv.action}</div>
+        <div style="font-size:12.5px;color:var(--pk-ink2);margin-top:3px;max-width:200px;line-height:1.35">${reasonText(cards, adv)}</div></div>
+      <div class="size">${adv.sizing ? `<div class="mono" style="font-size:20px;color:var(--pk-ink)">${adv.sizing.to}</div><div class="pk-eyebrow">${adv.sizing.bb}</div>` : '<div class="pk-eyebrow">no bet</div>'}</div>
+    </div>
+    <div class="st-metric"><div class="top"><span class="pk-eyebrow">Playability</span><span class="mono" style="font-size:13px;color:var(--pk-teal);font-weight:700">${adv.playability}/100</span></div>
+      <div class="st-bar"><i style="width:${adv.playability}%;background:var(--pk-teal)"></i></div></div>
+    <div class="st-metric"><div class="top"><span class="pk-eyebrow">Nut potential</span><span class="mono" style="font-size:12px;color:var(--pk-ink2)">${['low','fair','strong','elite'][nut-1]}</span></div>
+      <div class="st-nut">${[0,1,2,3].map(i => `<i class="${i < nut ? 'on' : ''}"></i>`).join('')}</div></div>`;
+}

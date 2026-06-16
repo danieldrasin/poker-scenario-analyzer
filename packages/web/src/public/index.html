@@ -2,832 +2,376 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Poker Scenario Analyzer</title>
-  <link rel="stylesheet" href="styles.css?v=20260218a">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0e1525">
+  <title>Omaha Edge</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="header-content">
-        <div class="header-title">
-          <h1>🎴 Poker Scenario Analyzer</h1>
-          <p class="subtitle">Omaha strategic hand analysis (4/5/6-card)</p>
-        </div>
-        <button class="settings-btn" id="settings-btn" title="AI Settings">⚙️</button>
-      </div>
-      <div class="deploy-info" id="deploy-info" title="Deployment timestamp"></div>
-    </header>
 
-    <main>
-      <!-- Data Status Indicators -->
-      <div id="data-status" style="display: none;"></div>
-      <div id="storage-status"></div>
+<div id="app">
 
-      <!-- Tab Navigation -->
-      <nav class="main-tabs">
-        <button class="tab-btn active" data-tab="scenario">Scenario Builder</button>
-        <button class="tab-btn" data-tab="advisor">Play Advisor</button>
-        <button class="tab-btn" data-tab="matrix">Probability Matrix</button>
-        <button class="tab-btn" data-tab="saved">Hand Journal</button>
-      </nav>
-
-      <!-- Scenario Builder Tab -->
-      <section id="scenario-tab" class="tab-content active">
-        <!-- Onboarding intro card -->
-        <div class="intro-card" id="scenario-intro" data-storage-key="scenario-intro-collapsed">
-          <div class="intro-card-header" onclick="toggleIntroCard('scenario-intro')">
-            <span class="intro-card-icon">🎯</span>
-            <span class="intro-card-title">Build a hand and see what to expect</span>
-            <span class="intro-card-toggle">▼</span>
-          </div>
-          <div class="intro-card-body">
-            <p>Configure a starting hand scenario — structure, suitedness, table size — and see the odds of making sets, flushes, straights and more. Great for studying spots before you play.</p>
-            <button class="intro-card-dismiss" onclick="collapseIntroCard('scenario-intro')">Got it</button>
-          </div>
-        </div>
-        <div class="scenario-builder">
-          <!-- Game Settings Row -->
-          <div class="settings-row">
-            <div class="setting">
-              <label>Game</label>
-              <select id="game-select">
-                <option value="omaha4" selected>Omaha 4-Card</option>
-                <option value="omaha5">Omaha 5-Card</option>
-                <option value="omaha6">Omaha 6-Card</option>
-              </select>
-            </div>
-            <div class="setting">
-              <label>Position</label>
-              <select id="position-select">
-                <option value="UTG">UTG (Early)</option>
-                <option value="MP">MP (Middle)</option>
-                <option value="CO">CO (Cutoff)</option>
-                <option value="BTN" selected>BTN (Button)</option>
-                <option value="SB">SB (Small Blind)</option>
-                <option value="BB">BB (Big Blind)</option>
-              </select>
-            </div>
-            <div class="setting">
-              <label>Style</label>
-              <select id="style-select">
-                <option value="rock">Rock (Tight-Passive)</option>
-                <option value="tag" selected>TAG (Tight-Aggressive)</option>
-                <option value="lag">LAG (Loose-Aggressive)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Opponents Row -->
-          <div class="settings-row opponents-row">
-            <div class="setting">
-              <label title="Total players at the table (not just those in the pot). Position determines how many will likely enter.">Players at Table</label>
-              <div class="opponent-selector">
-                <button class="opp-btn" data-count="1">1</button>
-                <button class="opp-btn" data-count="2">2</button>
-                <button class="opp-btn" data-count="3">3</button>
-                <button class="opp-btn" data-count="4">4</button>
-                <button class="opp-btn active" data-count="5">5</button>
-                <button class="opp-btn" data-count="6">6</button>
-                <button class="opp-btn" data-count="7">7</button>
-                <button class="opp-btn" data-count="8">8</button>
-              </div>
-            </div>
-            <div class="multiway-alert" id="multiway-alert" style="display: none;">
-              <span class="alert-icon">⚠️</span>
-              <span class="alert-text">Large table: Expect multiway pots - tighten range, prioritize nut potential!</span>
-            </div>
-          </div>
-
-          <!-- Quick Presets (Primary UI) -->
-          <div class="preset-grid">
-            <button class="preset-chip active" data-query="pair:AA:ds">AA ds</button>
-            <button class="preset-chip" data-query="pair:KK:ds">KK ds</button>
-            <button class="preset-chip" data-query="pair:TT+:ds">TT+ ds</button>
-            <button class="preset-chip" data-query="run:A+:ds">Rundown ds</button>
-            <button class="preset-chip" data-query="dpair:any:ds">DblPair ds</button>
-            <button class="preset-chip" data-query="bway:any:ds">Bway ds</button>
-            <button class="preset-chip" data-query="pair:any:any">Any Pair</button>
-            <button class="preset-chip" data-query="any:any:any">Any Hand</button>
-          </div>
-
-          <!-- Compact Custom Builder -->
-          <div class="compact-builder">
-            <div class="builder-row">
-              <div class="builder-cell">
-                <select id="structure-select" class="compact-select">
-                  <option value="pair" selected>Pair</option>
-                  <option value="dpair">Double Pair</option>
-                  <option value="run">Rundown</option>
-                  <option value="bway">Broadway</option>
-                  <option value="any">Any</option>
-                </select>
-              </div>
-
-              <div class="builder-cell rank-cell" id="rank-cell">
-                <button class="rank-adj" id="rank-down">◀</button>
-                <span class="rank-display" id="rank-display">A</span>
-                <button class="rank-adj" id="rank-up">▶</button>
-                <div class="rank-mod-toggle">
-                  <button class="rank-mod" data-mod="-" title="Lower kickers (e.g., AA with 7-6)">−</button>
-                  <button class="rank-mod active" data-mod="=" title="Average kickers (e.g., AA with Q-J)">=</button>
-                  <button class="rank-mod" data-mod="+" title="Premium kickers (e.g., AA with A-K suited)">+</button>
-                </div>
-              </div>
-
-              <div class="builder-cell">
-                <select id="suit-select" class="compact-select">
-                  <option value="ds" selected>DS</option>
-                  <option value="ss">SS</option>
-                  <option value="r">Rainbow</option>
-                  <option value="any">Any</option>
-                </select>
-              </div>
-
-              <div class="builder-cell" id="sidecards-cell">
-                <select id="sidecards-select" class="compact-select">
-                  <option value="any" selected>Any</option>
-                  <option value="conn">Conn</option>
-                  <option value="bway">Bway</option>
-                  <option value="wheel">Wheel</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Tags for active constraints -->
-            <div class="constraint-tags" id="constraint-tags">
-              <span class="tag">Pair <button class="tag-remove" data-tag="structure">×</button></span>
-              <span class="tag">Aces <button class="tag-remove" data-tag="rank">×</button></span>
-              <span class="tag">DS <button class="tag-remove" data-tag="suit">×</button></span>
-            </div>
-          </div>
-
-          <!-- Query Preview (Compact) -->
-          <div class="query-preview">
-            <div class="query-header">
-              <code id="query-code">pair:AA:ds</code>
-              <button id="copy-query" class="icon-btn" title="Copy">📋</button>
-            </div>
-            <div class="query-description" id="query-description">Pair Aces double-suited</div>
-            <div class="sample-hands">
-              <div class="hand-cards" id="hand-cards">
-                <span class="example-hand">A♠A♥K♠Q♥</span>
-                <span class="example-hand">A♦A♣8♦6♣</span>
-                <span class="example-hand">A♠A♥5♠3♥</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Strategy Insight Panel -->
-          <div class="strategy-insight" id="strategy-insight">
-            <div class="insight-header">
-              <span class="insight-title">Strategy Insight</span>
-              <span class="insight-context" id="insight-context">TAG @ BTN vs 5</span>
-            </div>
-            <div class="insight-recommendation" id="insight-recommendation">
-              <span class="rec-badge rec-raise" id="rec-badge">RAISE</span>
-              <span class="rec-text" id="rec-text">Premium hand, strong in position</span>
-            </div>
-            <div class="insight-details">
-              <div class="insight-row">
-                <span class="insight-label">Nut Potential:</span>
-                <div class="mini-bar">
-                  <div class="mini-bar-fill" id="nut-potential-bar" style="width: 85%"></div>
-                </div>
-                <span class="insight-value" id="nut-potential-val">High</span>
-              </div>
-              <div class="insight-row">
-                <span class="insight-label">Multiway Viability:</span>
-                <div class="mini-bar">
-                  <div class="mini-bar-fill" id="multiway-bar" style="width: 60%"></div>
-                </div>
-                <span class="insight-value" id="multiway-val">Medium</span>
-              </div>
-            </div>
-            <div class="insight-warnings" id="insight-warnings">
-              <!-- Warnings populated by JS -->
-            </div>
-            <div class="insight-actions">
-              <button class="explain-btn" id="explain-btn">
-                <span>💬</span> Explain This
-              </button>
-            </div>
-          </div>
-
-          <!-- Analyze Button -->
-          <button id="analyze-btn" class="primary-btn">
-            <span class="btn-icon">🔍</span>
-            <span class="btn-text">Analyze Scenario</span>
-          </button>
-        </div>
-
-        <!-- Results Section -->
-        <div id="results-section" class="results-section" style="display: none;">
-          <!-- Results Header with Actions -->
-          <div class="results-header">
-            <h3 id="results-title">Analysis Results</h3>
-            <div class="results-actions">
-              <button class="action-link" onclick="viewInMatrixWithHighlight()">📊 View in Matrix</button>
-            </div>
-          </div>
-          <!-- Summary Stats -->
-          <div class="results-summary">
-            <div class="summary-grid">
-              <div class="stat-card">
-                <div class="stat-value" id="stat-winrate">--</div>
-                <div class="stat-label">Win Rate</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-hands">--</div>
-                <div class="stat-label">Hands Analyzed</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-value" id="stat-frequency">--</div>
-                <div class="stat-label">Occurrence</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Strategic Scores -->
-          <div class="strategic-scores">
-            <h4>Strategic Profile</h4>
-            <div class="score-bars">
-              <div class="score-row">
-                <span class="score-label">Nut Potential</span>
-                <div class="score-bar">
-                  <div class="score-fill" id="score-nut" style="width: 0%"></div>
-                </div>
-                <span class="score-value" id="score-nut-val">--</span>
-              </div>
-              <div class="score-row">
-                <span class="score-label">RNIO Risk</span>
-                <div class="score-bar risk">
-                  <div class="score-fill" id="score-rnio" style="width: 0%"></div>
-                </div>
-                <span class="score-value" id="score-rnio-val">--</span>
-              </div>
-              <div class="score-row">
-                <span class="score-label">Multiway Strength</span>
-                <div class="score-bar">
-                  <div class="score-fill" id="score-multiway" style="width: 0%"></div>
-                </div>
-                <span class="score-value" id="score-multiway-val">--</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Flop Guidance -->
-          <div class="flop-guidance">
-            <h4>What to Look For on the Flop</h4>
-            <div class="flop-columns">
-              <div class="flop-column good">
-                <h5>✓ Good Flops</h5>
-                <ul id="good-flops">
-                  <li>Dry, rainbow boards</li>
-                  <li>Top set opportunities</li>
-                  <li>Nut flush draws</li>
-                </ul>
-              </div>
-              <div class="flop-column danger">
-                <h5>⚠ Dangerous Flops</h5>
-                <ul id="danger-flops">
-                  <li>Monotone without nut FD</li>
-                  <li>Very connected boards</li>
-                  <li>Paired + coordinated</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Multiway Adjustment -->
-          <div class="multiway-table">
-            <h4>Win Rate by Table Size</h4>
-            <table id="multiway-results">
-              <thead>
-                <tr>
-                  <th>Players</th>
-                  <th>Win Rate</th>
-                  <th>Nut Required?</th>
-                  <th>Strategy</th>
-                </tr>
-              </thead>
-              <tbody id="multiway-body">
-                <!-- Filled by JS -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- Play Advisor Tab -->
-      <section id="advisor-tab" class="tab-content">
-        <!-- Mode Toggle -->
-        <div class="advisor-mode-toggle">
-          <button class="mode-btn active" data-mode="live" id="mode-live-btn">
-            <span class="mode-icon">⚡</span>
-            <span class="mode-label">Live Table</span>
-          </button>
-          <button class="mode-btn" data-mode="study" id="mode-study-btn">
-            <span class="mode-icon">📖</span>
-            <span class="mode-label">Study</span>
-          </button>
-        </div>
-
-        <!-- ============================================ -->
-        <!-- LIVE TABLE MODE                              -->
-        <!-- Speed-optimized: fast entry, big action, go  -->
-        <!-- ============================================ -->
-        <div id="live-mode" class="advisor-mode active">
-          <!-- Compact top bar: game/position/players -->
-          <div class="live-settings-bar">
-            <div class="live-field">
-              <label class="live-label">Game</label>
-              <select id="live-game-select" class="live-select">
-                <option value="omaha4" selected>PLO4</option>
-                <option value="omaha5">PLO5</option>
-                <option value="omaha6">PLO6</option>
-              </select>
-            </div>
-            <div class="live-field">
-              <label class="live-label">Position</label>
-              <select id="live-position-select" class="live-select">
-                <option value="UTG">UTG</option>
-                <option value="MP">MP</option>
-                <option value="CO">CO</option>
-                <option value="BTN" selected>BTN</option>
-                <option value="SB">SB</option>
-                <option value="BB">BB</option>
-              </select>
-            </div>
-            <div class="live-field">
-              <label class="live-label">Players</label>
-              <select id="live-players-select" class="live-select">
-                <option value="2">2p</option>
-                <option value="3" selected>3p</option>
-                <option value="4">4p</option>
-                <option value="5">5p</option>
-                <option value="6">6p</option>
-                <option value="7">7p</option>
-                <option value="8">8p</option>
-                <option value="9">9p</option>
-              </select>
-            </div>
-            <div class="live-field">
-              <label class="live-label">Villain</label>
-              <select id="live-style-select" class="live-select">
-                <option value="nit">Nit</option>
-                <option value="rock">Rock</option>
-                <option value="reg" selected>Reg</option>
-                <option value="tag">TAG</option>
-                <option value="lag">LAG</option>
-                <option value="fish">Fish</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Card Entry Area -->
-          <div class="live-cards-area">
-            <div class="live-card-section">
-              <div class="live-card-label">HOLE</div>
-              <div id="live-hole-cards" class="live-card-slots">
-                <div class="live-card-slot empty" data-slot="hole-0">?</div>
-                <div class="live-card-slot empty" data-slot="hole-1">?</div>
-                <div class="live-card-slot empty" data-slot="hole-2">?</div>
-                <div class="live-card-slot empty" data-slot="hole-3">?</div>
-              </div>
-              <button id="live-clear-hole" class="live-clear-btn" title="Clear hole cards">✕</button>
-            </div>
-            <div class="live-card-section">
-              <div class="live-card-label">BOARD</div>
-              <div id="live-board-cards" class="live-card-slots">
-                <div class="live-card-slot board-slot empty" data-slot="board-0">?</div>
-                <div class="live-card-slot board-slot empty" data-slot="board-1">?</div>
-                <div class="live-card-slot board-slot empty" data-slot="board-2">?</div>
-                <div class="live-card-slot board-slot empty" data-slot="board-3">?</div>
-                <div class="live-card-slot board-slot empty" data-slot="board-4">?</div>
-              </div>
-              <button id="live-clear-board" class="live-clear-btn" title="Clear board cards">✕</button>
-            </div>
-          </div>
-
-          <!-- Card Picker (compact grid) -->
-          <div id="live-card-picker" class="live-card-picker"></div>
-
-          <!-- Pot / Call / Stack — inline spinners -->
-          <div class="live-betting-bar">
-            <div class="live-bet-field">
-              <label>Pot</label>
-              <div class="live-spinner">
-                <button class="spin-btn" data-target="live-pot" data-delta="-10">−</button>
-                <input type="number" id="live-pot" value="100" min="0" step="10">
-                <button class="spin-btn" data-target="live-pot" data-delta="10">+</button>
-              </div>
-            </div>
-            <div class="live-bet-field">
-              <label>Call</label>
-              <div class="live-spinner">
-                <button class="spin-btn" data-target="live-call" data-delta="-10">−</button>
-                <input type="number" id="live-call" value="0" min="0" step="10">
-                <button class="spin-btn" data-target="live-call" data-delta="10">+</button>
-              </div>
-            </div>
-            <div class="live-bet-field">
-              <label>Stack</label>
-              <div class="live-spinner">
-                <button class="spin-btn" data-target="live-stack" data-delta="-50">−</button>
-                <input type="number" id="live-stack" value="1000" min="0" step="50">
-                <button class="spin-btn" data-target="live-stack" data-delta="50">+</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- BIG Action Result -->
-          <div id="live-result" class="live-result">
-            <div class="live-result-placeholder">Enter your cards to get a recommendation</div>
-          </div>
-
-          <!-- New Hand button -->
-          <button id="live-new-hand" class="live-new-hand-btn">
-            <span>🔄</span> New Hand
-          </button>
-        </div>
-
-        <!-- ============================================ -->
-        <!-- STUDY MODE                                   -->
-        <!-- Detailed, explorable, no time pressure       -->
-        <!-- ============================================ -->
-        <div id="study-mode" class="advisor-mode">
-          <!-- Onboarding intro card -->
-          <div class="intro-card" id="advisor-intro" data-storage-key="advisor-intro-collapsed">
-            <div class="intro-card-header" onclick="toggleIntroCard('advisor-intro')">
-              <span class="intro-card-icon">📖</span>
-              <span class="intro-card-title">Study mode — explore hands in depth</span>
-              <span class="intro-card-toggle">▼</span>
-            </div>
-            <div class="intro-card-body">
-              <p>Take your time. Enter hole cards, board, and betting details to get detailed analysis with equity breakdowns, reasoning, board texture, and alternatives.</p>
-              <p class="intro-card-hint">🎯 <strong>Tip:</strong> Click cards to select them, then toggle between hole and board cards</p>
-              <button class="intro-card-dismiss" onclick="collapseIntroCard('advisor-intro')">Got it</button>
-            </div>
-          </div>
-
-          <div class="advisor-layout">
-            <!-- Input Panel -->
-            <div class="advisor-input-panel">
-              <h3>🃏 Card Selection</h3>
-
-              <!-- Card Selection Mode -->
-              <div class="card-mode-selector">
-                <label>
-                  <input type="radio" name="card-mode" value="hole" checked>
-                  Hole Cards
-                </label>
-                <label>
-                  <input type="radio" name="card-mode" value="board">
-                  Board Cards
-                </label>
-              </div>
-
-              <!-- Card Selector Grid -->
-              <div id="card-selector-grid"></div>
-
-              <!-- Selected Cards Display -->
-              <div class="selected-cards-section">
-                <div class="selected-cards-row">
-                  <span class="selected-cards-label">Hole:</span>
-                  <div id="selected-hole-cards" class="selected-cards-display"></div>
-                  <button id="clear-hole-cards" class="clear-btn">Clear</button>
-                </div>
-                <div class="selected-cards-row">
-                  <span class="selected-cards-label">Board:</span>
-                  <div id="selected-board-cards" class="selected-cards-display"></div>
-                  <button id="clear-board-cards" class="clear-btn">Clear</button>
-                </div>
-              </div>
-
-              <!-- Street Indicator -->
-              <div class="street-indicator" id="street-indicator">PREFLOP</div>
-
-              <!-- Situation Inputs -->
-              <div class="situation-inputs">
-                <div class="situation-select">
-                  <label>Game</label>
-                  <select id="advisor-game-select">
-                    <option value="omaha4" selected>Omaha 4-Card</option>
-                    <option value="omaha5">Omaha 5-Card</option>
-                    <option value="omaha6">Omaha 6-Card</option>
-                  </select>
-                </div>
-                <div class="situation-select">
-                  <label>Style</label>
-                  <select id="advisor-style-select">
-                    <option value="nit">Nit (Ultra-Tight)</option>
-                    <option value="rock">Rock (Tight-Passive)</option>
-                    <option value="reg" selected>Reg (Solid Regular)</option>
-                    <option value="tag">TAG (Tight-Aggressive)</option>
-                    <option value="lag">LAG (Loose-Aggressive)</option>
-                    <option value="fish">Fish (Loose-Passive)</option>
-                  </select>
-                </div>
-                <div class="situation-select">
-                  <label>Position</label>
-                  <select id="advisor-position-select">
-                    <option value="UTG">UTG</option>
-                    <option value="MP">MP</option>
-                    <option value="CO">CO</option>
-                    <option value="BTN" selected>BTN</option>
-                    <option value="SB">SB</option>
-                    <option value="BB">BB</option>
-                  </select>
-                </div>
-                <div class="situation-select">
-                  <label>Players</label>
-                  <select id="advisor-players-select">
-                    <option value="2">2 (Heads-up)</option>
-                    <option value="3" selected>3 (3-way)</option>
-                    <option value="4">4 (4-way)</option>
-                    <option value="5">5 (5-way)</option>
-                    <option value="6">6 (6-way)</option>
-                    <option value="7">7 (7-way)</option>
-                    <option value="8">8 (8-way)</option>
-                    <option value="9">9 (Full ring)</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Betting Inputs -->
-              <div class="betting-inputs">
-                <div class="betting-input">
-                  <label>Pot Size ($)</label>
-                  <input type="number" id="advisor-pot-size" value="100" min="0" step="10">
-                </div>
-                <div class="betting-input">
-                  <label>To Call ($)</label>
-                  <input type="number" id="advisor-to-call" value="0" min="0" step="10">
-                </div>
-                <div class="betting-input">
-                  <label>Stack ($)</label>
-                  <input type="number" id="advisor-stack-size" value="1000" min="0" step="50">
-                </div>
-              </div>
-
-              <!-- Villain Actions -->
-              <div class="villain-actions-section">
-                <h4>Villain Actions (optional)</h4>
-                <div class="villain-action-buttons">
-                  <button class="villain-action-btn" data-action="check">Check</button>
-                  <button class="villain-action-btn" data-action="call">Call</button>
-                  <button class="villain-action-btn" data-action="bet">Bet</button>
-                  <button class="villain-action-btn" data-action="raise">Raise</button>
-                  <button id="clear-villain-actions" class="clear-btn">Clear</button>
-                </div>
-                <div id="villain-actions-display"></div>
-              </div>
-
-              <!-- Analyze Button -->
-              <button id="advisor-analyze-btn" class="primary-btn" disabled>
-                <span class="btn-icon">💡</span>
-                <span class="btn-text">Analyze Hand</span>
-              </button>
-            </div>
-
-            <!-- Results Panel -->
-            <div class="advisor-results-panel">
-              <div id="advisor-results">
-                <div class="advisor-placeholder">Select your hole cards and at least 3 board cards to get recommendations</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Analytics Section (Collapsible) -->
-          <div class="analytics-section">
-            <div class="analytics-header" id="analytics-toggle">
-              <span class="analytics-icon">📊</span>
-              <span class="analytics-title">Feedback Analytics</span>
-              <span class="analytics-toggle-icon">▼</span>
-            </div>
-            <div class="analytics-body" id="analytics-body" style="display: none;">
-              <div id="analytics-content">
-                <p class="loading">Loading analytics...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Matrix Tab -->
-      <section id="matrix-tab" class="tab-content">
-        <!-- Onboarding intro card -->
-        <div class="intro-card" id="matrix-intro" data-storage-key="matrix-intro-collapsed">
-          <div class="intro-card-header" onclick="toggleIntroCard('matrix-intro')">
-            <span class="intro-card-icon">💡</span>
-            <span class="intro-card-title">You made your hand — but how worried should you be?</span>
-            <span class="intro-card-toggle">▼</span>
-          </div>
-          <div class="intro-card-body">
-            <p>This matrix shows the probability that opponents hold each hand type when <strong>you</strong> have a specific hand. A flush feels strong, but if 40% of opponents also have flushes, you need to be cautious. Use this to calibrate your aggression.</p>
-            <p class="intro-card-hint">📊 <strong>Click any cell</strong> to explore that matchup in the Scenario Builder</p>
-            <button class="intro-card-dismiss" onclick="collapseIntroCard('matrix-intro')">Got it</button>
-          </div>
-        </div>
-        <div class="matrix-controls">
-          <div class="control-row">
-            <div class="control-group">
-              <label>Game Variant</label>
-              <select id="matrix-game">
-                <option value="omaha4" selected>Omaha 4-Card</option>
-                <option value="omaha5">Omaha 5-Card</option>
-                <option value="omaha6">Omaha 6-Card</option>
-              </select>
-            </div>
-            <div class="control-group">
-              <label>Players at Table</label>
-              <select id="matrix-players">
-                <option value="2">2 Players</option>
-                <option value="3">3 Players</option>
-                <option value="4">4 Players</option>
-                <option value="5">5 Players</option>
-                <option value="6" selected>6 Players</option>
-                <option value="7">7 Players</option>
-                <option value="8">8 Players</option>
-                <option value="9">9 Players</option>
-              </select>
-            </div>
-            <button id="run-matrix" class="secondary-btn" style="display: none;">Refresh</button>
-            <button id="matrix-zoom-toggle" class="zoom-toggle-btn" onclick="toggleMatrixZoom()" title="Toggle zoom level">
-              <span class="zoom-icon">🔍</span>
-              <span class="zoom-label">Fit to Screen</span>
-            </button>
-          </div>
-        </div>
-
-        <div id="matrix-progress" class="progress-container" style="display: none;">
-          <div class="progress-bar">
-            <div id="matrix-progress-fill" class="progress-fill"></div>
-          </div>
-          <span id="matrix-progress-text">0%</span>
-        </div>
-
-        <div id="matrix-container" class="matrix-display">
-          <p class="placeholder">Run a simulation to see the probability matrix</p>
-        </div>
-      </section>
-
-      <!-- Saved Tab -->
-      <section id="saved-tab" class="tab-content">
-        <div class="saved-coming-soon">
-          <div class="coming-soon-icon">📓</div>
-          <h3>Hand Journal</h3>
-          <p class="coming-soon-subtitle">Coming Soon</p>
-          <p class="coming-soon-description">Save and review hands from the Play Advisor, annotate your decisions, and build a personal study library. Track your reasoning over time to spot patterns and improve.</p>
-          <div class="coming-soon-features">
-            <div class="coming-soon-feature">
-              <span>🃏</span> Save any Play Advisor analysis with one click
-            </div>
-            <div class="coming-soon-feature">
-              <span>📝</span> Add notes explaining your actual decision vs the recommendation
-            </div>
-            <div class="coming-soon-feature">
-              <span>🔄</span> Replay hands with different styles and parameters
-            </div>
-            <div class="coming-soon-feature">
-              <span>📊</span> Strategy lab — test tweaks against simulated data
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <p>Poker Scenario Analyzer v2.0</p>
-    </footer>
+  <!-- ============================================================
+       SPLASH SCREEN
+       ============================================================ -->
+  <div id="splash" class="sh-splash">
+    <div class="sh-logo">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2C9 6 4 8.5 4 13.5A5 5 0 0012 18a5 5 0 008-4.5C20 8.5 15 6 12 2z" fill="var(--pk-teal)"/>
+        <path d="M12 16v5M9 21h6" stroke="#04261f" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="sh-name">Omaha <b>Edge</b></div>
+    <div class="sh-suits">&spades; &hearts; &diams; &clubs;</div>
+    <div class="sh-tag">Cards in, decision out. Your pocket PLO advisor, coach and hand journal.</div>
+    <div class="pk-btn primary sh-start" id="splash-start">Get started</div>
+    <div class="sh-foot">v1.0 &middot; bring your own AI key</div>
   </div>
 
-  <!-- AI Settings Modal -->
-  <div class="modal-overlay" id="settings-modal" style="display: none;">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>🤖 AI Coach Settings</h3>
-        <button class="modal-close" id="close-settings">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="settings-intro">
-          <p><strong>🎯 Get personalized poker insights</strong></p>
-          <p>The AI Coach analyzes your specific scenario and provides:</p>
-          <ul>
-            <li>Whether your hand is playable and why</li>
-            <li>Key statistics (set probability, flush draw odds, etc.)</li>
-            <li>What to look for on the flop</li>
-            <li>Warnings for your specific situation</li>
-          </ul>
-          <p class="privacy-note">🔒 Your API key is stored locally and never sent to our servers.</p>
-        </div>
-
-        <div class="setting-group">
-          <label>AI Provider</label>
-          <select id="ai-provider">
-            <option value="gemini" selected>Google Gemini (Free Tier)</option>
-            <option value="groq">Groq (Free Tier)</option>
-            <option value="anthropic">Anthropic (Claude)</option>
-            <option value="openai">OpenAI (GPT-4)</option>
-          </select>
-        </div>
-
-        <div class="setting-group">
-          <label>API Key</label>
-          <div class="key-input-group">
-            <input type="password" id="ai-api-key" placeholder="Enter your API key...">
-            <button class="toggle-visibility" id="toggle-key-visibility">👁️</button>
-          </div>
-          <p class="setting-hint">
-            <span id="provider-hint">🆓 Free tier! Get key at <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a></span>
-          </p>
-        </div>
-
-        <div class="setting-group">
-          <button class="test-connection-btn" id="test-connection">Test Connection</button>
-          <span class="connection-status" id="connection-status"></span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="secondary-btn" id="cancel-settings">Cancel</button>
-        <button class="primary-btn" id="save-settings">Save Settings</button>
+  <!-- ============================================================
+       WALKTHROUGH OVERLAY
+       ============================================================ -->
+  <div id="walkthrough" class="wt-overlay hidden">
+    <div class="wt-spot" id="wt-spot"></div>
+    <div class="wt-tip" id="wt-tip">
+      <div class="wt-step" id="wt-step-label"></div>
+      <div class="wt-title" id="wt-title"></div>
+      <div class="wt-body" id="wt-body"></div>
+      <div class="wt-row">
+        <div class="wt-dots" id="wt-dots"></div>
+        <span class="wt-skip" id="wt-skip">Skip</span>
+        <button class="wt-next" id="wt-next">Next</button>
       </div>
     </div>
   </div>
 
-  <!-- Help Modal for Matrix -->
-  <div class="modal" id="help-modal" style="display: none;">
-    <div class="modal-content" style="max-width: 700px;">
-      <div class="modal-header">
-        <h3>📊 Understanding the Threat Landscape Matrix</h3>
-        <button class="modal-close" id="close-help">×</button>
+  <!-- ============================================================
+       TOAST
+       ============================================================ -->
+  <div id="toast" class="sh-toast hidden">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--pk-teal)" stroke-width="2" stroke-linecap="round"><path d="M2 7l3.5 3.5L12 4"/></svg>
+    <span id="toast-text"></span>
+  </div>
+
+  <!-- ============================================================
+       PLAY TAB
+       ============================================================ -->
+  <div id="pane-play" class="sh-pane">
+
+    <!-- play header -->
+    <div class="pk-head">
+      <div class="pk-headrow">
+        <div class="pk-seg" id="play-seg">
+          <span class="knob"></span>
+          <button class="on" id="btn-starter" data-mode="starter">Starter</button>
+          <button id="btn-expert" data-mode="expert">Expert</button>
+        </div>
+        <div style="flex:1"></div>
+        <div class="pk-gear" id="btn-coach-play" style="color:var(--pk-teal);background:var(--pk-teal-dim);border-color:var(--pk-teal)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6L8 1z" fill="currentColor"/></svg>
+        </div>
+        <div class="pk-gear" id="btn-situation-play">
+          <svg width="16" height="16" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7.5" cy="7.5" r="2.2"/><path d="M7.5 1v2M7.5 12v2M1 7.5h2M12 7.5h2M3 3l1.4 1.4M10.6 10.6L12 12M12 3l-1.4 1.4M4.4 10.6L3 12" stroke-linecap="round"/></svg>
+        </div>
       </div>
-      <div class="modal-body" style="text-align: left; line-height: 1.6;">
-        <h4>What does this matrix show?</h4>
-        <p>Each cell answers: <strong>"When I have [ROW hand], what % of hands have at least one opponent with [COLUMN hand]?"</strong></p>
-        
-        <h4 style="margin-top: 16px;">Example Reading</h4>
-        <p>If the cell for "One Pair → Two Pair" shows <strong>85%</strong>, that means:</p>
-        <ul style="margin-left: 20px;">
-          <li>When you have One Pair, 85% of all hands dealt will have at least one opponent with Two Pair</li>
-          <li>This is NOT your win rate — it's how often you FACE this hand type</li>
-        </ul>
-        
-        <h4 style="margin-top: 16px;">Why values can exceed 100% across a row</h4>
-        <p>Multiple opponents can have different best hands simultaneously. In a 6-player pot, you might face:</p>
-        <ul style="margin-left: 20px;">
-          <li>One opponent with Two Pair (counted in that column)</li>
-          <li>Another opponent with a Flush (counted in that column)</li>
-          <li>So both columns get incremented for the same hand</li>
-        </ul>
-        
-        <h4 style="margin-top: 16px;">Color Guide</h4>
-        <p><span style="background: #dcfce7; padding: 2px 8px; border-radius: 4px;">Green</span> = Rare threat (you don't face this often)</p>
-        <p><span style="background: #fde047; padding: 2px 8px; border-radius: 4px;">Yellow</span> = Moderate threat (fairly common)</p>
-        <p><span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px;">Red</span> = Very common threat (expect to face this frequently)</p>
-        
-        <h4 style="margin-top: 16px;">Strategic Use</h4>
-        <p>Use this matrix to understand your <strong>vulnerability</strong>:</p>
-        <ul style="margin-left: 20px;">
-          <li>High % in stronger hand columns = your hand is very vulnerable</li>
-          <li>More players at table = higher threat percentages across the board</li>
-          <li>Helps decide whether to fold, call, or raise based on likely opposition</li>
-        </ul>
+      <div class="pk-ctx" id="play-ctx">
+        <span class="lbl"><b id="ctx-pos">BTN</b> &middot; <span id="ctx-players">6</span>-max &middot; <b id="ctx-style">TAG</b></span>
+        <span class="chev"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3.5 3.5L9 4"/></svg></span>
       </div>
-      <div class="modal-footer">
-        <button class="primary-btn" id="close-help-btn">Got it!</button>
+    </div>
+
+    <!-- STARTER VIEW -->
+    <div id="view-starter" style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="pk-glow"></div>
+      <!-- equity ring -->
+      <div style="display:flex;justify-content:center;margin-top:6px;position:relative;z-index:1" id="starter-ring-wrap">
+        <div class="pk-ring" id="starter-ring" style="width:120px;height:120px">
+          <div class="hole" style="inset:12px" id="starter-ring-inner">
+            <div class="pk-eyebrow">Equity</div>
+            <div class="mono" id="starter-eq-text" style="font-size:26px;font-weight:700;color:var(--pk-ink3);margin-top:3px">&mdash;</div>
+          </div>
+        </div>
+      </div>
+      <!-- sizing + confidence (shown when ready) -->
+      <div id="starter-details" class="pk-fade hidden" style="padding:0 20px">
+        <div style="display:flex;justify-content:center;margin-top:14px">
+          <div class="pk-sizing-pill" id="starter-sizing"></div>
+        </div>
+        <div style="margin-top:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span class="pk-eyebrow">Confidence</span>
+            <span class="mono" id="starter-conf" style="font-size:12px;color:var(--pk-ink2)"></span>
+          </div>
+          <div class="pk-thermo"><span class="mark" id="starter-conf-mark" style="left:50%"></span></div>
+        </div>
+      </div>
+      <!-- card fan -->
+      <div class="pk-fan" id="starter-fan"></div>
+      <div style="flex:1;min-height:6px"></div>
+      <!-- picker sheet (shown when entering) -->
+      <div id="starter-picker" class="pk-sheet">
+        <div class="pk-grab"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+          <span class="pk-eyebrow">1 &middot; Rank</span>
+          <span class="mono" style="font-size:12px;color:var(--pk-ink3);cursor:pointer" id="starter-clear">&circlearrowleft; New</span>
+        </div>
+        <div class="pk-rankpad" id="starter-rankpad" style="grid-template-columns:repeat(5,1fr)"></div>
+        <div class="pk-eyebrow" style="margin:12px 0 8px" id="starter-suit-label">2 &middot; Suit</div>
+        <div class="pk-suitrow" id="starter-suitrow"></div>
+      </div>
+      <!-- result sheet (shown when 4 cards entered) -->
+      <div id="starter-result" class="pk-sheet pk-fade hidden">
+        <div class="pk-reason" id="starter-reason" style="text-align:center;margin-bottom:12px;padding:0 6px"></div>
+        <div class="pk-save-handle" id="starter-save">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 11V3M3.5 6.5L7 3l3.5 3.5"/></svg>
+          Swipe up to save to Journal
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="pk-btn ghost" id="starter-edit" style="flex:0 0 120px">&#9998; Edit hand</div>
+          <div class="pk-btn primary" id="starter-new" style="flex:1">New hand</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPERT VIEW -->
+    <div id="view-expert" class="hidden" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <!-- live strip -->
+      <div style="padding:2px 16px 0" id="expert-strip"></div>
+      <!-- stat chips -->
+      <div style="padding:10px 16px 0;display:flex;gap:8px" id="expert-stats"></div>
+      <!-- card track -->
+      <div style="padding:14px 16px 6px;display:flex;align-items:center;gap:8px" id="expert-track"></div>
+      <div style="padding:0 16px;display:flex;justify-content:flex-end">
+        <span class="mono" id="expert-meta" style="font-size:11px;color:var(--pk-ink3)">&nbsp;</span>
+      </div>
+      <div style="flex:1;min-height:6px"></div>
+      <!-- reason (shown when ready) -->
+      <div id="expert-reason-wrap" class="hidden" style="padding:0 16px 10px">
+        <div class="pk-reason pk-fade" id="expert-reason" style="background:var(--pk-surface);border:1px solid var(--pk-line);border-radius:12px;padding:11px 14px"></div>
+      </div>
+      <!-- type field -->
+      <div style="padding:0 16px 10px">
+        <div class="pk-field">
+          <input id="expert-type-input" placeholder="type notation — e.g. AsAhKsQd" spellcheck="false" autocapitalize="characters">
+          <span class="mono" id="expert-type-clear" style="font-size:12px;color:var(--pk-ink3);cursor:pointer;display:none">clear</span>
+        </div>
+      </div>
+      <!-- keypad -->
+      <div style="background:var(--pk-surface);border-top:1px solid var(--pk-line);padding:12px 14px 8px">
+        <div class="pk-rankpad" id="expert-rankpad" style="grid-template-columns:repeat(7,1fr)"></div>
+        <div style="min-height:44px;margin-top:9px" id="expert-suitarea"></div>
+        <div id="expert-save-wrap" class="hidden">
+          <div class="pk-save-handle" id="expert-save">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 11V3M3.5 6.5L7 3l3.5 3.5"/></svg>
+            Swipe up to save to Journal
+          </div>
+        </div>
+        <div class="pk-btn primary" id="expert-new" style="margin-top:9px;height:46px">New hand</div>
       </div>
     </div>
   </div>
 
-  <!-- AI Coach Panel -->
-  <div class="ai-panel" id="ai-panel" style="display: none;">
-    <div class="ai-panel-header">
-      <span class="ai-panel-title">🎓 AI Coach</span>
-      <div class="ai-panel-actions">
-        <button class="ai-panel-btn" id="new-chat" title="New conversation">🔄</button>
-        <button class="ai-panel-btn" id="close-ai-panel" title="Close">×</button>
+  <!-- ============================================================
+       STUDY TAB
+       ============================================================ -->
+  <div id="pane-study" class="sh-pane hidden">
+    <div class="st-head">
+      <div class="st-titlerow">
+        <span class="st-title">Study</span>
+        <div class="st-coachbtn" id="btn-coach-study">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6L8 1z" fill="currentColor"/></svg>Coach
+        </div>
+      </div>
+      <div class="st-seg" id="study-seg">
+        <span class="knob"></span>
+        <button class="on" id="btn-scenarios" data-sub="scenarios">Scenarios</button>
+        <button id="btn-matrix" data-sub="matrix">Matrix</button>
       </div>
     </div>
-    <div class="ai-panel-messages" id="ai-messages">
-      <!-- Messages populated by JS -->
+
+    <!-- Scenarios sub-view -->
+    <div id="study-scenarios" class="st-scroll">
+      <div class="st-ctx" id="study-ctx">
+        <span class="lbl"><b id="study-ctx-pos">BTN</b> &middot; <span id="study-ctx-players">6</span>-max &middot; <b id="study-ctx-style">TAG</b></span>
+        <span style="color:var(--pk-ink3)"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3.5 3.5L9 4"/></svg></span>
+      </div>
+      <div class="st-seclabel"><span class="pk-eyebrow">Starting-hand presets</span><span class="mono" style="font-size:11px;color:var(--pk-ink3)">tap to analyze</span></div>
+      <div class="st-presets" id="study-presets"></div>
+      <div class="st-seclabel"><span class="pk-eyebrow">Strategy insight</span><span class="mono" id="study-insight-name" style="font-size:11px;color:var(--pk-ink3)"></span></div>
+      <div class="st-insight" id="study-insight"></div>
+      <!-- custom builder -->
+      <div class="st-collapse" id="study-custom">
+        <div class="hd" id="study-custom-hd">
+          <span style="font-weight:640;font-size:15px">Build a custom hand</span>
+          <span class="chev"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5l4 4 4-4"/></svg></span>
+        </div>
+        <div class="body" id="study-custom-body" style="display:none"></div>
+      </div>
+      <div style="height:6px"></div>
     </div>
-    <div class="ai-panel-input">
-      <input type="text" id="ai-input" placeholder="Ask a follow-up question...">
-      <button class="send-btn" id="send-ai-message">Send</button>
+
+    <!-- Matrix sub-view -->
+    <div id="study-matrix" class="st-scroll hidden" style="padding-top:8px">
+      <!-- hand selector -->
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="st-stepper" id="matrix-prev"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3L5 7l4 4"/></svg></div>
+        <div style="flex:1;text-align:center">
+          <div class="pk-eyebrow">When I hold</div>
+          <div class="mono" id="matrix-hand-name" style="font-size:21px;font-weight:800;color:var(--pk-ink);margin-top:2px"></div>
+        </div>
+        <div class="st-stepper" id="matrix-next"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 3l4 4-4 4"/></svg></div>
+      </div>
+      <!-- ahead row -->
+      <div class="st-aheadrow">
+        <div>
+          <div class="st-ahead" id="matrix-ahead-pct"></div>
+          <div class="pk-eyebrow" style="margin-top:2px">you're ahead</div>
+        </div>
+        <div style="flex:1">
+          <div class="pk-thermo" style="height:12px"><span class="mark" id="matrix-ahead-mark"></span></div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            <span class="mono" id="matrix-beat-pct" style="font-size:10.5px;color:var(--pk-fold)"></span>
+            <span class="mono" id="matrix-opp-count" style="font-size:10.5px;color:var(--pk-ink3)"></span>
+          </div>
+        </div>
+      </div>
+      <!-- minimap -->
+      <div class="st-seclabel"><span class="pk-eyebrow">Hand-vs-hand map</span><span class="mono" style="font-size:10px;color:var(--pk-ink3)">swipe or tap a row</span></div>
+      <div class="st-minimap" id="matrix-minimap"></div>
+      <!-- threats -->
+      <div class="st-seclabel"><span class="pk-eyebrow">Threat landscape &middot; sorted</span><span class="mono" style="font-size:10px;color:var(--pk-ink3)">chance &ge;1 opp holds</span></div>
+      <div class="st-threats" id="matrix-threats"></div>
+      <!-- legend -->
+      <div id="matrix-legend" style="display:flex;gap:7px;margin-top:14px;align-items:center;justify-content:center;color:var(--pk-ink3);font-family:var(--pk-mono);font-size:10.5px">
+        <span style="display:flex;align-items:center;gap:5px"><i style="width:9px;height:9px;border-radius:2px;background:var(--pk-fold)"></i>beats you</span>
+        <span style="display:flex;align-items:center;gap:5px"><i style="width:9px;height:9px;border-radius:2px;background:var(--pk-raise)"></i>ties</span>
+        <span style="display:flex;align-items:center;gap:5px"><i style="width:9px;height:9px;border-radius:2px;background:var(--pk-bet)"></i>you beat</span>
+      </div>
+      <div style="height:6px"></div>
     </div>
   </div>
 
-  <!-- No API Key Prompt -->
-  <div class="no-key-prompt" id="no-key-prompt" style="display: none;">
-    <p>To use AI explanations, you'll need to configure your API key.</p>
-    <button class="primary-btn small" id="open-settings-from-prompt">Configure AI</button>
+  <!-- ============================================================
+       JOURNAL TAB
+       ============================================================ -->
+  <div id="pane-journal" class="sh-pane hidden">
+    <div class="jr-head">
+      <div class="jr-titlerow">
+        <span class="jr-title">Journal</span>
+        <span class="jr-streak" id="jr-streak">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1c1.5 2.5 3.5 3.5 3.5 6.5A3.5 3.5 0 017 11a3.5 3.5 0 01-3.5-3.5C3.5 5 5 4 7 1z" fill="var(--pk-raise)"/></svg>
+          <b id="jr-session-count">0</b> sessions
+        </span>
+      </div>
+      <div class="jr-filters" id="jr-filters"></div>
+    </div>
+    <div class="jr-scroll" id="jr-scroll"></div>
   </div>
 
-  <script src="poker-stats.js?v=20260218a"></script>
-  <script src="data-manager.js?v=20260218a"></script>
-  <script src="app.js?v=20260218a"></script>
-  <script src="play-advisor.js?v=20260218a"></script>
+  <!-- ============================================================
+       TAB BAR
+       ============================================================ -->
+  <div class="pk-tabbar" id="tabbar">
+    <div class="pk-tab on" data-tab="play">
+      <span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M6 4l12 7-12 7V4z" fill="currentColor"/></svg></span>
+      <span class="tl">Play</span>
+    </div>
+    <div class="pk-tab" data-tab="study">
+      <span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5A1.5 1.5 0 015.5 4H10v14H5.5A1.5 1.5 0 014 16.5v-11zM18 5.5A1.5 1.5 0 0016.5 4H12v14h4.5a1.5 1.5 0 001.5-1.5v-11z"/></svg></span>
+      <span class="tl">Study</span>
+    </div>
+    <div class="pk-tab" data-tab="journal">
+      <span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="14" height="16" rx="2"/><path d="M8 7h6M8 11h6M8 15h3" stroke-linecap="round"/></svg></span>
+      <span class="tl">Journal</span>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SITUATION SHEET (shared overlay)
+       ============================================================ -->
+  <div id="situation-sheet" class="pk-overlay hidden">
+    <div class="pk-sheet" style="padding-bottom:24px" onclick="event.stopPropagation()">
+      <div class="pk-grab"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span style="font-weight:680;font-size:17px">Table situation</span>
+        <span class="mono" id="situation-done" style="color:var(--pk-teal);cursor:pointer;font-size:14px">Done</span>
+      </div>
+      <!-- Position -->
+      <div style="margin-bottom:14px">
+        <div class="pk-eyebrow" style="margin-bottom:8px">Position</div>
+        <div class="pk-segpick" id="sit-positions" style="grid-template-columns:repeat(6,1fr)"></div>
+      </div>
+      <!-- Players -->
+      <div style="margin-bottom:14px">
+        <div class="pk-eyebrow" style="margin-bottom:8px">Players</div>
+        <div class="pk-segpick" id="sit-players" style="grid-template-columns:repeat(6,1fr)"></div>
+      </div>
+      <!-- Villain style -->
+      <div style="margin-bottom:14px">
+        <div class="pk-eyebrow" style="margin-bottom:8px">Villain style</div>
+        <div class="pk-segpick" id="sit-styles" style="grid-template-columns:repeat(5,1fr)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       AI COACH SHEET (shared overlay)
+       ============================================================ -->
+  <div id="coach-sheet" class="co-wrap hidden">
+    <!-- top bar -->
+    <div class="co-top">
+      <div class="co-grab"></div>
+      <div class="co-hrow">
+        <div class="co-nm"><span class="co-dot"></span>AI Coach</div>
+        <div><div class="co-sub" id="coach-provider-label">demo mode</div></div>
+        <div class="co-iconbtn" id="coach-settings" style="margin-left:auto" title="Coach settings">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7.5" cy="7.5" r="2.2"/><path d="M7.5 1v2M7.5 12v2M1 7.5h2M12 7.5h2M3 3l1.4 1.4M10.6 10.6L12 12M12 3l-1.4 1.4M4.4 10.6L3 12" stroke-linecap="round"/></svg>
+        </div>
+        <div class="co-iconbtn" id="coach-close">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l8 8M11 3l-8 8"/></svg>
+        </div>
+      </div>
+      <div id="coach-ctx-chip" class="co-ctxchip hidden"></div>
+    </div>
+    <!-- BYOK screen (shown if not configured) -->
+    <div id="coach-byok" class="co-byok">
+      <div class="co-spark">
+        <svg width="26" height="26" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.6 4.4L14 7l-4.4 1.6L8 13l-1.6-4.4L2 7l4.4-1.6L8 1z" fill="var(--pk-teal)"/></svg>
+      </div>
+      <div class="co-h1">Connect your AI Coach</div>
+      <div class="co-p">Bring your own key from any provider. It's stored only on this device and used to talk to the model directly &mdash; we never see it.</div>
+      <div class="pk-eyebrow" style="margin-bottom:9px">Provider</div>
+      <div class="co-provgrid" id="coach-provgrid"></div>
+      <div class="pk-eyebrow" style="margin-bottom:9px">API key</div>
+      <div class="co-keyfield">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="var(--pk-ink3)" stroke-width="1.4"><circle cx="6" cy="7" r="3.2"/><path d="M8.6 8.6L14 14M12 12l1.2-1.2M9.2 9.4l1.4 1.4" stroke-linecap="round"/></svg>
+        <input type="password" id="coach-key-input" placeholder="Paste your API key" spellcheck="false">
+        <span class="mono" id="coach-key-toggle" style="font-size:11px;color:var(--pk-ink3);cursor:pointer">show</span>
+      </div>
+      <div class="co-priv">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--pk-teal)" stroke-width="1.4" style="flex:none;margin-top:1px"><path d="M8 1.5l5 2v4c0 3-2.2 5.2-5 6.5C5.2 12.7 3 10.5 3 7.5v-4l5-2z" stroke-linejoin="round"/></svg>
+        <span>Stored locally on your device. Your key never touches our servers &mdash; requests go straight from your phone to the provider.</span>
+      </div>
+      <div class="pk-btn primary" id="coach-save-key" style="opacity:0.45;pointer-events:none">Save &amp; continue</div>
+      <div class="co-skip" id="coach-skip">Skip for now &mdash; try the demo coach</div>
+    </div>
+    <!-- Chat thread (shown after config) -->
+    <div id="coach-chat" class="hidden" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="co-thread" id="coach-thread"></div>
+      <div class="co-suggest" id="coach-suggest"></div>
+      <div class="co-inputbar">
+        <input class="co-input" id="coach-input" placeholder="Message the Coach&hellip;">
+        <div class="co-send" id="coach-send">
+          <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M2 8.5L15 2l-4 13-3-5-6-1.5z" fill="#04261f"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<script src="app.js"></script>
 </body>
 </html>
