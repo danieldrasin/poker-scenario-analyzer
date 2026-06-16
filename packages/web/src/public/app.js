@@ -65,11 +65,11 @@ function advise(cards) {
   const confidence = Math.min(97, Math.round(72 + Math.min(d, 16) * 1.45));
   const potOdds = action === 'FOLD' ? '—' : (equity >= 55 ? '2.4:1' : '1.9:1');
   const playability = Math.round(score);
-  return { ready: cards.length === 4, equity, action, color, sizing, confidence, potOdds, playability };
+  return { ready: cards.length === holeCount(), equity, action, color, sizing, confidence, potOdds, playability };
 }
 
 function reasonText(cards, adv) {
-  const n = 4 - cards.length;
+  const n = holeCount() - cards.length;
   if (n > 0) return 'Add ' + n + ' more card' + (n > 1 ? 's' : '') + ' for your read.';
   const ranks = cards.map(c => c.rank), suits = cards.map(c => c.suit);
   const counts = {}; ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
@@ -214,36 +214,44 @@ function hbQueryBadge(axis) {
   return parts.join(':');
 }
 
-function hbGenerateHands(axis, numCards) {
+function hbGenerateHands(axis, numCards, seed) {
   const n = numCards || 4;
+  const sd = seed || 0;
   const hands = [];
   const rankIdx = RANKS.indexOf(axis.rank);
 
-  function makeSuits(cards, suitPref) {
+  const SUIT_ROTATIONS = [
+    ['s','h','d','c','s','h'],
+    ['h','d','s','c','h','d'],
+    ['d','c','h','s','d','c'],
+    ['c','s','d','h','c','s'],
+  ];
+
+  function makeSuits(cards, suitPref, handIdx) {
+    const rot = SUIT_ROTATIONS[(sd + (handIdx || 0)) % SUIT_ROTATIONS.length];
     if (suitPref === 'ds' && cards.length >= 4) {
-      const s = ['s','h','s','h','d','c'];
+      const s = [rot[0], rot[1], rot[0], rot[1], rot[2], rot[3]];
       return cards.map((c, i) => ({ rank: c, suit: s[i % s.length] }));
     }
     if (suitPref === 'ss') {
-      const s = ['s','s','h','d','c','h'];
+      const s = [rot[0], rot[0], rot[1], rot[2], rot[3], rot[1]];
       return cards.map((c, i) => ({ rank: c, suit: s[i % s.length] }));
     }
     if (suitPref === 'rainbow') {
-      const s = ['s','h','d','c','s','h'];
-      return cards.map((c, i) => ({ rank: c, suit: s[i % s.length] }));
+      return cards.map((c, i) => ({ rank: c, suit: rot[i % rot.length] }));
     }
-    const s = ['s','h','d','c','s','h'];
-    return cards.map((c, i) => ({ rank: c, suit: s[i % s.length] }));
+    return cards.map((c, i) => ({ rank: c, suit: rot[i % rot.length] }));
   }
 
   function addHand(ranks) {
     if (ranks.length !== n) return;
+    const hi = hands.length;
+    const rot = SUIT_ROTATIONS[(sd + hi) % SUIT_ROTATIONS.length];
     const hasDupes = ranks.some((r, i) => {
-      const s = ['s','h','d','c','s','h'];
-      const key = r + s[i % s.length];
-      return ranks.slice(0, i).some((r2, j) => r2 + s[j % s.length] === key);
+      const key = r + rot[i % rot.length];
+      return ranks.slice(0, i).some((r2, j) => r2 + rot[j % rot.length] === key);
     });
-    if (!hasDupes) hands.push(makeSuits(ranks, axis.suited));
+    if (!hasDupes) hands.push(makeSuits(ranks, axis.suited, hi));
   }
 
   function sideCards(count) {
@@ -293,7 +301,7 @@ function hbGenerateHands(axis, numCards) {
     hands.push(hands[hands.length - 1]);
   }
   if (hands.length === 0) {
-    hands.push(makeSuits(RANKS.slice(0, n), axis.suited));
+    hands.push(makeSuits(RANKS.slice(0, n), axis.suited, 0));
     hands.push(hands[0]);
     hands.push(hands[0]);
   }
@@ -477,6 +485,7 @@ const state = {
   studyPreset: 0,
   matrixHand: 5,
   hbAxis: load('pk-hb-axis', { structure: 'pair', rank: 'A', rankMod: '+', suited: 'ds', side: 'any' }),
+  hbSeed: 0,
   // journal
   journalStore: load('pk-journal', { deleted: [], notes: {} }),
   journalExpanded: null,
@@ -1015,17 +1024,19 @@ function renderExpert() {
   // suit area
   const suitarea = $('expert-suitarea');
   if (state.armed) {
+    const expMaxCards = state.boardPickerActive ? 5 : maxHole;
+    const expCurrentCount = state.boardPickerActive ? state.board.length : cards.length;
     suitarea.innerHTML = `<div class="pk-fade" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--pk-teal-dim);border:1px solid var(--pk-teal);border-radius:11px">
-      <span class="mono" style="font-size:13px;color:var(--pk-teal);font-weight:700;flex:0 0 auto">${state.armed} +</span>
+      <span class="mono" style="font-size:13px;color:var(--pk-teal);font-weight:700;flex:0 0 auto">${state.boardPickerActive ? 'Board ' : ''}${state.armed} +</span>
       ${Object.entries(SUIT).map(([k, v]) => {
-        const dead = used.has(state.armed + k) || cards.length >= maxHole;
+        const dead = used.has(state.armed + k) || expCurrentCount >= expMaxCards;
         return `<div data-suit="${k}" style="flex:1;text-align:center;font-size:21px;color:${v.c};padding:5px 0;border-radius:8px;background:rgba(0,0,0,.2);cursor:pointer;opacity:${dead ? .28 : 1};pointer-events:${dead ? 'none' : 'auto'}">${v.g}</div>`;
       }).join('')}</div>`;
     suitarea.querySelectorAll('[data-suit]').forEach(el => {
       el.onclick = () => placeCard(el.dataset.suit);
     });
   } else {
-    suitarea.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:44px;border:1px dashed var(--pk-line2);border-radius:11px;color:var(--pk-ink3);font-size:12px" class="mono">pick a rank, then its suit</div>`;
+    suitarea.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:44px;border:1px dashed var(--pk-line2);border-radius:11px;color:var(--pk-ink3);font-size:12px" class="mono">${state.boardPickerActive ? 'pick a rank for the board' : 'pick a rank, then its suit'}</div>`;
   }
 
   // board + econ (expert compact)
@@ -1047,7 +1058,7 @@ function renderExpertBoard(ready) {
     if (c) {
       html += `<div class="pk-board-slot filled" data-bi="${i}">${chipCardHTML(c.rank, c.suit, 36, 50)}</div>`;
     } else {
-      html += `<div class="pk-board-slot${next ? ' next' : ''}" style="width:36px;height:50px;font-size:11px">${next ? '+' : ''}</div>`;
+      html += `<div class="pk-board-slot${next ? ' next' : ''}" data-bi="${i}" style="width:36px;height:50px;font-size:11px">${next ? '+' : ''}</div>`;
     }
   }
   if (board.length > 0) html += `<span class="pk-eyebrow" style="cursor:pointer;color:var(--pk-teal);margin-left:6px" id="exp-board-clear">CLR</span>`;
@@ -1066,8 +1077,16 @@ function renderExpertBoard(ready) {
   wrap.innerHTML = html;
 
   // wire board slot clicks
-  wrap.querySelectorAll('.pk-board-slot.filled').forEach(el => {
-    el.onclick = () => { removeBoardAt(+el.dataset.bi); };
+  wrap.querySelectorAll('.pk-board-slot').forEach(el => {
+    el.onclick = () => {
+      const idx = +el.dataset.bi;
+      if (state.board[idx]) {
+        removeBoardAt(idx);
+      } else if (idx === state.board.length) {
+        state.boardPickerActive = true;
+        renderExpert();
+      }
+    };
   });
   const clrBtn = wrap.querySelector('#exp-board-clear');
   if (clrBtn) clrBtn.onclick = () => { clearBoard(); };
@@ -1383,7 +1402,11 @@ function renderJournal() {
       e.stopPropagation();
       const hand = [...state.savedHands, ...SEED_HANDS].find(h => h.id === el.dataset.replay);
       if (hand) {
+        if (hand.variant) state.variant = hand.variant;
         state.cards = hand.hole.slice();
+        state.board = hand.board ? hand.board.slice() : [];
+        state.boardPickerActive = false;
+        state.armed = null;
         state.mode = 'starter';
         persist();
         switchTab('play');
@@ -1769,16 +1792,18 @@ function renderHandBuilder() {
   });
   html += '</div></div>';
 
-  // Side cards axis
-  html += '<div class="hb-section"><span class="pk-eyebrow">Side cards</span><div class="hb-chips">';
-  HB_SIDES.forEach(s => {
-    html += `<div class="hb-chip${ax.side === s ? ' on' : ''}" data-ax="side" data-val="${s}">${HB_SIDE_LABELS[s]}</div>`;
-  });
-  html += '</div></div>';
+  // Side cards axis (only for pair/dpair structures)
+  if (ax.structure === 'pair' || ax.structure === 'dpair') {
+    html += '<div class="hb-section"><span class="pk-eyebrow">Side cards</span><div class="hb-chips">';
+    HB_SIDES.forEach(s => {
+      html += `<div class="hb-chip${ax.side === s ? ' on' : ''}" data-ax="side" data-val="${s}">${HB_SIDE_LABELS[s]}</div>`;
+    });
+    html += '</div></div>';
+  }
 
   // Example hands
-  const examples = hbGenerateHands(ax, nc);
-  html += '<div class="hb-examples"><span class="pk-eyebrow">Examples</span>';
+  const examples = hbGenerateHands(ax, nc, state.hbSeed);
+  html += '<div class="hb-examples"><div style="display:flex;align-items:center;justify-content:space-between"><span class="pk-eyebrow">Examples</span><div class="hb-shuffle" style="display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--pk-teal);font-family:var(--pk-mono);font-size:11px;font-weight:600">&#x21bb; Shuffle</div></div>';
   examples.forEach(hand => {
     html += `<div class="hb-example">${hand.map(c => miniCardHTML(c.rank, c.suit, 24, 33)).join('')}</div>`;
   });
@@ -1837,4 +1862,13 @@ function renderHandBuilder() {
       renderHandBuilder();
     };
   });
+
+  // Wire shuffle button
+  const shuffleBtn = wrap.querySelector('.hb-shuffle');
+  if (shuffleBtn) {
+    shuffleBtn.onclick = () => {
+      state.hbSeed = (state.hbSeed + 1) % 4;
+      renderHandBuilder();
+    };
+  }
 }
