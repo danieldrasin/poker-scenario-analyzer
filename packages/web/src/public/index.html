@@ -81,6 +81,8 @@
         <span class="chev"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 4l3.5 3.5L9 4"/></svg></span>
       </div>
     </div>
+    <!-- Variant selector -->
+    <div class="pk-variant-row" id="play-variants"></div>
 
     <!-- STARTER VIEW -->
     <div id="view-starter" style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;min-height:0">
@@ -109,6 +111,10 @@
       </div>
       <!-- card fan -->
       <div class="pk-fan" id="starter-fan"></div>
+      <!-- board card area (shown after hole cards complete) -->
+      <div id="starter-board-wrap" class="hidden"></div>
+      <!-- pot economics (starter: collapsible card) -->
+      <div id="starter-econ-wrap" class="hidden"></div>
       <div style="flex:1;min-height:6px"></div>
       <!-- picker sheet (shown when entering) -->
       <div id="starter-picker" class="pk-sheet">
@@ -146,6 +152,10 @@
       <div style="padding:0 16px;display:flex;justify-content:flex-end">
         <span class="mono" id="expert-meta" style="font-size:11px;color:var(--pk-ink3)">&nbsp;</span>
       </div>
+      <!-- board card area (expert: compact row) -->
+      <div id="expert-board-wrap" class="hidden"></div>
+      <!-- pot economics (expert: always-visible compact row) -->
+      <div id="expert-econ-wrap" class="hidden"></div>
       <div style="flex:1;min-height:6px"></div>
       <!-- reason (shown when ready) -->
       <div id="expert-reason-wrap" class="hidden" style="padding:0 16px 10px">
@@ -190,6 +200,8 @@
         <button id="btn-matrix" data-sub="matrix">Matrix</button>
       </div>
     </div>
+    <!-- Study variant selector -->
+    <div class="pk-variant-row" id="study-variants" style="margin-top:2px"></div>
 
     <!-- Scenarios sub-view -->
     <div id="study-scenarios" class="st-scroll">
@@ -201,14 +213,9 @@
       <div class="st-presets" id="study-presets"></div>
       <div class="st-seclabel"><span class="pk-eyebrow">Strategy insight</span><span class="mono" id="study-insight-name" style="font-size:11px;color:var(--pk-ink3)"></span></div>
       <div class="st-insight" id="study-insight"></div>
-      <!-- custom builder -->
-      <div class="st-collapse" id="study-custom">
-        <div class="hd" id="study-custom-hd">
-          <span style="font-weight:640;font-size:15px">Build a custom hand</span>
-          <span class="chev"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5l4 4 4-4"/></svg></span>
-        </div>
-        <div class="body" id="study-custom-body" style="display:none"></div>
-      </div>
+      <!-- abstract hand builder -->
+      <div class="st-seclabel"><span class="pk-eyebrow">Hand builder</span><span class="mono" style="font-size:10px;color:var(--pk-ink3)">5-axis configurator</span></div>
+      <div id="hand-builder" class="hb-wrap"></div>
       <div style="height:6px"></div>
     </div>
 

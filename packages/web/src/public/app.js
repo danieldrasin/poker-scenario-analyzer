@@ -21,6 +21,14 @@ const RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
 const ORDER = '23456789TJQKA';
 const rv = r => ORDER.indexOf(r);
 
+// ── Variant Constants ──
+const VARIANTS = [
+  { id: 'plo4', name: 'PLO', cards: 4, label: '4-card' },
+  { id: 'plo5', name: 'Big O', cards: 5, label: '5-card' },
+  { id: 'plo6', name: 'PLO-6', cards: 6, label: '6-card' },
+];
+function holeCount() { return VARIANTS.find(v => v.id === state.variant).cards; }
+
 // ── PLO Heuristic Advisor (from poker-kit.jsx) ──
 function evaluate(cards) {
   if (!cards.length) return 0;
@@ -89,6 +97,208 @@ function parseNotation(str) {
     } else i += 1;
   }
   return out;
+}
+
+// ── Combinatorics helper ──
+function combinations(arr, k) {
+  if (k === 0) return [[]];
+  if (arr.length < k) return [];
+  const [first, ...rest] = arr;
+  return [...combinations(rest, k - 1).map(c => [first, ...c]), ...combinations(rest, k)];
+}
+
+// ── 5-Card Poker Hand Evaluator ──
+function evaluate5Card(cards) {
+  const vals = cards.map(c => rv(c.rank));
+  const suits = cards.map(c => c.suit);
+  const isFlush = new Set(suits).size === 1;
+  const sorted = [...vals].sort((a, b) => a - b);
+  const uniq = [...new Set(sorted)];
+  const isStraight = uniq.length === 5 && sorted[4] - sorted[0] === 4;
+  const isWheel = uniq.length === 5 && sorted.join(',') === '0,1,2,3,12';
+
+  const counts = {};
+  vals.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const freqs = Object.values(counts).sort((a, b) => b - a);
+  const highVal = Math.max(...vals);
+
+  if ((isStraight || isWheel) && isFlush) return { handRank: 8, name: 'Straight Flush', high: isWheel ? 3 : highVal };
+  if (freqs[0] === 4) return { handRank: 7, name: 'Quads', high: highVal };
+  if (freqs[0] === 3 && freqs[1] === 2) return { handRank: 6, name: 'Full House', high: highVal };
+  if (isFlush) return { handRank: 5, name: 'Flush', high: highVal };
+  if (isStraight || isWheel) return { handRank: 4, name: 'Straight', high: isWheel ? 3 : highVal };
+  if (freqs[0] === 3) return { handRank: 3, name: 'Trips', high: highVal };
+  if (freqs[0] === 2 && freqs[1] === 2) return { handRank: 2, name: 'Two Pair', high: highVal };
+  if (freqs[0] === 2) return { handRank: 1, name: 'Pair', high: highVal };
+  return { handRank: 0, name: 'High Card', high: highVal };
+}
+
+// ── Omaha Hand Evaluator (exactly 2 hole + 3 board) ──
+function evaluateOmaha(hole, board) {
+  if (board.length < 3) return null;
+  const boardCards = board.slice(0, 5);
+  let best = null;
+  const holeCombos = combinations(hole, 2);
+  const boardCombos = combinations(boardCards, 3);
+  for (const hc of holeCombos) {
+    for (const bc of boardCombos) {
+      const hand = [...hc, ...bc];
+      const ev = evaluate5Card(hand);
+      if (!best || ev.handRank > best.handRank || (ev.handRank === best.handRank && ev.high > best.high)) {
+        best = ev;
+      }
+    }
+  }
+  return best;
+}
+
+function isNutHand(hole, board) {
+  if (!board.length || board.length < 3) return false;
+  const myHand = evaluateOmaha(hole, board);
+  if (!myHand) return false;
+  return myHand.handRank >= 5;
+}
+
+// ── Board Danger Heuristics ──
+function boardDanger(board) {
+  if (board.length < 3) return { level: 'none', reasons: [] };
+  const reasons = [];
+  const suits = board.map(c => c.suit);
+  const vals = board.map(c => rv(c.rank));
+  const suitCounts = {};
+  suits.forEach(s => suitCounts[s] = (suitCounts[s] || 0) + 1);
+  const maxSuit = Math.max(...Object.values(suitCounts));
+  if (maxSuit >= 3) reasons.push('flush possible');
+  else if (maxSuit === 2 && board.length >= 4) reasons.push('flush draw');
+
+  const rankCounts = {};
+  board.forEach(c => rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1);
+  if (Object.values(rankCounts).some(n => n >= 2)) reasons.push('paired board');
+
+  const sorted = [...new Set(vals)].sort((a, b) => a - b);
+  for (let i = 0; i < sorted.length - 2; i++) {
+    if (sorted[i + 2] - sorted[i] <= 4) { reasons.push('straight possible'); break; }
+  }
+
+  const level = reasons.length >= 2 ? 'high' : reasons.length === 1 ? 'medium' : 'low';
+  return { level, reasons };
+}
+
+// ── Pot Economics ──
+function calcPotOdds(pot, toCall) {
+  if (toCall <= 0) return 0;
+  return Math.round(toCall / (pot + toCall) * 100);
+}
+
+// ── Hand Builder Engine ──
+const HB_STRUCTURES = ['pair', 'dpair', 'rundown', 'broadway', 'any'];
+const HB_STRUCT_LABELS = { pair: 'Pair', dpair: 'Dbl Pair', rundown: 'Rundown', broadway: 'Broadway', any: 'Any' };
+const HB_SUITED = ['ds', 'ss', 'rainbow', 'any'];
+const HB_SUITED_LABELS = { ds: 'Double-suited', ss: 'Single-suited', rainbow: 'Rainbow', any: 'Any' };
+const HB_SIDES = ['connected', 'broadway', 'wheel', 'any'];
+const HB_SIDE_LABELS = { connected: 'Connected', broadway: 'Broadway', wheel: 'Wheel', any: 'Any' };
+const HB_FAST_PRESETS = [
+  { label: 'pair:AA:ds', axis: { structure: 'pair', rank: 'A', rankMod: '=', suited: 'ds', side: 'any' } },
+  { label: 'run:T+:ss', axis: { structure: 'rundown', rank: 'T', rankMod: '+', suited: 'ss', side: 'any' } },
+  { label: 'bway:ds', axis: { structure: 'broadway', rank: 'A', rankMod: '=', suited: 'ds', side: 'any' } },
+  { label: '2pair:KK+QQ', axis: { structure: 'dpair', rank: 'K', rankMod: '=', suited: 'any', side: 'any' } },
+];
+
+function hbQueryBadge(axis) {
+  const parts = [];
+  parts.push(axis.structure === 'dpair' ? '2pair' : axis.structure === 'rundown' ? 'run' : axis.structure === 'broadway' ? 'bway' : axis.structure);
+  if (axis.structure !== 'broadway' && axis.structure !== 'any') {
+    parts.push(axis.rank + axis.rank + (axis.rankMod === '+' ? '+' : axis.rankMod === '-' ? '-' : ''));
+  }
+  if (axis.suited !== 'any') parts.push(axis.suited);
+  return parts.join(':');
+}
+
+function hbGenerateHands(axis, numCards) {
+  const n = numCards || 4;
+  const hands = [];
+  const rankIdx = RANKS.indexOf(axis.rank);
+
+  function makeSuits(cards, suitPref) {
+    if (suitPref === 'ds' && cards.length >= 4) {
+      const s = ['s','h','s','h','d','c'];
+      return cards.map((c, i) => ({ rank: c, suit: s[i % s.length] }));
+    }
+    if (suitPref === 'ss') {
+      const s = ['s','s','h','d','c','h'];
+      return cards.map((c, i) => ({ rank: c, suit: s[i % s.length] }));
+    }
+    if (suitPref === 'rainbow') {
+      const s = ['s','h','d','c','s','h'];
+      return cards.map((c, i) => ({ rank: c, suit: s[i % s.length] }));
+    }
+    const s = ['s','h','d','c','s','h'];
+    return cards.map((c, i) => ({ rank: c, suit: s[i % s.length] }));
+  }
+
+  function addHand(ranks) {
+    if (ranks.length !== n) return;
+    const hasDupes = ranks.some((r, i) => {
+      const s = ['s','h','d','c','s','h'];
+      const key = r + s[i % s.length];
+      return ranks.slice(0, i).some((r2, j) => r2 + s[j % s.length] === key);
+    });
+    if (!hasDupes) hands.push(makeSuits(ranks, axis.suited));
+  }
+
+  function sideCards(count) {
+    if (axis.side === 'broadway') return ['A','K','Q','J','T'].slice(0, count);
+    if (axis.side === 'wheel') return ['5','4','3','2','A'].slice(0, count);
+    if (axis.side === 'connected' && rankIdx < RANKS.length - 1) {
+      const base = Math.min(rankIdx + 2, RANKS.length - 1);
+      return Array.from({ length: count }, (_, i) => RANKS[Math.min(base + i, RANKS.length - 1)]);
+    }
+    const pool = RANKS.filter(r => r !== axis.rank);
+    return pool.slice(0, count);
+  }
+
+  const offsets = [0, -1, 1];
+  for (const off of offsets) {
+    if (hands.length >= 3) break;
+    const ri = Math.max(0, Math.min(RANKS.length - 1, rankIdx + off));
+    if (axis.rankMod === '+' && ri > rankIdx) continue;
+    if (axis.rankMod === '-' && ri < rankIdx) continue;
+    const r = RANKS[ri];
+
+    if (axis.structure === 'pair') {
+      const sides = sideCards(n - 2);
+      addHand([r, r, ...sides]);
+    } else if (axis.structure === 'dpair') {
+      const r2Idx = Math.min(ri + 1, RANKS.length - 1);
+      const r2 = RANKS[r2Idx];
+      if (r === r2 && n <= 4) continue;
+      const sides = sideCards(n - 4);
+      addHand([r, r, r2, r2, ...sides].slice(0, n));
+    } else if (axis.structure === 'rundown') {
+      const run = [];
+      for (let k = 0; k < n && ri + k < RANKS.length; k++) run.push(RANKS[ri + k]);
+      while (run.length < n) run.push(RANKS[Math.min(ri + run.length, RANKS.length - 1)]);
+      addHand(run);
+    } else if (axis.structure === 'broadway') {
+      const bway = ['A','K','Q','J','T'];
+      addHand(bway.slice(0, n));
+      if (hands.length < 3 && n <= 5) addHand(['A','K','Q','J','T','9'].slice(off + 1, off + 1 + n));
+    } else {
+      const pool = RANKS.slice(ri);
+      addHand(pool.slice(0, n));
+    }
+  }
+
+  while (hands.length < 3 && hands.length > 0) {
+    hands.push(hands[hands.length - 1]);
+  }
+  if (hands.length === 0) {
+    hands.push(makeSuits(RANKS.slice(0, n), axis.suited));
+    hands.push(hands[0]);
+    hands.push(hands[0]);
+  }
+
+  return hands.slice(0, 3);
 }
 
 // ── Matrix Data Model (from poker-kit.jsx) ──
@@ -252,9 +462,13 @@ function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); 
 const state = {
   tab: 'play',
   mode: load('pk-play-mode', 'starter'),
+  variant: load('pk-variant', 'plo4'),
   situation: load('pk-situation', { pos: 'BTN', players: 6, style: 'TAG' }),
   cards: load('pk-cards', []),
   armed: null,       // selected rank awaiting suit
+  board: load('pk-board', []),
+  boardPickerActive: false,
+  econ: load('pk-econ', { pot: 100, toCall: 50, stack: 1000 }),
   savedHands: load('pk-journal-saved', []),
   onboarded: load('pk-onboarded', false),
   wtStep: -1,
@@ -262,7 +476,7 @@ const state = {
   studySub: load('pk-study-sub', 'scenarios'),
   studyPreset: 0,
   matrixHand: 5,
-  customOpts: { suited: 'double', struct: 'pair', hi: 'high' },
+  hbAxis: load('pk-hb-axis', { structure: 'pair', rank: 'A', rankMod: '+', suited: 'ds', side: 'any' }),
   // journal
   journalStore: load('pk-journal', { deleted: [], notes: {} }),
   journalExpanded: null,
@@ -279,11 +493,15 @@ const state = {
 
 function persist() {
   save('pk-play-mode', state.mode);
+  save('pk-variant', state.variant);
   save('pk-situation', state.situation);
   save('pk-cards', state.cards);
+  save('pk-board', state.board);
+  save('pk-econ', state.econ);
   save('pk-journal-saved', state.savedHands);
   save('pk-study-sub', state.studySub);
   save('pk-journal', state.journalStore);
+  save('pk-hb-axis', state.hbAxis);
 }
 
 // ============================================================
@@ -357,15 +575,28 @@ function updateContextLabels() {
 // ============================================================
 // PLAY MODE — Shared logic
 // ============================================================
-const FAN = [{ rot: -12, x: -60, y: 14 }, { rot: -4, x: -21, y: 2 }, { rot: 4, x: 21, y: 2 }, { rot: 12, x: 60, y: 14 }];
+const FAN4 = [{ rot: -12, x: -60, y: 14 }, { rot: -4, x: -21, y: 2 }, { rot: 4, x: 21, y: 2 }, { rot: 12, x: 60, y: 14 }];
+const FAN5 = [{ rot: -14, x: -72, y: 18 }, { rot: -7, x: -36, y: 6 }, { rot: 0, x: 0, y: 0 }, { rot: 7, x: 36, y: 6 }, { rot: 14, x: 72, y: 18 }];
+const FAN6 = [{ rot: -15, x: -80, y: 20 }, { rot: -9, x: -48, y: 10 }, { rot: -3, x: -16, y: 2 }, { rot: 3, x: 16, y: 2 }, { rot: 9, x: 48, y: 10 }, { rot: 15, x: 80, y: 20 }];
+function getFan() { const n = holeCount(); return n === 6 ? FAN6 : n === 5 ? FAN5 : FAN4; }
 
-function usedSet() { return new Set(state.cards.map(c => c.rank + c.suit)); }
+function usedSet() {
+  return new Set([...state.cards, ...state.board].map(c => c.rank + c.suit));
+}
 
 function placeCard(suit) {
-  if (!state.armed || state.cards.length >= 4) return;
+  if (!state.armed) return;
+  const maxHole = holeCount();
   const used = usedSet();
   if (used.has(state.armed + suit)) { state.armed = null; return; }
-  state.cards.push({ rank: state.armed, suit });
+
+  if (state.boardPickerActive) {
+    if (state.board.length >= 5) return;
+    state.board.push({ rank: state.armed, suit });
+  } else {
+    if (state.cards.length >= maxHole) return;
+    state.cards.push({ rank: state.armed, suit });
+  }
   state.armed = null;
   persist();
   renderPlay();
@@ -373,26 +604,45 @@ function placeCard(suit) {
 
 function removeCardAt(i) {
   state.cards.splice(i, 1);
+  state.boardPickerActive = false;
+  persist();
+  renderPlay();
+}
+
+function removeBoardAt(i) {
+  state.board.splice(i, 1);
+  persist();
+  renderPlay();
+}
+
+function clearBoard() {
+  state.board = [];
+  state.boardPickerActive = false;
   persist();
   renderPlay();
 }
 
 function newHand() {
   state.cards = [];
+  state.board = [];
   state.armed = null;
+  state.boardPickerActive = false;
   persist();
   renderPlay();
 }
 
 function saveCurrentHand() {
-  if (state.cards.length !== 4) return;
+  const maxHole = holeCount();
+  if (state.cards.length !== maxHole) return;
   const adv = advise(state.cards);
+  const madeHand = state.board.length >= 3 ? evaluateOmaha(state.cards, state.board) : null;
   const entry = {
     id: 'u' + Date.now(), s: 'live', ts: Date.now(),
-    hole: state.cards.slice(), board: [],
+    hole: state.cards.slice(), board: state.board.slice(),
     advised: adv.action, size: adv.sizing ? adv.sizing.to : null,
     took: adv.action, equity: adv.equity, conf: adv.confidence,
-    result: 'pending', amt: 0, tags: [], note: ''
+    result: 'pending', amt: 0, tags: [], note: '',
+    variant: state.variant, madeHand: madeHand ? madeHand.name : null
   };
   state.savedHands.unshift(entry);
   persist();
@@ -403,6 +653,7 @@ function saveCurrentHand() {
 // PLAY MODE — Render
 // ============================================================
 function renderPlay() {
+  renderVariantSelector('play-variants');
   const isExpert = state.mode === 'expert';
   const seg = $('play-seg');
   seg.classList.toggle('expert', isExpert);
@@ -423,9 +674,11 @@ function renderPlay() {
 // ── Starter View ──
 function renderStarter() {
   const cards = state.cards;
+  const maxHole = holeCount();
   const adv = advise(cards);
-  const ready = cards.length === 4;
+  const ready = cards.length === maxHole;
   const used = usedSet();
+  const madeHand = ready && state.board.length >= 3 ? evaluateOmaha(cards, state.board) : null;
 
   // ring
   const ring = $('starter-ring');
@@ -436,8 +689,9 @@ function renderStarter() {
   inner.style.inset = (ready ? 15 : 12) + 'px';
 
   if (ready) {
+    const handLabel = madeHand ? `<div style="font-size:11px;color:var(--pk-ink3);margin-top:1px">${madeHand.name}</div>` : '';
     inner.innerHTML = `<div class="mono" style="color:${adv.color};font-weight:800;font-size:28px;letter-spacing:.03em">${adv.action}</div>
-      <div class="mono" style="font-size:13px;color:var(--pk-ink2);margin-top:2px">${adv.equity}% equity</div>`;
+      <div class="mono" style="font-size:13px;color:var(--pk-ink2);margin-top:2px">${adv.equity}% equity</div>${handLabel}`;
   } else {
     inner.innerHTML = `<div class="pk-eyebrow">Equity</div>
       <div class="mono" style="font-size:26px;font-weight:700;color:${cards.length ? 'var(--pk-ink)' : 'var(--pk-ink3)'};margin-top:3px">${cards.length ? '~' + adv.equity + '%' : '—'}</div>`;
@@ -465,26 +719,35 @@ function renderStarter() {
 
   // fan
   const fan = $('starter-fan');
+  const fanPositions = getFan();
+  const cardW = maxHole > 4 ? 68 : 84;
+  const cardH = maxHole > 4 ? 96 : 118;
   fan.style.height = (ready ? 134 : 124) + 'px';
   fan.style.marginTop = (ready ? 16 : 18) + 'px';
   fan.innerHTML = '';
-  FAN.forEach((f, i) => {
+  fanPositions.forEach((f, i) => {
     const c = cards[i];
-    const next = !c && i === cards.length;
+    const next = !c && i === cards.length && !state.boardPickerActive;
     const wrap = h('div', 'pk-fan-card', null, {
       style: { transformOrigin: 'center bottom', transform: `translateX(-50%) translateX(${f.x}px) translateY(${f.y}px) rotate(${f.rot}deg)` }
     });
     if (c) {
-      wrap.innerHTML = faceCardHTML(c.rank, c.suit, 84, 118);
+      wrap.innerHTML = faceCardHTML(c.rank, c.suit, cardW, cardH);
       wrap.onclick = () => removeCardAt(i);
     } else {
-      wrap.innerHTML = `<div class="pk-slot${next ? ' next' : ''}" style="width:84px;height:118px;font-size:20px">${next ? '+' : ''}</div>`;
+      wrap.innerHTML = `<div class="pk-slot${next ? ' next' : ''}" style="width:${cardW}px;height:${cardH}px;font-size:20px">${next ? '+' : ''}</div>`;
     }
     fan.appendChild(wrap);
   });
 
+  // board area
+  renderStarterBoard(ready);
+
+  // pot economics
+  renderStarterEcon(ready);
+
   // sheets
-  if (ready) {
+  if (ready && !state.boardPickerActive) {
     hide($('starter-picker'));
     show($('starter-result'));
     $('starter-reason').textContent = reasonText(cards, adv);
@@ -508,23 +771,174 @@ function renderStarterKeypad() {
   clearKey.onclick = newHand;
   pad.appendChild(clearKey);
 
-  $('starter-suit-label').textContent = '2 · Suit' + (state.armed ? ' for ' + state.armed : '');
+  const maxCards = state.boardPickerActive ? 5 : holeCount();
+  const currentCount = state.boardPickerActive ? state.board.length : state.cards.length;
+  $('starter-suit-label').textContent = (state.boardPickerActive ? 'Board · Suit' : '2 · Suit') + (state.armed ? ' for ' + state.armed : '');
 
   const suitrow = $('starter-suitrow');
   suitrow.innerHTML = '';
   Object.entries(SUIT).forEach(([k, v]) => {
-    const dead = !state.armed || used.has(state.armed + k) || state.cards.length >= 4;
+    const dead = !state.armed || used.has(state.armed + k) || currentCount >= maxCards;
     const btn = h('div', 'pk-suitkey' + (dead ? ' dead' : ''), v.g, { style: { color: v.c } });
     btn.onclick = () => placeCard(k);
     suitrow.appendChild(btn);
   });
 }
 
+// ── Starter Board Rendering ──
+function renderStarterBoard(ready) {
+  const wrap = $('starter-board-wrap');
+  if (!ready) { hide(wrap); return; }
+
+  show(wrap);
+  const board = state.board;
+  const madeHand = board.length >= 3 ? evaluateOmaha(state.cards, board) : null;
+  const danger = boardDanger(board);
+
+  let html = '<div class="pk-board-area">';
+  html += '<div class="pk-board-label-row"><span class="pk-eyebrow">Community cards</span>';
+  if (board.length > 0) html += '<span class="mono" style="font-size:11px;color:var(--pk-ink3);cursor:pointer" id="clear-board-starter">clear board</span>';
+  html += '</div>';
+
+  html += '<div class="pk-board-slots">';
+  const streetLabels = ['Flop','','','Turn','River'];
+  for (let i = 0; i < 5; i++) {
+    if (i === 3) html += '<div class="pk-board-sep"></div>';
+    const c = board[i];
+    const next = !c && i === board.length && state.boardPickerActive;
+    const hasLabel = i === 0 || i === 3 || i === 4;
+    if (hasLabel) {
+      html += '<div style="display:flex;flex-direction:column;align-items:center">';
+      html += `<div class="pk-board-street-label">${streetLabels[i]}</div>`;
+    }
+    if (c) {
+      html += `<div class="pk-board-slot filled" data-board-idx="${i}">${chipCardHTML(c.rank, c.suit, 40, 56)}</div>`;
+    } else {
+      html += `<div class="pk-board-slot${next ? ' next' : ''}" data-board-idx="${i}">${next ? '+' : ''}</div>`;
+    }
+    if (hasLabel) html += '</div>';
+  }
+  html += '</div>';
+
+  if (madeHand) {
+    const nutClass = isNutHand(state.cards, board) ? 'background:var(--pk-teal-dim);border:1px solid var(--pk-teal);color:var(--pk-teal)' : 'background:var(--pk-surface2);color:var(--pk-ink3)';
+    html += `<div class="pk-made-hand"><span class="mh-name">${madeHand.name}</span><span class="mh-nut" style="${nutClass}">${isNutHand(state.cards, board) ? 'NUT' : ''}</span></div>`;
+  }
+
+  if (danger.reasons.length > 0) {
+    html += '<div class="pk-board-danger">';
+    danger.reasons.forEach(r => {
+      html += `<span class="pk-danger-chip${danger.level === 'medium' ? ' warn' : ''}">${r}</span>`;
+    });
+    html += '</div>';
+  }
+
+  if (board.length === 0 && !state.boardPickerActive) {
+    html = `<div class="pk-board-prompt" id="board-prompt-starter">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 3v8M3 7h8"/></svg>
+      Add board cards</div>`;
+  }
+
+  html += '</div>';
+  wrap.innerHTML = html;
+
+  if ($('board-prompt-starter')) {
+    $('board-prompt-starter').onclick = () => {
+      state.boardPickerActive = true;
+      show($('starter-picker'));
+      hide($('starter-result'));
+      renderStarterKeypad();
+    };
+  }
+  if ($('clear-board-starter')) {
+    $('clear-board-starter').onclick = clearBoard;
+  }
+  wrap.querySelectorAll('.pk-board-slot').forEach(el => {
+    el.onclick = () => {
+      const idx = parseInt(el.dataset.boardIdx);
+      if (state.board[idx]) {
+        removeBoardAt(idx);
+      } else if (idx === state.board.length) {
+        state.boardPickerActive = true;
+        show($('starter-picker'));
+        hide($('starter-result'));
+        renderStarterKeypad();
+      }
+    };
+  });
+}
+
+// ── Starter Pot Economics ──
+function renderStarterEcon(ready) {
+  const wrap = $('starter-econ-wrap');
+  if (!ready) { hide(wrap); return; }
+  show(wrap);
+
+  const { pot, toCall, stack } = state.econ;
+  const breakEven = calcPotOdds(pot, toCall);
+  const adv = advise(state.cards);
+  const haveEquity = adv.equity;
+  const isGood = haveEquity >= breakEven;
+
+  wrap.innerHTML = `<div class="pk-econ-card" id="econ-card-starter">
+    <div class="pk-econ-header" id="econ-toggle-starter">
+      <span style="font-weight:650;font-size:14px">Situation</span>
+      <span class="chev"><svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5l4 4 4-4"/></svg></span>
+    </div>
+    <div class="pk-econ-body">
+      <div class="pk-econ-row">
+        <span class="elabel">Pot</span>
+        <div class="pk-econ-stepper">
+          <span class="ebtn" data-econ="pot" data-dir="-1">−</span>
+          <span class="eval">$${pot}</span>
+          <span class="ebtn" data-econ="pot" data-dir="1">+</span>
+        </div>
+      </div>
+      <div class="pk-econ-row">
+        <span class="elabel">Call</span>
+        <div class="pk-econ-stepper">
+          <span class="ebtn" data-econ="toCall" data-dir="-1">−</span>
+          <span class="eval">$${toCall}</span>
+          <span class="ebtn" data-econ="toCall" data-dir="1">+</span>
+        </div>
+      </div>
+      <div class="pk-econ-row">
+        <span class="elabel">Stack</span>
+        <div class="pk-econ-stepper">
+          <span class="ebtn" data-econ="stack" data-dir="-1">−</span>
+          <span class="eval">$${stack}</span>
+          <span class="ebtn" data-econ="stack" data-dir="1">+</span>
+        </div>
+      </div>
+      <div class="pk-odds-row">
+        <div class="pk-odds-chip"><div class="olabel">Pot odds</div><div class="oval">${breakEven}% need</div></div>
+        <div class="pk-odds-chip ${isGood ? 'good' : 'bad'}"><div class="olabel">${isGood ? 'Good call' : 'Bad call'}</div><div class="oval">${haveEquity}% have</div></div>
+      </div>
+    </div>
+  </div>`;
+
+  $('econ-toggle-starter').onclick = () => {
+    $('econ-card-starter').classList.toggle('collapsed');
+  };
+
+  wrap.querySelectorAll('[data-econ]').forEach(el => {
+    el.onclick = () => {
+      const key = el.dataset.econ;
+      const dir = parseInt(el.dataset.dir);
+      const step = key === 'stack' ? 100 : key === 'pot' ? 25 : 10;
+      state.econ[key] = Math.max(0, state.econ[key] + dir * step);
+      persist();
+      renderStarterEcon(true);
+    };
+  });
+}
+
 // ── Expert View ──
 function renderExpert() {
   const cards = state.cards;
+  const maxHole = holeCount();
   const adv = advise(cards);
-  const ready = cards.length === 4;
+  const ready = cards.length === maxHole;
   const used = usedSet();
 
   // strip
@@ -558,9 +972,9 @@ function renderExpert() {
   // card track
   const track = $('expert-track');
   track.innerHTML = '<span class="pk-eyebrow" style="width:30px">Hand</span>';
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < maxHole; i++) {
     const c = cards[i];
-    const next = !c && i === cards.length;
+    const next = !c && i === cards.length && !state.boardPickerActive;
     if (c) {
       const el = h('div', '', chipCardHTML(c.rank, c.suit, 48, 66));
       el.firstChild.style.fontSize = '17px';
@@ -604,7 +1018,7 @@ function renderExpert() {
     suitarea.innerHTML = `<div class="pk-fade" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--pk-teal-dim);border:1px solid var(--pk-teal);border-radius:11px">
       <span class="mono" style="font-size:13px;color:var(--pk-teal);font-weight:700;flex:0 0 auto">${state.armed} +</span>
       ${Object.entries(SUIT).map(([k, v]) => {
-        const dead = used.has(state.armed + k) || cards.length >= 4;
+        const dead = used.has(state.armed + k) || cards.length >= maxHole;
         return `<div data-suit="${k}" style="flex:1;text-align:center;font-size:21px;color:${v.c};padding:5px 0;border-radius:8px;background:rgba(0,0,0,.2);cursor:pointer;opacity:${dead ? .28 : 1};pointer-events:${dead ? 'none' : 'auto'}">${v.g}</div>`;
       }).join('')}</div>`;
     suitarea.querySelectorAll('[data-suit]').forEach(el => {
@@ -613,12 +1027,89 @@ function renderExpert() {
   } else {
     suitarea.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:44px;border:1px dashed var(--pk-line2);border-radius:11px;color:var(--pk-ink3);font-size:12px" class="mono">pick a rank, then its suit</div>`;
   }
+
+  // board + econ (expert compact)
+  renderExpertBoard(ready);
+  renderExpertEcon(ready);
+}
+
+function renderExpertBoard(ready) {
+  const wrap = $('expert-board-wrap');
+  if (!ready) { hide(wrap); return; }
+  show(wrap);
+  const board = state.board;
+  const isBP = state.boardPickerActive;
+  let html = '<div class="pk-board-compact"><span class="pk-eyebrow" style="width:36px">Board</span>';
+  for (let i = 0; i < 5; i++) {
+    const c = board[i];
+    const next = !c && i === board.length && isBP;
+    if (i === 3) html += '<span class="pk-board-sep">|</span>';
+    if (c) {
+      html += `<div class="pk-board-slot filled" data-bi="${i}">${chipCardHTML(c.rank, c.suit, 36, 50)}</div>`;
+    } else {
+      html += `<div class="pk-board-slot${next ? ' next' : ''}" style="width:36px;height:50px;font-size:11px">${next ? '+' : ''}</div>`;
+    }
+  }
+  if (board.length > 0) html += `<span class="pk-eyebrow" style="cursor:pointer;color:var(--pk-teal);margin-left:6px" id="exp-board-clear">CLR</span>`;
+  if (!isBP) html += `<span class="pk-eyebrow" style="cursor:pointer;color:var(--pk-teal);margin-left:6px" id="exp-board-add">+BOARD</span>`;
+  html += '</div>';
+
+  // made hand + danger
+  if (board.length >= 3) {
+    const cards = state.cards;
+    const mh = evaluateOmaha(cards, board);
+    const danger = boardDanger(board);
+    if (mh) html += `<div class="pk-made-hand" style="font-size:11px;margin-top:4px">${mh.name}${isNutHand(cards, board) ? ' <span style="color:var(--pk-teal)">★NUT</span>' : ''}</div>`;
+    if (danger.reasons.length) html += `<div class="pk-board-danger" style="margin-top:2px">${danger.reasons.map(r => `<span class="pk-danger-chip">${r}</span>`).join('')}</div>`;
+  }
+
+  wrap.innerHTML = html;
+
+  // wire board slot clicks
+  wrap.querySelectorAll('.pk-board-slot.filled').forEach(el => {
+    el.onclick = () => { removeBoardAt(+el.dataset.bi); };
+  });
+  const clrBtn = wrap.querySelector('#exp-board-clear');
+  if (clrBtn) clrBtn.onclick = () => { clearBoard(); };
+  const addBtn = wrap.querySelector('#exp-board-add');
+  if (addBtn) addBtn.onclick = () => { state.boardPickerActive = true; renderExpert(); };
+}
+
+function renderExpertEcon(ready) {
+  const wrap = $('expert-econ-wrap');
+  if (!ready) { hide(wrap); return; }
+  show(wrap);
+  const e = state.econ;
+  let html = '<div class="pk-econ-compact">';
+  html += `<div class="pk-econ-cell"><span class="pk-eyebrow">Pot</span><div class="pk-econ-stepper"><span class="pk-step-btn" data-ef="pot" data-dir="-1">▼</span><span class="mono" style="font-size:14px;color:var(--pk-ink)">${e.pot}</span><span class="pk-step-btn" data-ef="pot" data-dir="1">▲</span></div></div>`;
+  html += `<div class="pk-econ-cell"><span class="pk-eyebrow">To Call</span><div class="pk-econ-stepper"><span class="pk-step-btn" data-ef="toCall" data-dir="-1">▼</span><span class="mono" style="font-size:14px;color:var(--pk-ink)">${e.toCall}</span><span class="pk-step-btn" data-ef="toCall" data-dir="1">▲</span></div></div>`;
+  const odds = e.toCall > 0 ? calcPotOdds(e.pot, e.toCall) : null;
+  if (odds !== null) {
+    const good = odds <= 35;
+    html += `<div class="pk-econ-cell"><span class="pk-eyebrow">Odds</span><span class="pk-odds-chip ${good ? 'good' : 'bad'}">${odds}%</span></div>`;
+  }
+  html += `<div class="pk-econ-cell"><span class="pk-eyebrow">Stack</span><div class="pk-econ-stepper"><span class="pk-step-btn" data-ef="stack" data-dir="-1">▼</span><span class="mono" style="font-size:14px;color:var(--pk-ink)">${e.stack}</span><span class="pk-step-btn" data-ef="stack" data-dir="1">▲</span></div></div>`;
+  html += '</div>';
+  wrap.innerHTML = html;
+
+  // wire steppers
+  wrap.querySelectorAll('.pk-step-btn').forEach(btn => {
+    btn.onclick = () => {
+      const field = btn.dataset.ef;
+      const dir = +btn.dataset.dir;
+      const step = field === 'stack' ? 50 : (field === 'pot' ? 25 : 10);
+      state.econ[field] = Math.max(0, state.econ[field] + dir * step);
+      persist();
+      renderExpertEcon(true);
+    };
+  });
 }
 
 // ============================================================
 // STUDY MODE — Render
 // ============================================================
 function renderStudy() {
+  renderVariantSelector('study-variants');
   const seg = $('study-seg');
   const isMat = state.studySub === 'matrix';
   seg.classList.toggle('matrix', isMat);
@@ -668,6 +1159,8 @@ function renderScenarios() {
       Ask the Coach about this hand</div>`;
 
   $('study-ask-coach').onclick = () => openCoach({ kind: 'hand', name: sel.name, cards: sel.cards });
+
+  renderHandBuilder();
 }
 
 function renderMatrix() {
@@ -1148,17 +1641,11 @@ document.addEventListener('DOMContentLoaded', () => {
   $('matrix-prev').onclick = () => { state.matrixHand = Math.max(0, state.matrixHand - 1); renderMatrix(); };
   $('matrix-next').onclick = () => { state.matrixHand = Math.min(8, state.matrixHand + 1); renderMatrix(); };
 
-  // Study custom builder toggle
-  $('study-custom-hd').onclick = () => {
-    const el = $('study-custom');
-    const body = $('study-custom-body');
-    el.classList.toggle('open');
-    body.style.display = el.classList.contains('open') ? '' : 'none';
-    if (el.classList.contains('open') && !body.innerHTML) renderCustomBuilder();
-  };
+  // Hand builder init (renders on study mode entry)
+  // Variant selectors init on first play/study render
 
   // Coach
-  $('btn-coach-play').onclick = () => openCoach({ kind: 'play', cards: state.cards.length === 4 ? state.cards : undefined });
+  $('btn-coach-play').onclick = () => openCoach({ kind: 'play', cards: state.cards.length === holeCount() ? state.cards : undefined });
   $('btn-coach-study').onclick = () => {
     if (state.studySub === 'scenarios') {
       const sel = PRESETS[state.studyPreset];
@@ -1206,68 +1693,148 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
-// Study Custom Builder
+// Variant Selector
 // ============================================================
-function renderCustomBuilder() {
-  const body = $('study-custom-body');
-  body.innerHTML = '';
-
-  const groups = [
-    ['Suitedness', [['double','Double'],['single','Single'],['rainbow','Rainbow']], 'suited'],
-    ['Structure', [['pair','Pair'],['nopair','No pair']], 'struct'],
-    ['High cards', [['high','High'],['mid','Mid'],['low','Low']], 'hi']
-  ];
-
-  groups.forEach(([lbl, opts, key]) => {
-    const row = h('div', 'st-optrow');
-    row.innerHTML = `<span class="pk-eyebrow">${lbl}</span>`;
-    const pick = h('div', 'pk-segpick', null, { style: { gridTemplateColumns: `repeat(${opts.length},1fr)` } });
-    opts.forEach(([v, l]) => {
-      const chip = h('div', 'pk-pchip' + (state.customOpts[key] === v ? ' on' : ''), l);
-      chip.onclick = () => {
-        state.customOpts[key] = v;
-        applyCustomHand();
-        renderCustomBuilder();
-      };
-      pick.appendChild(chip);
-    });
-    row.appendChild(pick);
-    body.appendChild(row);
+function renderVariantSelector(containerId) {
+  const el = $(containerId);
+  if (!el) return;
+  el.innerHTML = VARIANTS.map(v =>
+    `<div class="pk-variant-tile${state.variant === v.id ? ' on' : ''}" data-vid="${v.id}">
+      <span style="font-weight:600;font-size:13px">${v.name}</span>
+      <span class="pk-eyebrow" style="font-size:9px">${v.label}</span>
+    </div>`
+  ).join('');
+  el.querySelectorAll('.pk-variant-tile').forEach(tile => {
+    tile.onclick = () => {
+      const newVar = tile.dataset.vid;
+      if (newVar !== state.variant) {
+        state.variant = newVar;
+        state.cards = [];
+        state.board = [];
+        state.boardPickerActive = false;
+        state.armed = null;
+        persist();
+        if (state.tab === 'play') renderPlay();
+        else renderStudy();
+      }
+    };
   });
 }
 
-function applyCustomHand() {
-  const { suited, struct, hi } = state.customOpts;
-  const pool = hi === 'high' ? ['A','K','Q','J'] : hi === 'mid' ? ['T','9','8','7'] : ['6','5','4','3'];
-  let cards;
-  if (struct === 'pair') cards = [C(pool[0],'s'), C(pool[0],'h'), C(pool[1],'s'), C(pool[2],'h')];
-  else cards = [C(pool[0],'s'), C(pool[1],'h'), C(pool[2],'s'), C(pool[3],'h')];
-  if (suited === 'single') cards = [C(cards[0].rank,'s'), C(cards[1].rank,'s'), C(cards[2].rank,'d'), C(cards[3].rank,'c')];
-  if (suited === 'rainbow') cards = [C(cards[0].rank,'s'), C(cards[1].rank,'h'), C(cards[2].rank,'d'), C(cards[3].rank,'c')];
+// ============================================================
+// Hand Builder (replaces old custom builder)
+// ============================================================
+function renderHandBuilder() {
+  const wrap = $('hand-builder');
+  if (!wrap) return;
+  const ax = state.hbAxis;
+  const nc = holeCount();
 
-  // add as custom preset (temporary)
-  state.studyPreset = -1; // special custom index
-  // render with custom cards
-  const presetsEl = $('study-presets');
-  // We'll just update the insight directly
-  const adv = advise(cards);
-  $('study-insight-name').textContent = 'Custom hand';
-  renderCustomInsight(cards, adv);
-}
+  let html = '';
 
-function renderCustomInsight(cards, adv) {
-  const nut = Math.max(1, Math.min(4, Math.round(adv.playability / 25)));
-  const bgMap = { RAISE: 'linear-gradient(120deg,rgba(245,158,11,.2),rgba(245,158,11,.04))', CALL: 'linear-gradient(120deg,rgba(59,130,246,.18),rgba(59,130,246,.04))', FOLD: 'linear-gradient(120deg,rgba(239,68,68,.18),rgba(239,68,68,.04))' };
-  const bdMap = { RAISE: 'rgba(245,158,11,.45)', CALL: 'rgba(59,130,246,.4)', FOLD: 'rgba(239,68,68,.4)' };
+  // Query badge
+  html += `<div class="hb-query"><span class="mono" style="font-size:12px;color:var(--pk-teal);font-weight:700">${hbQueryBadge(ax)}</span></div>`;
 
-  $('study-insight').innerHTML = `
-    <div class="pk-badge" style="background:${bgMap[adv.action]};border:1px solid ${bdMap[adv.action]}">
-      <div><div class="act" style="font-size:26px;color:${adv.color}">${adv.action}</div>
-        <div style="font-size:12.5px;color:var(--pk-ink2);margin-top:3px;max-width:200px;line-height:1.35">${reasonText(cards, adv)}</div></div>
-      <div class="size">${adv.sizing ? `<div class="mono" style="font-size:20px;color:var(--pk-ink)">${adv.sizing.to}</div><div class="pk-eyebrow">${adv.sizing.bb}</div>` : '<div class="pk-eyebrow">no bet</div>'}</div>
+  // Fast presets
+  html += '<div class="hb-presets">';
+  HB_FAST_PRESETS.forEach((p, i) => {
+    html += `<div class="hb-preset" data-hbp="${i}">${p.label}</div>`;
+  });
+  html += '</div>';
+
+  // Structure axis
+  html += '<div class="hb-section"><span class="pk-eyebrow">Structure</span><div class="hb-chips">';
+  HB_STRUCTURES.forEach(s => {
+    html += `<div class="hb-chip${ax.structure === s ? ' on' : ''}" data-ax="structure" data-val="${s}">${HB_STRUCT_LABELS[s]}</div>`;
+  });
+  html += '</div></div>';
+
+  // Rank axis with stepper
+  html += `<div class="hb-section"><span class="pk-eyebrow">Rank</span>
+    <div class="hb-rank-stepper">
+      <div class="hb-step-btn" data-rd="-1">◀</div>
+      <div class="hb-rank-display"><span class="mono" style="font-size:18px;color:var(--pk-ink);font-weight:700">${ax.rank}${ax.rank}</span></div>
+      <div class="hb-step-btn" data-rd="1">▶</div>
     </div>
-    <div class="st-metric"><div class="top"><span class="pk-eyebrow">Playability</span><span class="mono" style="font-size:13px;color:var(--pk-teal);font-weight:700">${adv.playability}/100</span></div>
-      <div class="st-bar"><i style="width:${adv.playability}%;background:var(--pk-teal)"></i></div></div>
-    <div class="st-metric"><div class="top"><span class="pk-eyebrow">Nut potential</span><span class="mono" style="font-size:12px;color:var(--pk-ink2)">${['low','fair','strong','elite'][nut-1]}</span></div>
-      <div class="st-nut">${[0,1,2,3].map(i => `<i class="${i < nut ? 'on' : ''}"></i>`).join('')}</div></div>`;
+    <div class="hb-chips" style="margin-top:6px">
+      <div class="hb-mod${ax.rankMod === '+' ? ' on' : ''}" data-rm="+">+</div>
+      <div class="hb-mod${ax.rankMod === '=' ? ' on' : ''}" data-rm="=">=</div>
+      <div class="hb-mod${ax.rankMod === '-' ? ' on' : ''}" data-rm="-">−</div>
+    </div></div>`;
+
+  // Suitedness axis
+  html += '<div class="hb-section"><span class="pk-eyebrow">Suitedness</span><div class="hb-chips">';
+  HB_SUITED.forEach(s => {
+    html += `<div class="hb-chip${ax.suited === s ? ' on' : ''}" data-ax="suited" data-val="${s}">${HB_SUITED_LABELS[s]}</div>`;
+  });
+  html += '</div></div>';
+
+  // Side cards axis
+  html += '<div class="hb-section"><span class="pk-eyebrow">Side cards</span><div class="hb-chips">';
+  HB_SIDES.forEach(s => {
+    html += `<div class="hb-chip${ax.side === s ? ' on' : ''}" data-ax="side" data-val="${s}">${HB_SIDE_LABELS[s]}</div>`;
+  });
+  html += '</div></div>';
+
+  // Example hands
+  const examples = hbGenerateHands(ax, nc);
+  html += '<div class="hb-examples"><span class="pk-eyebrow">Examples</span>';
+  examples.forEach(hand => {
+    html += `<div class="hb-example">${hand.map(c => miniCardHTML(c.rank, c.suit, 24, 33)).join('')}</div>`;
+  });
+  html += '</div>';
+
+  // Strategy insight from first example
+  if (examples.length > 0) {
+    const adv = advise(examples[0]);
+    html += `<div style="margin-top:10px;padding:10px;background:var(--pk-surface2);border-radius:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:18px;font-weight:700;color:${adv.color}">${adv.action}</span>
+        <span class="mono" style="font-size:12px;color:var(--pk-ink3)">Playability ${adv.playability}/100</span>
+      </div>
+      <div style="font-size:12px;color:var(--pk-ink2);margin-top:4px;line-height:1.35">${reasonText(examples[0], adv)}</div>
+    </div>`;
+  }
+
+  wrap.innerHTML = html;
+
+  // Wire fast presets
+  wrap.querySelectorAll('.hb-preset').forEach(el => {
+    el.onclick = () => {
+      const p = HB_FAST_PRESETS[+el.dataset.hbp];
+      Object.assign(state.hbAxis, p.axis);
+      persist();
+      renderHandBuilder();
+    };
+  });
+
+  // Wire axis chips
+  wrap.querySelectorAll('.hb-chip').forEach(el => {
+    el.onclick = () => {
+      state.hbAxis[el.dataset.ax] = el.dataset.val;
+      persist();
+      renderHandBuilder();
+    };
+  });
+
+  // Wire rank stepper
+  wrap.querySelectorAll('.hb-step-btn').forEach(el => {
+    el.onclick = () => {
+      const dir = +el.dataset.rd;
+      const ri = RANKS.indexOf(ax.rank);
+      const ni = Math.max(0, Math.min(RANKS.length - 1, ri + dir));
+      state.hbAxis.rank = RANKS[ni];
+      persist();
+      renderHandBuilder();
+    };
+  });
+
+  // Wire rank modifier chips
+  wrap.querySelectorAll('.hb-mod').forEach(el => {
+    el.onclick = () => {
+      state.hbAxis.rankMod = el.dataset.rm;
+      persist();
+      renderHandBuilder();
+    };
+  });
 }

@@ -2067,3 +2067,289 @@ body {
    SCROLLBAR HIDING (global for dark theme)
    ============================================================ */
 ::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ============================================================
+   VARIANT SELECTOR
+   ============================================================ */
+.pk-variant-row {
+  display: flex; gap: 8px; padding: 0 18px; margin-bottom: 6px;
+}
+.pk-variant-tile {
+  flex: 1; padding: 8px 6px; border-radius: 11px;
+  background: var(--pk-surface); border: 1px solid var(--pk-line);
+  text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+  font-family: var(--pk-mono); font-size: 12px; color: var(--pk-ink2);
+}
+.pk-variant-tile.on {
+  border-color: var(--pk-teal); background: var(--pk-teal-dim); color: var(--pk-teal); font-weight: 700;
+}
+.pk-variant-tile .vname { font-weight: 700; font-size: 13px; }
+.pk-variant-tile .vsub { font-size: 10px; color: var(--pk-ink3); margin-top: 2px; }
+.pk-variant-tile.on .vsub { color: var(--pk-teal); opacity: .7; }
+
+/* ============================================================
+   BOARD CARD ENTRY (Play tab)
+   ============================================================ */
+.pk-board-prompt {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 16px; margin: 8px 18px 0; border-radius: 12px;
+  background: var(--pk-teal-dim); border: 1px dashed var(--pk-teal);
+  color: var(--pk-teal); font-family: var(--pk-sans); font-weight: 600;
+  font-size: 13px; cursor: pointer; transition: background .15s;
+  position: relative; z-index: 2;
+}
+.pk-board-prompt:active { background: rgba(0,212,170,.22); }
+
+.pk-board-area {
+  padding: 6px 18px; margin-top: 6px;
+  position: relative; z-index: 2;
+}
+.pk-board-label-row {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+}
+.pk-board-slots {
+  display: flex; align-items: center; gap: 6px;
+}
+.pk-board-street-label {
+  font-family: var(--pk-mono); font-size: 9px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--pk-ink3); text-align: center;
+  margin-bottom: 3px;
+}
+.pk-board-sep {
+  width: 1px; height: 44px; background: var(--pk-line2); margin: 0 2px;
+  align-self: flex-end;
+}
+.pk-board-slot {
+  width: 40px; height: 56px; border-radius: 7px;
+  border: 1.4px dashed var(--pk-line2); background: rgba(255,255,255,.015);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--pk-mono); font-size: 14px; color: var(--pk-ink3);
+  cursor: pointer; flex: none;
+}
+.pk-board-slot.next {
+  border-style: solid; border-color: var(--pk-teal);
+  background: var(--pk-teal-dim); color: var(--pk-teal);
+  box-shadow: 0 0 0 3px rgba(0,212,170,.08);
+}
+.pk-board-slot.filled {
+  border: none; padding: 0; background: none;
+}
+
+.pk-made-hand {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  padding: 8px 12px; border-radius: 10px;
+  background: var(--pk-surface); border: 1px solid var(--pk-line);
+}
+.pk-made-hand .mh-name {
+  font-family: var(--pk-mono); font-weight: 700; font-size: 14px;
+}
+.pk-made-hand .mh-nut {
+  font-family: var(--pk-mono); font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 6px; margin-left: auto;
+}
+
+.pk-board-danger {
+  display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;
+}
+.pk-danger-chip {
+  font-family: var(--pk-mono); font-size: 10px; padding: 3px 8px;
+  border-radius: 6px; background: rgba(239,68,68,.12);
+  border: 1px solid rgba(239,68,68,.3); color: var(--pk-fold);
+}
+.pk-danger-chip.warn {
+  background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.3); color: var(--pk-raise);
+}
+
+/* Expert board row */
+.pk-board-compact {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px 4px;
+}
+.pk-board-compact .pk-board-slot {
+  width: 34px; height: 48px; font-size: 12px;
+}
+
+/* ============================================================
+   POT ECONOMICS (Play tab)
+   ============================================================ */
+.pk-econ-card {
+  margin: 8px 18px 0; padding: 12px 14px; border-radius: 14px;
+  background: var(--pk-surface); border: 1px solid var(--pk-line);
+}
+.pk-econ-header {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; margin-bottom: 10px;
+}
+.pk-econ-header .chev {
+  color: var(--pk-ink3); transition: transform .25s;
+}
+.pk-econ-card.collapsed .pk-econ-body { display: none; }
+.pk-econ-card.collapsed .pk-econ-header .chev { transform: rotate(-90deg); }
+
+.pk-econ-body {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.pk-econ-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.pk-econ-row .elabel {
+  font-family: var(--pk-mono); font-size: 11px; color: var(--pk-ink3);
+  width: 54px; flex: none; text-transform: uppercase; letter-spacing: .08em;
+}
+.pk-econ-stepper {
+  display: flex; align-items: center; gap: 0;
+  background: var(--pk-surface2); border: 1px solid var(--pk-line2);
+  border-radius: 10px; overflow: hidden; flex: 1;
+}
+.pk-econ-stepper .ebtn {
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  color: var(--pk-ink2); cursor: pointer; font-size: 16px; font-weight: 700;
+  font-family: var(--pk-mono); user-select: none;
+  transition: background .1s;
+}
+.pk-econ-stepper .ebtn:active { background: rgba(255,255,255,.06); }
+.pk-econ-stepper .eval {
+  flex: 1; text-align: center; font-family: var(--pk-mono);
+  font-size: 15px; font-weight: 700; color: var(--pk-ink);
+}
+
+.pk-odds-row {
+  display: flex; gap: 8px; margin-top: 4px;
+}
+.pk-odds-chip {
+  flex: 1; padding: 7px 10px; border-radius: 9px; text-align: center;
+  font-family: var(--pk-mono); font-size: 12px;
+  background: var(--pk-surface2); border: 1px solid var(--pk-line);
+}
+.pk-odds-chip .olabel {
+  font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--pk-ink3); margin-bottom: 3px;
+}
+.pk-odds-chip .oval {
+  font-weight: 700; font-size: 14px; color: var(--pk-ink);
+}
+.pk-odds-chip.good { border-color: rgba(34,197,94,.4); background: rgba(34,197,94,.1); }
+.pk-odds-chip.good .oval { color: var(--pk-bet); }
+.pk-odds-chip.bad { border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.08); }
+.pk-odds-chip.bad .oval { color: var(--pk-fold); }
+
+/* Expert compact econ row */
+.pk-econ-compact {
+  display: flex; gap: 6px; padding: 6px 16px 0;
+}
+.pk-econ-cell {
+  flex: 1; padding: 6px 8px; border-radius: 9px; text-align: center;
+  background: var(--pk-surface); border: 1px solid var(--pk-line);
+  font-family: var(--pk-mono);
+}
+.pk-econ-cell .elabel {
+  font-size: 8px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--pk-ink3); margin-bottom: 2px;
+}
+.pk-econ-cell .eval { font-size: 14px; font-weight: 700; color: var(--pk-ink); }
+.pk-econ-cell .estep {
+  display: flex; justify-content: center; gap: 10px; margin-top: 3px;
+}
+.pk-econ-cell .estep span {
+  color: var(--pk-ink3); cursor: pointer; font-size: 12px; font-weight: 700;
+  user-select: none;
+}
+.pk-econ-cell .estep span:active { color: var(--pk-teal); }
+
+/* ============================================================
+   ABSTRACT HAND BUILDER (Study tab)
+   ============================================================ */
+.hb-wrap {
+  padding: 0 0 16px;
+}
+.hb-section {
+  margin-bottom: 12px;
+}
+.hb-section .hb-label {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 7px;
+}
+.hb-chips {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.hb-chip {
+  padding: 8px 12px; border-radius: 10px;
+  background: var(--pk-surface2); border: 1px solid var(--pk-line);
+  font-family: var(--pk-mono); font-size: 12px; color: var(--pk-ink2);
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.hb-chip.on {
+  background: var(--pk-teal-dim); border-color: var(--pk-teal);
+  color: var(--pk-teal); font-weight: 700;
+}
+.hb-chip:active { transform: scale(.96); }
+
+/* rank stepper */
+.hb-rank-stepper {
+  display: flex; align-items: center; gap: 10px;
+}
+.hb-rank-display {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--pk-surface2); border: 1px solid var(--pk-line2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--pk-mono); font-size: 24px; font-weight: 800;
+  color: var(--pk-ink);
+}
+.hb-step-btn {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--pk-surface); border: 1px solid var(--pk-line2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--pk-ink); cursor: pointer; font-size: 18px;
+}
+.hb-step-btn:active { background: var(--pk-surface2); }
+.hb-mod-chips {
+  display: flex; gap: 5px; margin-left: 8px;
+}
+.hb-mod {
+  padding: 5px 10px; border-radius: 8px; font-family: var(--pk-mono);
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  background: var(--pk-surface); border: 1px solid var(--pk-line);
+  color: var(--pk-ink2);
+}
+.hb-mod.on {
+  background: var(--pk-teal-dim); border-color: var(--pk-teal); color: var(--pk-teal);
+}
+
+/* query badge */
+.hb-query {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px;
+  background: var(--pk-surface2); border: 1px solid var(--pk-line2);
+  font-family: var(--pk-mono); font-size: 12px; font-weight: 700;
+  color: var(--pk-teal); margin-bottom: 10px;
+}
+
+/* example hands */
+.hb-examples {
+  display: flex; flex-direction: column; gap: 8px; margin-top: 8px;
+}
+.hb-example {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 10px;
+  background: var(--pk-surface); border: 1px solid var(--pk-line);
+}
+.hb-example .hb-cards { display: flex; gap: 3px; }
+.hb-example .hb-score {
+  margin-left: auto; font-family: var(--pk-mono); font-size: 11px;
+  color: var(--pk-ink3);
+}
+
+/* fast-path presets */
+.hb-presets {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.hb-preset {
+  padding: 6px 10px; border-radius: 8px;
+  background: var(--pk-surface); border: 1px solid var(--pk-line);
+  font-family: var(--pk-mono); font-size: 11px; color: var(--pk-ink2);
+  cursor: pointer; white-space: nowrap;
+}
+.hb-preset.on {
+  border-color: var(--pk-teal); color: var(--pk-teal); background: var(--pk-teal-dim);
+}
+.hb-preset:active { transform: scale(.96); }
