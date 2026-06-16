@@ -32,58 +32,114 @@ function holeCount() { return VARIANTS.find(v => v.id === state.variant).cards; 
 // ── PLO Heuristic Advisor (from poker-kit.jsx) ──
 function evaluate(cards) {
   if (!cards.length) return 0;
+  const n = cards.length;
+  const combos = n * (n - 1) / 2;
+  const comboFactor = combos / 6; // 1.0 for PLO4, 1.67 for PLO5, 2.5 for PLO6
+
   const vals = cards.map(c => rv(c.rank)), ranks = cards.map(c => c.rank), suits = cards.map(c => c.suit);
   let s = 0;
-  const sorted = [...vals].sort((a, b) => b - a), w = [1.7, 1.15, 0.55, 0.25];
-  sorted.forEach((v, i) => s += v * (w[i] || 0.2));
+  const sorted = [...vals].sort((a, b) => b - a), w = [1.7, 1.15, 0.55, 0.25, 0.18, 0.12];
+  sorted.forEach((v, i) => s += v * (w[i] || 0.1));
+
+  // pairs — more cards means trips/quads penalties matter more
   const counts = {}; ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
-  Object.entries(counts).forEach(([r, n]) => { if (n >= 2) s += 7 + rv(r) * 0.7; if (n >= 3) s -= 11; if (n >= 4) s -= 12; });
+  Object.entries(counts).forEach(([r, cnt]) => { if (cnt >= 2) s += 7 + rv(r) * 0.7; if (cnt >= 3) s -= 11; if (cnt >= 4) s -= 12; });
+
+  // suitedness — scales with extra combos
   const sc = {}; suits.forEach(x => sc[x] = (sc[x] || 0) + 1);
-  const ds = Object.values(sc).filter(n => n === 2).length === 2;
-  const oneSuited = Object.values(sc).filter(n => n >= 2).length >= 1;
-  if (ds) s += 11; else if (oneSuited) s += 5.5;
-  if (Object.values(sc).some(n => n >= 3)) s -= 5;
-  if (Object.values(sc).some(n => n >= 4)) s -= 6;
+  const suitPairs = Object.values(sc).filter(v => v === 2).length;
+  const tripleSuited = Object.values(sc).some(v => v >= 3);
+  const suitWeight = n > 4 ? 1 + (comboFactor - 1) * 0.55 : 1;
+  if (suitPairs >= 2) s += 11 * suitWeight;
+  else if (suitPairs === 1) s += 5.5 * suitWeight;
+  if (tripleSuited && n >= 6) s += 4;
+  else if (tripleSuited) s -= 5;
+  if (Object.values(sc).some(v => v >= 4)) s -= 6;
+
+  // connectivity — scales with extra combos
   const uniq = [...new Set(vals)].sort((a, b) => a - b);
   let conn = 0;
   for (let i = 1; i < uniq.length; i++) {
     const g = uniq[i] - uniq[i - 1];
     if (g === 1) conn += 3; else if (g === 2) conn += 1.5; else if (g === 3) conn += 0.5;
   }
-  s += Math.min(conn, 12);
-  const frac = cards.length / 4;
-  return Math.max(0, Math.min(100, s * (cards.length === 4 ? 1 : (0.9 / frac))));
+  const connCap = n > 4 ? 12 + (n - 4) * 3 : 12;
+  const connWeight = n > 4 ? 1 + (comboFactor - 1) * 0.45 : 1;
+  s += Math.min(conn * connWeight, connCap);
+
+  // Big O wheel card bonus (A-5 range as 5th card aids nut low)
+  if (n === 5) {
+    const lowCards = vals.filter(v => v <= 3); // A,2,3,4,5
+    if (lowCards.length >= 2) s += 3;
+  }
+
+  // PLO6 rundown bonus — 4+ connected unique ranks in a row
+  if (n === 6) {
+    let maxRun = 1, run = 1;
+    for (let i = 1; i < uniq.length; i++) {
+      if (uniq[i] - uniq[i - 1] === 1) { run++; maxRun = Math.max(maxRun, run); }
+      else run = 1;
+    }
+    if (maxRun >= 4) s += 5;
+  }
+
+  // normalize: more cards = higher raw score, but opponents also improve
+  // scale so the 0-100 range stays meaningful across variants
+  const normFactor = 1 / (1 + (comboFactor - 1) * 0.32);
+  return Math.max(0, Math.min(100, s * normFactor));
 }
 
 function advise(cards) {
   const score = evaluate(cards);
-  const equity = Math.round(30 + score * 0.36);
+  const n = holeCount();
+  const combos = n * (n - 1) / 2;
+
+  // position adjustment: late = looser, early = tighter
+  const posOrder = { BTN: 2, CO: 1, SB: 0, BB: 0, HJ: -1, MP: -2, UTG: -3 };
+  const posAdj = (posOrder[state.situation.pos] || 0) * 1.2;
+
+  const equity = Math.round(30 + score * 0.36 + posAdj);
+
+  // 5/6-card: tighter raise thresholds (hand quality gap narrows)
+  const raiseThresh = n === 4 ? 55 : n === 5 ? 57 : 59;
+  const callThresh = n === 4 ? 46 : n === 5 ? 47 : 48;
+
   let action = 'FOLD', color = 'var(--pk-fold)', sizing = null;
-  if (equity >= 55) { action = 'RAISE'; color = 'var(--pk-raise)'; sizing = { to: '$175', bb: '3.5 bb' }; }
-  else if (equity >= 46) { action = 'CALL'; color = 'var(--pk-call)'; sizing = { to: '$50', bb: 'call' }; }
-  const d = Math.min(Math.abs(equity - 55), Math.abs(equity - 46));
+  if (equity >= raiseThresh) { action = 'RAISE'; color = 'var(--pk-raise)'; sizing = { to: '$175', bb: '3.5 bb' }; }
+  else if (equity >= callThresh) { action = 'CALL'; color = 'var(--pk-call)'; sizing = { to: '$50', bb: 'call' }; }
+  const d = Math.min(Math.abs(equity - raiseThresh), Math.abs(equity - callThresh));
   const confidence = Math.min(97, Math.round(72 + Math.min(d, 16) * 1.45));
-  const potOdds = action === 'FOLD' ? '—' : (equity >= 55 ? '2.4:1' : '1.9:1');
+  const potOdds = action === 'FOLD' ? '—' : (equity >= raiseThresh ? '2.4:1' : '1.9:1');
   const playability = Math.round(score);
-  return { ready: cards.length === holeCount(), equity, action, color, sizing, confidence, potOdds, playability };
+  return { ready: cards.length === n, equity, action, color, sizing, confidence, potOdds, playability, combos };
 }
 
 function reasonText(cards, adv) {
-  const n = holeCount() - cards.length;
-  if (n > 0) return 'Add ' + n + ' more card' + (n > 1 ? 's' : '') + ' for your read.';
+  const nc = holeCount();
+  const remaining = nc - cards.length;
+  if (remaining > 0) return 'Add ' + remaining + ' more card' + (remaining > 1 ? 's' : '') + ' for your read.';
+
   const ranks = cards.map(c => c.rank), suits = cards.map(c => c.suit);
   const counts = {}; ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
   const sc = {}; suits.forEach(s => sc[s] = (sc[s] || 0) + 1);
-  const ds = Object.values(sc).filter(n => n === 2).length === 2;
-  const aces = counts['A'] >= 2, anyPair = Object.values(counts).some(n => n >= 2);
+  const suitPairs = Object.values(sc).filter(v => v === 2).length;
+  const ds = suitPairs >= 2;
+  const tripleSuited = Object.values(sc).some(v => v >= 3);
+  const aces = counts['A'] >= 2, anyPair = Object.values(counts).some(v => v >= 2);
   const broadway = ranks.every(r => 'AKQJT'.includes(r));
-  if (aces && ds) return 'Double-suited aces — top of your raising range from the button.';
-  if (aces) return 'A pair of aces with playable side cards — raise for value.';
-  if (broadway && ds) return 'Double-suited broadway — premium holding, raise.';
-  if (anyPair && ds) return 'Paired and double-suited — strong, raise.';
-  if (adv.action === 'RAISE') return 'Connected and suited enough to raise for value.';
-  if (adv.action === 'CALL') return 'Speculative — playable in position, proceed with care.';
-  return 'Disconnected and offsuit — fold and wait for a better spot.';
+
+  const combos = nc * (nc - 1) / 2;
+  const varTag = nc === 5 ? ' With 10 two-card combos in Big O, ' : nc === 6 ? ' With 15 combos in 6-card, ' : '';
+  const posTag = state.situation.pos === 'BTN' || state.situation.pos === 'CO' ? ' in position' : state.situation.pos === 'UTG' || state.situation.pos === 'MP' ? ' from early position' : '';
+
+  if (aces && ds) return `Double-suited aces${posTag} — top of your raising range.${nc > 4 ? varTag + 'aces still dominate but the edge is thinner.' : ''}`;
+  if (aces) return `A pair of aces with playable side cards — raise for value${posTag}.${nc > 4 ? varTag + 'connectivity matters more than in PLO.' : ''}`;
+  if (tripleSuited && nc >= 6) return `Triple-suited with ${combos} combos — strong flush potential across multiple runouts.`;
+  if (broadway && ds) return `Double-suited broadway${posTag} — premium holding, raise.${nc > 4 ? varTag + 'suitedness carries extra weight.' : ''}`;
+  if (anyPair && ds) return `Paired and double-suited${posTag} — strong, raise.${nc > 4 ? varTag + 'the extra suited combos add equity.' : ''}`;
+  if (adv.action === 'RAISE') return `Connected and suited enough to raise for value${posTag}.${nc > 4 ? varTag + 'connectivity and suits drive your edge.' : ''}`;
+  if (adv.action === 'CALL') return `Speculative — playable${posTag || ' in position'}, proceed with care.${nc > 4 ? varTag + 'be cautious — opponents hold strong combos too.' : ''}`;
+  return `Disconnected and offsuit — fold and wait for a better spot.${nc > 4 ? varTag + 'the bar is higher with more combos in play.' : ''}`;
 }
 
 function parseNotation(str) {
