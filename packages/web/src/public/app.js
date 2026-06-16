@@ -1334,6 +1334,25 @@ function renderMatrix() {
       <div class="track"><div class="fill" style="width:${Math.max(3, Math.min(100, r.pct * 1.4))}%;background:${r.color}"></div></div>
       <span class="pct" style="color:${r.outcome === 'win' ? 'var(--pk-ink3)' : 'var(--pk-ink)'}">${r.pct < 1 ? r.pct.toFixed(1) : Math.round(r.pct)}%</span></div>`;
   });
+
+  // "Build hands" cross-link to Scenarios
+  const buildLink = $('matrix-build-link');
+  if (buildLink) {
+    const hbAxis = MATRIX_TO_HB[hand];
+    if (hbAxis) {
+      buildLink.innerHTML = `<div class="pk-btn" id="matrix-to-scenarios" style="background:var(--pk-surface2);font-size:12px;min-height:36px">← Build ${cat.name.toLowerCase()} hands in Scenarios</div>`;
+      $('matrix-to-scenarios').onclick = () => {
+        Object.assign(state.hbAxis, hbAxis);
+        state.studySub = 'scenarios';
+        persist();
+        renderStudy();
+        const hbEl = $('hand-builder');
+        if (hbEl) hbEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    } else {
+      buildLink.innerHTML = '';
+    }
+  }
 }
 
 // ============================================================
@@ -2025,6 +2044,14 @@ function renderVariantSelector(containerId) {
 }
 
 // ============================================================
+// Scenario ↔ Matrix cross-link mappings
+// ============================================================
+// Matrix categories: 0=High Card, 1=Pair, 2=Two Pair, 3=Trips, 4=Straight, 5=Flush, 6=Full House, 7=Quads, 8=Straight Flush
+const HB_TO_MATRIX = { pair: 1, dpair: 2, rundown: 4, broadway: 0, any: null };
+const MATRIX_TO_HB = { 0: { structure: 'broadway', rank: 'A', rankMod: '=', suited: 'any', side: 'any' }, 1: { structure: 'pair', rank: 'A', rankMod: '+', suited: 'any', side: 'any' }, 2: { structure: 'dpair', rank: 'K', rankMod: '=', suited: 'any', side: 'any' }, 3: { structure: 'pair', rank: 'A', rankMod: '+', suited: 'any', side: 'any' }, 4: { structure: 'rundown', rank: 'T', rankMod: '+', suited: 'any', side: 'any' }, 5: { structure: 'rundown', rank: 'T', rankMod: '+', suited: 'ds', side: 'any' }, 6: { structure: 'dpair', rank: 'A', rankMod: '+', suited: 'any', side: 'any' }, 7: { structure: 'pair', rank: 'A', rankMod: '+', suited: 'any', side: 'any' }, 8: { structure: 'rundown', rank: 'T', rankMod: '+', suited: 'ss', side: 'any' } };
+function hbStructureToMatrixIndex(structure) { const idx = HB_TO_MATRIX[structure]; return idx != null ? idx : null; }
+
+// ============================================================
 // Hand Builder (replaces old custom builder)
 // ============================================================
 function renderHandBuilder() {
@@ -2092,12 +2119,14 @@ function renderHandBuilder() {
   // Strategy insight from first example
   if (examples.length > 0) {
     const adv = advise(examples[0]);
+    const matrixIdx = hbStructureToMatrixIndex(ax.structure);
     html += `<div style="margin-top:10px;padding:10px;background:var(--pk-surface2);border-radius:10px">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:18px;font-weight:700;color:${adv.color}">${adv.action}</span>
         <span class="mono" style="font-size:12px;color:var(--pk-ink3)">Playability ${adv.playability}/100</span>
       </div>
       <div style="font-size:12px;color:var(--pk-ink2);margin-top:4px;line-height:1.35">${reasonText(examples[0], adv)}</div>
+      ${matrixIdx !== null ? `<div class="pk-btn hb-see-matrix" data-matrix-idx="${matrixIdx}" style="margin-top:8px;background:var(--pk-surface3);font-size:12px;min-height:36px">See ${HAND_CATS[matrixIdx].name} in Matrix →</div>` : ''}
     </div>`;
   }
 
@@ -2149,6 +2178,17 @@ function renderHandBuilder() {
     shuffleBtn.onclick = () => {
       state.hbSeed = (state.hbSeed + 1) % 4;
       renderHandBuilder();
+    };
+  }
+
+  // Wire "See in Matrix" cross-link
+  const matBtn = wrap.querySelector('.hb-see-matrix');
+  if (matBtn) {
+    matBtn.onclick = () => {
+      state.matrixHand = +matBtn.dataset.matrixIdx;
+      state.studySub = 'matrix';
+      persist();
+      renderStudy();
     };
   }
 }
