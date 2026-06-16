@@ -1831,8 +1831,8 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-situation-play').onclick = () => { renderSituationSheet(); show($('situation-sheet')); };
   $('play-ctx').onclick = () => { renderSituationSheet(); show($('situation-sheet')); };
   $('study-ctx').onclick = () => { renderSituationSheet(); show($('situation-sheet')); };
-  $('situation-sheet').onclick = () => hide($('situation-sheet'));
-  $('situation-done').onclick = () => hide($('situation-sheet'));
+  $('situation-sheet').onclick = () => { hide($('situation-sheet')); if (state.tab === 'play') renderPlay(); else if (state.tab === 'study') renderStudy(); };
+  $('situation-done').onclick = () => { hide($('situation-sheet')); if (state.tab === 'play') renderPlay(); else if (state.tab === 'study') renderStudy(); };
 
   // Starter mode buttons
   $('starter-clear').onclick = newHand;
@@ -1913,6 +1913,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-help').onpointercancel = () => { clearTimeout(helpMenuTimer); helpMenuTimer = null; };
 
   $('help-menu-mode').onclick = () => { hideHelpMenu(); toggleHelpMode(); };
+  $('help-menu-situation').onclick = () => { hideHelpMenu(); renderSituationSheet(); show($('situation-sheet')); };
   $('help-menu-reset').onclick = () => {
     hideHelpMenu();
     state.onboarded = false;
