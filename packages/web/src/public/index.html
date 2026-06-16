@@ -31,9 +31,10 @@
   </div>
 
   <!-- ============================================================
-       WALKTHROUGH OVERLAY
+       WALKTHROUGH OVERLAY (onboarding)
        ============================================================ -->
   <div id="walkthrough" class="wt-overlay hidden">
+    <div class="wt-scrim" id="wt-scrim"></div>
     <div class="wt-spot" id="wt-spot"></div>
     <div class="wt-tip" id="wt-tip">
       <div class="wt-step" id="wt-step-label"></div>
@@ -74,6 +75,9 @@
         </div>
         <div class="pk-gear" id="btn-situation-play">
           <svg width="16" height="16" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="7.5" cy="7.5" r="2.2"/><path d="M7.5 1v2M7.5 12v2M1 7.5h2M12 7.5h2M3 3l1.4 1.4M10.6 10.6L12 12M12 3l-1.4 1.4M4.4 10.6L3 12" stroke-linecap="round"/></svg>
+        </div>
+        <div class="pk-gear" id="btn-help">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M6 6.2a2 2 0 013.9.6c0 1.3-2 1.3-2 2.7" stroke-linecap="round"/><circle cx="8" cy="12.2" r=".7" fill="currentColor" stroke="none"/></svg>
         </div>
       </div>
       <div class="pk-ctx" id="play-ctx">
@@ -374,6 +378,29 @@
           <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M2 8.5L15 2l-4 13-3-5-6-1.5z" fill="#04261f"/></svg>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       HELP MODE OVERLAY
+       ============================================================ -->
+  <div id="help-overlay" class="hp-overlay hidden"></div>
+  <div id="help-tooltip" class="hp-tip hidden">
+    <div class="hp-tip-text" id="help-tip-text"></div>
+    <div class="hp-tip-arrow" id="help-tip-arrow"></div>
+  </div>
+
+  <!-- ============================================================
+       HELP MENU (reset tutorial option)
+       ============================================================ -->
+  <div id="help-menu" class="hp-menu hidden">
+    <div class="hp-menu-item" id="help-menu-reset">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 7a5 5 0 019.3-2.5M12 7a5 5 0 01-9.3 2.5"/><path d="M2 2v4h4M12 12V8H8"/></svg>
+      Reset tutorial
+    </div>
+    <div class="hp-menu-item" id="help-menu-mode">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.5"/><path d="M6 6.2a2 2 0 013.9.6c0 1.3-2 1.3-2 2.7" stroke-linecap="round"/><circle cx="8" cy="12.2" r=".7" fill="currentColor" stroke="none"/></svg>
+      Help mode
     </div>
   </div>
 

@@ -411,15 +411,50 @@ function buildConversation(context) {
   };
 }
 
-// ── Walkthrough Steps ──
+// ── Walkthrough Steps (onboarding) ──
 const WT_STEPS = [
-  { spot: { top: '62%', left: '2%', width: '96%', height: '30%' }, tipTop: '32%',
-    title: 'Enter your cards', body: "Tap a rank, then a suit to deal your four hole cards — two taps each, all within your thumb's reach." },
-  { spot: { top: '14%', left: '28%', width: '44%', height: '20%', radius: '50%' }, tipTop: '38%',
-    title: 'Your read appears instantly', body: 'The moment all four cards are in, your RAISE / CALL / FOLD, sizing and equity show up right here.' },
-  { spot: { top: '14%', left: '5%', width: '90%', height: '36%' }, tipTop: '54%',
-    title: 'Swipe up to save', body: 'Got a hand worth remembering? Swipe up on the result to log it to your Journal in one gesture.' },
+  { el: null, title: 'Welcome to Omaha Edge!', body: 'This app helps you analyze Omaha poker hands and study strategy. Let’s take a quick tour.' },
+  { el: () => document.querySelector('#tabbar .pk-tab[data-tab="play"]'), title: 'Play tab', body: 'Start here. Enter your hole cards to get instant hand analysis.' },
+  { el: () => document.querySelector('#play-variants'), title: 'Switch variants', body: 'Playing Big O or 6-card? Switch variants here.' },
+  { el: () => document.querySelector('#starter-picker') || document.querySelector('#expert-rankpad'), title: 'Enter your cards', body: 'Tap ranks and suits to enter your cards. The advisor updates as you add them.' },
+  { el: () => document.querySelector('#tabbar .pk-tab[data-tab="study"]'), title: 'Study tab', body: 'Build abstract hand types and explore the probability matrix.' },
+  { el: () => document.querySelector('#tabbar .pk-tab[data-tab="journal"]'), title: 'Journal tab', body: 'Save hands during play and review your history here.' },
+  { el: () => document.querySelector('#btn-help'), title: 'Need help?', body: 'Tap the ? anytime for help on any control. You can also reset this tutorial from the ? menu.' },
 ];
+
+// ── Help Mode Tooltip Definitions ──
+const HELP_DEFS = {
+  play: [
+    { sel: '#play-variants', text: 'Choose your Omaha variant. PLO uses 4 hole cards, Big O uses 5, and 6-card uses 6.' },
+    { sel: '#play-seg', text: 'Starter mode shows simplified guidance. Expert mode shows detailed analysis and compact layout.' },
+    { sel: '#starter-fan, #expert-track', text: 'Your hole cards. Tap a rank then a suit to add cards. The advisor updates as you add cards.' },
+    { sel: '#starter-board-wrap, #expert-board-wrap', text: 'Community cards. After entering all hole cards, tap “Add board cards” to enter the flop, turn, and river.', showWhen: el => !el.classList.contains('hidden') },
+    { sel: '#starter-ring-wrap', text: 'The advisor’s recommendation based on your hand strength. Shows equity %, suggested action (Fold/Call/Raise), and confidence.' },
+    { sel: '#starter-econ-wrap, #expert-econ-wrap', text: 'Enter pot size, amount to call, and effective stack to see pot odds and break-even equity needed.', showWhen: el => !el.classList.contains('hidden') },
+    { sel: '#starter-new, #expert-new', text: 'Clear all cards and start analyzing a new hand.' },
+    { sel: '#starter-save, #expert-save', text: 'Save this hand to your journal for review later.' },
+    { sel: '#starter-picker, #expert-rankpad', text: 'Tap a rank, then pick a suit to enter each card.' },
+    { sel: '#btn-coach-play', text: 'Ask the AI coach for strategic advice about your current hand.' },
+    { sel: '#play-ctx', text: 'Set your position, table size, and villain style to refine the advisor’s recommendations.' },
+  ],
+  study: [
+    { sel: '#study-seg', text: 'Scenarios lets you build abstract hand types. Matrix shows win probabilities across all hand categories.' },
+    { sel: '#study-presets', text: 'Quick shortcuts to common hand types like AA double-suited or suited rundowns.' },
+    { sel: '.hb-query', text: 'Shows the compact notation for your current hand query, like “pair:AA+:ds”.' },
+    { sel: '#hand-builder .hb-chips', text: 'Choose the structure of your starting hand: Pair, Double Pair, Rundown (connected), Broadway (high cards), or Any.' },
+    { sel: '.hb-rank-stepper', text: 'Set the minimum rank. Use +/=/− to mean “or better”, “exactly”, or “or worse”.' },
+    { sel: '#hand-builder [data-ax="suited"]', text: 'Double-suited (ds) = two suits matched. Single-suited (ss) = one suit matched. Rainbow = no suits matched.', resolveParent: true },
+    { sel: '#hand-builder [data-ax="side"]', text: 'For Pair/Double Pair hands, choose what your non-pair cards look like: connected, broadway, wheel (low), or any.', resolveParent: true, showWhen: el => !!el },
+    { sel: '.hb-shuffle', text: 'Generate new random example hands matching your current query.' },
+    { sel: '#btn-coach-study', text: 'Ask the AI coach for strategic advice about your current hand or matrix category.' },
+    { sel: '#matrix-hand-name', text: 'Navigate between hand categories (High Card through Straight Flush) to see win rates.', showWhen: () => state.studySub === 'matrix' },
+    { sel: '#matrix-minimap', text: 'Visual heat map of how your hand performs against every other hand category.', showWhen: () => state.studySub === 'matrix' },
+  ],
+  journal: [
+    { sel: '#jr-scroll', text: 'Your saved hands. Tap to expand and see full details.' },
+    { sel: '.jr-replay', text: 'Load this hand back into the Play tab to re-analyze it.', showWhen: el => !!el },
+  ],
+};
 
 // ============================================================
 // DOM helpers
@@ -497,6 +532,7 @@ const state = {
   coachProvider: 'groq',
   coachMsgs: [],
   coachUsed: new Set(),
+  helpMode: false,
   coachConvo: null,
 };
 
@@ -540,6 +576,7 @@ function switchTab(tab) {
   });
   if (tab === 'study') renderStudy();
   if (tab === 'journal') renderJournal();
+  if (state.helpMode) { hide($('help-tooltip')); highlightHelpTargets(); }
 }
 
 // ============================================================
@@ -1575,13 +1612,118 @@ function renderWalkthrough() {
   show($('walkthrough'));
   const st = WT_STEPS[state.wtStep];
   const spot = $('wt-spot');
-  Object.assign(spot.style, { top: st.spot.top, left: st.spot.left, width: st.spot.width, height: st.spot.height, borderRadius: (st.spot.radius || '18px') });
-  $('wt-tip').style.top = st.tipTop;
+  const tip = $('wt-tip');
+  const target = st.el ? st.el() : null;
+
+  if (target) {
+    const r = target.getBoundingClientRect();
+    const pad = 6;
+    Object.assign(spot.style, {
+      top: (r.top - pad) + 'px', left: (r.left - pad) + 'px',
+      width: (r.width + pad * 2) + 'px', height: (r.height + pad * 2) + 'px',
+      borderRadius: '14px', display: 'block'
+    });
+    const tipBelow = r.bottom + 16;
+    const tipAbove = r.top - 16;
+    if (tipBelow + 150 < window.innerHeight) {
+      tip.style.top = tipBelow + 'px'; tip.style.bottom = '';
+    } else {
+      tip.style.top = ''; tip.style.bottom = (window.innerHeight - tipAbove) + 'px';
+    }
+  } else {
+    spot.style.display = 'none';
+    tip.style.top = '35%'; tip.style.bottom = '';
+  }
+
   $('wt-step-label').textContent = 'Step ' + (state.wtStep + 1) + ' of ' + WT_STEPS.length;
   $('wt-title').textContent = st.title;
   $('wt-body').textContent = st.body;
   $('wt-dots').innerHTML = WT_STEPS.map((_, i) => `<i class="${i === state.wtStep ? 'on' : ''}"></i>`).join('');
   $('wt-next').textContent = state.wtStep === WT_STEPS.length - 1 ? 'Got it' : 'Next';
+}
+
+// ============================================================
+// HELP MODE — contextual tooltips
+// ============================================================
+function enterHelpMode() {
+  state.helpMode = true;
+  $('btn-help').classList.add('active');
+  show($('help-overlay'));
+  highlightHelpTargets();
+}
+
+function exitHelpMode() {
+  state.helpMode = false;
+  $('btn-help').classList.remove('active');
+  hide($('help-overlay'));
+  hide($('help-tooltip'));
+  clearHighlights();
+}
+
+function toggleHelpMode() {
+  if (state.helpMode) exitHelpMode();
+  else enterHelpMode();
+}
+
+function clearHighlights() {
+  document.querySelectorAll('.hp-highlight').forEach(el => el.classList.remove('hp-highlight'));
+}
+
+function highlightHelpTargets() {
+  clearHighlights();
+  const defs = HELP_DEFS[state.tab] || [];
+  defs.forEach(def => {
+    const sels = def.sel.split(',').map(s => s.trim());
+    for (const sel of sels) {
+      const el = document.querySelector(sel);
+      if (!el) continue;
+      if (el.classList.contains('hidden')) continue;
+      if (def.showWhen && !def.showWhen(el)) continue;
+      el.classList.add('hp-highlight');
+      el.dataset.helpText = def.text;
+      break;
+    }
+  });
+}
+
+function showHelpTooltip(target) {
+  const text = target.dataset.helpText;
+  if (!text) return;
+  const tip = $('help-tooltip');
+  const tipText = $('help-tip-text');
+  const arrow = $('help-tip-arrow');
+  tipText.textContent = text;
+  show(tip);
+
+  const r = target.getBoundingClientRect();
+  const tipW = Math.min(280, window.innerWidth - 40);
+  tip.style.width = tipW + 'px';
+  tip.style.left = Math.max(12, Math.min(window.innerWidth - tipW - 12, r.left + r.width / 2 - tipW / 2)) + 'px';
+
+  const spaceBelow = window.innerHeight - r.bottom;
+  if (spaceBelow > 100) {
+    tip.style.top = (r.bottom + 10) + 'px';
+    tip.style.bottom = '';
+    arrow.className = 'hp-tip-arrow below';
+  } else {
+    tip.style.top = '';
+    tip.style.bottom = (window.innerHeight - r.top + 10) + 'px';
+    arrow.className = 'hp-tip-arrow above';
+  }
+  arrow.style.left = Math.max(20, Math.min(tipW - 20, r.left + r.width / 2 - parseFloat(tip.style.left))) + 'px';
+}
+
+function showHelpMenu() {
+  const btn = $('btn-help');
+  const r = btn.getBoundingClientRect();
+  const menu = $('help-menu');
+  show(menu);
+  menu.style.top = (r.bottom + 6) + 'px';
+  menu.style.right = (window.innerWidth - r.right) + 'px';
+}
+
+function hideHelpMenu() {
+  hide($('help-menu'));
 }
 
 // ============================================================
@@ -1702,6 +1844,49 @@ document.addEventListener('DOMContentLoaded', () => {
     inp.type = showing ? 'password' : 'text';
     $('coach-key-toggle').textContent = showing ? 'show' : 'hide';
   };
+
+  // Help button — long-press or tap shows menu, help-mode toggles
+  let helpMenuTimer = null;
+  $('btn-help').onpointerdown = () => { helpMenuTimer = setTimeout(() => { showHelpMenu(); helpMenuTimer = 'shown'; }, 400); };
+  $('btn-help').onpointerup = () => {
+    if (helpMenuTimer === 'shown') { helpMenuTimer = null; return; }
+    clearTimeout(helpMenuTimer); helpMenuTimer = null;
+    if (!$('help-menu').classList.contains('hidden')) { hideHelpMenu(); return; }
+    showHelpMenu();
+  };
+  $('btn-help').onpointercancel = () => { clearTimeout(helpMenuTimer); helpMenuTimer = null; };
+
+  $('help-menu-mode').onclick = () => { hideHelpMenu(); toggleHelpMode(); };
+  $('help-menu-reset').onclick = () => {
+    hideHelpMenu();
+    state.onboarded = false;
+    save('pk-onboarded', false);
+    state.wtStep = 0;
+    renderWalkthrough();
+    showToast('Tutorial reset');
+  };
+
+  // Help mode — intercept all clicks to show tooltips or dismiss
+  document.addEventListener('click', (e) => {
+    if (state.helpMode) {
+      if (e.target.closest('#btn-help') || e.target.closest('.hp-menu')) return;
+      const hp = e.target.closest('.hp-highlight');
+      if (hp) {
+        e.preventDefault();
+        e.stopPropagation();
+        showHelpTooltip(hp);
+        return;
+      }
+      if (e.target.closest('.hp-tip')) return;
+      exitHelpMode();
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (!e.target.closest('#help-menu') && !e.target.closest('#btn-help')) {
+      hideHelpMenu();
+    }
+  }, true);
 
   // Close filters on outside click
   document.addEventListener('click', () => { if (state.jFilterOpen) { state.jFilterOpen = null; renderJournalFilters(); } });

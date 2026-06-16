@@ -2353,3 +2353,126 @@ body {
   border-color: var(--pk-teal); color: var(--pk-teal); background: var(--pk-teal-dim);
 }
 .hb-preset:active { transform: scale(.96); }
+
+/* ============================================================
+   HELP SYSTEM — contextual tooltips + help mode
+   ============================================================ */
+
+/* help button in header — active state */
+#btn-help.active {
+  background: var(--pk-teal-dim);
+  border-color: var(--pk-teal);
+  color: var(--pk-teal);
+}
+
+/* help mode overlay — transparent click catcher */
+.hp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* help mode highlight ring on interactive elements */
+.hp-highlight {
+  position: relative;
+  cursor: help;
+}
+.hp-highlight::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--pk-teal);
+  border-radius: 12px;
+  pointer-events: none;
+  animation: hp-pulse 1.6s ease-in-out infinite;
+  z-index: 49;
+}
+
+@keyframes hp-pulse {
+  0%, 100% { opacity: .45; border-color: var(--pk-teal); }
+  50% { opacity: 1; border-color: var(--pk-teal); box-shadow: 0 0 8px rgba(0,212,170,.35); }
+}
+
+/* help tooltip */
+.hp-tip {
+  position: fixed;
+  z-index: 52;
+  max-width: 280px;
+  background: var(--pk-surface);
+  border: 1px solid var(--pk-teal-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 16px 40px -10px rgba(0,0,0,.7);
+  animation: hp-fadein .18s ease;
+}
+
+.hp-tip-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pk-ink2);
+}
+
+.hp-tip-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--pk-surface);
+  border-right: 1px solid var(--pk-teal-line);
+  border-bottom: 1px solid var(--pk-teal-line);
+}
+
+.hp-tip-arrow.above {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.hp-tip-arrow.below {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-135deg);
+}
+
+@keyframes hp-fadein {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* help menu dropdown */
+.hp-menu {
+  position: fixed;
+  z-index: 55;
+  background: var(--pk-surface);
+  border: 1px solid var(--pk-line2);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 40px -10px rgba(0,0,0,.7);
+  min-width: 170px;
+  animation: hp-fadein .15s ease;
+}
+
+.hp-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--pk-ink2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hp-menu-item:active {
+  background: var(--pk-surface2);
+}
+
+/* walkthrough scrim (full translucent background) */
+.wt-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(6,10,18,.76);
+  pointer-events: none;
+}
