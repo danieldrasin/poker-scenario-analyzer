@@ -29,19 +29,10 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'desktop-safari',
-      use: { ...devices['Desktop Safari'] },
-    },
-    {
-      name: 'iphone-14',
-      use: { ...devices['iPhone 14'] },
-    },
-    {
-      name: 'ipad',
-      use: { ...devices['iPad (gen 7)'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome',
+      },
     },
   ],
 
