@@ -367,21 +367,96 @@ function hbGenerateHands(axis, numCards, seed) {
 
 // ── Matrix Data Model (from poker-kit.jsx) ──
 const HAND_CATS = [
-  { key: 'high',  short: 'High',     name: 'High Card' },
-  { key: 'pair',  short: 'Pair',     name: 'One Pair' },
-  { key: 'two',   short: '2 Pair',   name: 'Two Pair' },
-  { key: 'trips', short: 'Trips',    name: 'Trips / Set' },
-  { key: 'str',   short: 'Straight', name: 'Straight' },
-  { key: 'flush', short: 'Flush',    name: 'Flush' },
-  { key: 'boat',  short: 'Boat',     name: 'Full House' },
-  { key: 'quads', short: 'Quads',    name: 'Quads' },
-  { key: 'sf',    short: 'St.Flush', name: 'Straight Flush' },
+  { key: 'high',  short: 'High',     name: 'High Card',      code: 'Hi' },
+  { key: 'pair',  short: 'Pair',     name: 'One Pair',       code: 'Pr' },
+  { key: 'two',   short: '2 Pair',   name: 'Two Pair',       code: '2P' },
+  { key: 'trips', short: 'Trips',    name: 'Trips / Set',    code: 'Tr' },
+  { key: 'str',   short: 'Straight', name: 'Straight',       code: 'St' },
+  { key: 'flush', short: 'Flush',    name: 'Flush',          code: 'Fl' },
+  { key: 'boat',  short: 'Boat',     name: 'Full House',     code: 'FH' },
+  { key: 'quads', short: 'Quads',    name: 'Quads',          code: 'Qd' },
+  { key: 'sf',    short: 'St.Flush', name: 'Straight Flush', code: 'SF' },
 ];
 const FINAL_FREQ = [6, 33, 30, 12, 9, 5.5, 3.6, 0.35, 0.05];
 const OUTCOME_COLOR = { win: 'var(--pk-bet)', tie: 'var(--pk-raise)', lose: 'var(--pk-fold)' };
+// raw rgb triplets for alpha-blended heat cells
+const OUTCOME_HEX = { win: '34,197,94', tie: '245,158,11', lose: '239,68,68' };
 
 function fieldProb(j, opp) { const p = FINAL_FREQ[j] / 100; return (1 - Math.pow(1 - p, opp)) * 100; }
 function outcome(i, j) { return i > j ? 'win' : i < j ? 'lose' : 'tie'; }
+
+// Full 9×9 grid with variant awareness (more cards => more made hands).
+function gridData(opp, holeCount) {
+  const hc = holeCount || 4;
+  const vbump = 1 + (hc - 4) * 0.16;
+  const freq = FINAL_FREQ.map((f, j) => j >= 3 ? Math.min(f * vbump, f * 2) : f);
+  const colProb = HAND_CATS.map((_, j) => { const p = freq[j] / 100; return (1 - Math.pow(1 - p, opp)) * 100; });
+  const maxProb = Math.max(...colProb);
+  const cells = HAND_CATS.map((_, i) => HAND_CATS.map((_, j) => {
+    const oc = outcome(i, j);
+    const intensity = Math.sqrt(colProb[j] / maxProb);
+    const a = (0.14 + 0.82 * intensity).toFixed(2);
+    return { i, j, prob: colProb[j], outcome: oc, intensity, bg: `rgba(${OUTCOME_HEX[oc]},${a})` };
+  }));
+  return { cells, colProb, maxProb, freq };
+}
+
+// Maps a matrix category index to a hand-builder query (prototype schema).
+function catToQuery(i) {
+  const Q = (structure, rank, suited, side, rank2) => ({ structure, rank: rank || { value: 10, mod: '+' }, rank2, suited: suited || 'any', side: side || 'any' });
+  switch (i) {
+    case 0: return Q('any');
+    case 1: return Q('pair', { value: 9, mod: '+' }, 'ss', 'conn');
+    case 2: return Q('dpair', { value: 12, mod: '+' }, 'ss', 'any', { value: 9, mod: '-' });
+    case 3: return Q('pair', { value: 7, mod: '+' }, 'ss', 'conn');
+    case 4: return Q('rundown', { value: 10, mod: '+' }, 'ss');
+    case 5: return Q('any', null, 'ds');
+    case 6: return Q('dpair', { value: 13, mod: '+' }, 'any', 'any', { value: 10, mod: '-' });
+    case 7: return Q('pair', { value: 11, mod: '+' }, 'any', 'any');
+    case 8: return Q('rundown', { value: 12, mod: '+' }, 'ds');
+    default: return Q('any');
+  }
+}
+
+// Translate the prototype catToQuery() schema into our hbAxis schema.
+function catQueryToAxis(i) {
+  const q = catToQuery(i);
+  const valToLetter = v => ORDER[Math.max(0, Math.min(ORDER.length - 1, v - 2))];
+  return {
+    structure: q.structure,
+    rank: q.rank ? valToLetter(q.rank.value) : 'T',
+    rankMod: q.rank ? q.rank.mod : '+',
+    suited: q.suited || 'any',
+    side: q.side === 'conn' ? 'connected' : (q.side || 'any'),
+  };
+}
+
+// Estimate the made-hand category a starting hand is aiming for (preflop).
+function estimateStartingCat(cards) {
+  if (!cards.length) return 1;
+  const ranks = cards.map(c => c.rank), suits = cards.map(c => c.suit);
+  const counts = {}; ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+  const sc = {}; suits.forEach(s => sc[s] = (sc[s] || 0) + 1);
+  const pairs = Object.values(counts).filter(v => v >= 2).length;
+  const suitPairs = Object.values(sc).filter(v => v >= 2).length;
+  const vals = [...new Set(cards.map(c => rv(c.rank)))].sort((a, b) => a - b);
+  let conn = 0;
+  for (let i = 1; i < vals.length; i++) if (vals[i] - vals[i - 1] <= 1) conn++;
+  if (pairs >= 1) return 3;     // pocket pairs make sets
+  if (conn >= 2) return 4;      // connected => straights
+  if (suitPairs >= 1) return 5; // suited => flushes
+  if (ranks.every(r => 'AKQJT'.includes(r))) return 2; // broadway => two pair
+  return 1;
+}
+
+// The matrix category to focus when navigating from the current Play hand.
+function playMatrixCat() {
+  if (state.board.length >= 3) {
+    const mh = evaluateOmaha(state.cards, state.board);
+    if (mh) return Math.max(0, Math.min(8, mh.handRank));
+  }
+  return estimateStartingCat(state.cards);
+}
 
 function rowData(i, opp) {
   const rows = HAND_CATS.map((c, j) => ({
@@ -504,7 +579,8 @@ const HELP_DEFS = {
     { sel: '.hb-shuffle', text: 'Generate new random example hands matching your current query.' },
     { sel: '#btn-coach-study', text: 'Ask the AI coach for strategic advice about your current hand or matrix category.' },
     { sel: '#matrix-hand-name', text: 'Navigate between hand categories (High Card through Straight Flush) to see win rates.', showWhen: () => state.studySub === 'matrix' },
-    { sel: '#matrix-minimap', text: 'Visual heat map of how your hand performs against every other hand category.', showWhen: () => state.studySub === 'matrix' },
+    { sel: '#matrix-gridwrap', text: 'Heat map of how your hand performs against every opponent category. Tap a cell for detail.', showWhen: () => state.studySub === 'matrix' && state.mode === 'expert' },
+    { sel: '#matrix-keys', text: 'The matchups that matter most, in plain language. Switch to Expert mode for the full heat grid.', showWhen: () => state.studySub === 'matrix' && state.mode !== 'expert' },
   ],
   journal: [
     { sel: '#jr-scroll', text: 'Your saved hands. Tap to expand and see full details.' },
@@ -590,6 +666,9 @@ const state = {
   coachUsed: new Set(),
   helpMode: false,
   coachConvo: null,
+  // pathway navigation
+  navOrigin: null,      // { tab, studySub, label } — where a pathway started
+  matrixExpanded: false, // starter-mode "show full heat grid" toggle
 };
 
 function persist() {
@@ -620,7 +699,9 @@ function showToast(text) {
 // ============================================================
 // Tab Switching
 // ============================================================
-function switchTab(tab) {
+function switchTab(tab, keepOrigin) {
+  // Manually tapping a bottom tab clears any active pathway breadcrumb.
+  if (!keepOrigin) state.navOrigin = null;
   state.tab = tab;
   ['play', 'study', 'journal'].forEach(t => {
     const pane = $('pane-' + t);
@@ -630,9 +711,109 @@ function switchTab(tab) {
   document.querySelectorAll('#tabbar .pk-tab').forEach(el => {
     el.classList.toggle('on', el.dataset.tab === tab);
   });
+  if (tab === 'play') renderPlay();
   if (tab === 'study') renderStudy();
   if (tab === 'journal') renderJournal();
+  renderCrumb();
   if (state.helpMode) { hide($('help-tooltip')); highlightHelpTargets(); }
+}
+
+// ============================================================
+// Analysis Pathways — cross-feature navigation + breadcrumb
+// ============================================================
+function currentLocationLabel() {
+  if (state.tab === 'journal') return 'Journal';
+  if (state.tab === 'study') return state.studySub === 'matrix' ? 'Matrix' : 'Scenarios';
+  return 'Play';
+}
+
+// Navigate along a pathway, remembering where we came from for the breadcrumb.
+// target: { tab, studySub?, matrixHand?, applyAxis?, loadHand?, scrollTo? }
+function goPath(target, toastMsg) {
+  state.navOrigin = { tab: state.tab, studySub: state.studySub, label: currentLocationLabel() };
+  if (target.applyAxis) Object.assign(state.hbAxis, target.applyAxis);
+  if (target.studySub) state.studySub = target.studySub;
+  if (target.matrixHand != null) state.matrixHand = target.matrixHand;
+  if (target.loadHand) {
+    const hand = target.loadHand;
+    if (hand.variant) state.variant = hand.variant;
+    state.cards = hand.hole ? hand.hole.slice() : (hand.cards ? hand.cards.slice() : []);
+    state.board = hand.board ? hand.board.slice() : [];
+    state.boardPickerActive = false;
+    state.armed = null;
+    state.mode = 'starter';
+  }
+  persist();
+  switchTab(target.tab || state.tab, true);
+  if (toastMsg) showToast(toastMsg);
+  if (target.scrollTo) {
+    const el = $(target.scrollTo);
+    if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30);
+  }
+}
+
+function crumbBack() {
+  const o = state.navOrigin;
+  if (!o) return;
+  state.navOrigin = null;
+  if (o.studySub) state.studySub = o.studySub;
+  persist();
+  switchTab(o.tab, true);
+}
+
+function renderCrumb() {
+  const el = $('crumb');
+  if (!el) return;
+  if (state.navOrigin) {
+    el.innerHTML = `<span class="u-crumb-back"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3L5 7l4 4"/></svg>Back to ${state.navOrigin.label}</span><span class="u-crumb-badge">pathway</span>`;
+    el.querySelector('.u-crumb-back').onclick = crumbBack;
+    show(el);
+  } else {
+    hide(el);
+  }
+}
+
+// Build a teal inline pathway link element.
+function plink(label, onClick) {
+  const el = h('div', 'st-plink', `${label}<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5"/></svg>`);
+  el.onclick = onClick;
+  return el;
+}
+
+// Derive a hand-builder query (hbAxis) from a concrete set of hole cards.
+function handToAxis(cards) {
+  const ranks = cards.map(c => c.rank), suits = cards.map(c => c.suit);
+  const counts = {}; ranks.forEach(r => counts[r] = (counts[r] || 0) + 1);
+  const sc = {}; suits.forEach(s => sc[s] = (sc[s] || 0) + 1);
+  const pairCount = Object.values(counts).filter(v => v >= 2).length;
+  const suitPairs = Object.values(sc).filter(v => v >= 2).length;
+  const suited = suitPairs >= 2 ? 'ds' : suitPairs === 1 ? 'ss' : 'rainbow';
+  let structure = 'any';
+  if (pairCount >= 2) structure = 'dpair';
+  else if (pairCount === 1) structure = 'pair';
+  else {
+    const vals = [...new Set(cards.map(c => rv(c.rank)))].sort((a, b) => a - b);
+    let conn = 0;
+    for (let i = 1; i < vals.length; i++) if (vals[i] - vals[i - 1] <= 1) conn++;
+    if (conn >= 2) structure = 'rundown';
+    else if (ranks.every(r => 'AKQJT'.includes(r))) structure = 'broadway';
+  }
+  const topIdx = ranks.map(rv).sort((a, b) => b - a)[0];
+  return { structure, rank: ORDER[topIdx] || 'A', rankMod: '=', suited, side: 'any' };
+}
+
+// Render the two Play-tab pathway links into the given host (when hand complete).
+function renderPlayPathways(hostId) {
+  const host = $(hostId);
+  if (!host) return;
+  host.innerHTML = '';
+  if (state.cards.length !== holeCount()) return;
+  host.appendChild(plink('Where does this rank?', () => {
+    goPath({ tab: 'study', studySub: 'matrix', matrixHand: playMatrixCat() }, 'Showing in Matrix');
+  }));
+  host.appendChild(plink('Explore hands like this', () => {
+    goPath({ tab: 'study', studySub: 'scenarios', applyAxis: handToAxis(state.cards), scrollTo: 'hand-builder' }, 'Loaded into Hand builder');
+  }));
 }
 
 // ============================================================
@@ -857,6 +1038,7 @@ function renderStarter() {
     hide($('starter-picker'));
     show($('starter-result'));
     $('starter-reason').textContent = reasonText(cards, adv);
+    renderPlayPathways('starter-plinks');
   } else {
     show($('starter-picker'));
     hide($('starter-result'));
@@ -1100,7 +1282,7 @@ function renderExpert() {
   }
 
   // reason
-  if (ready) { show($('expert-reason-wrap')); $('expert-reason').textContent = reasonText(cards, adv); }
+  if (ready) { show($('expert-reason-wrap')); $('expert-reason').textContent = reasonText(cards, adv); renderPlayPathways('expert-plinks'); }
   else hide($('expert-reason-wrap'));
 
   // save
@@ -1284,6 +1466,7 @@ function renderMatrix() {
   const opp = Math.max(1, (state.situation.players || 6) - 1);
   const data = rowData(hand, opp);
   const cat = HAND_CATS[hand];
+  const isExpert = state.mode === 'expert';
 
   $('matrix-hand-name').textContent = cat.name;
   $('matrix-ahead-pct').textContent = Math.round(data.ahead) + '%';
@@ -1292,38 +1475,17 @@ function renderMatrix() {
   $('matrix-beat-pct').textContent = Math.round(data.beat) + '% beaten';
   $('matrix-opp-count').textContent = 'vs ' + opp + ' opp';
 
-  // minimap
-  const mm = $('matrix-minimap');
-  mm.innerHTML = '';
-  const reversed = HAND_CATS.slice().reverse();
-  reversed.forEach((rc, ri) => {
-    const myCat = 8 - ri;
-    const label = h('div', 'st-rowlabel' + (myCat === hand ? ' on' : ''), rc.short);
-    label.onclick = () => { state.matrixHand = myCat; renderMatrix(); };
-    mm.appendChild(label);
-    const grid = h('div', 'st-mmgrid');
-    HAND_CATS.forEach((oc, ci) => {
-      const oc2 = outcome(myCat, ci);
-      const cell = h('i', '', null, {
-        style: {
-          background: OUTCOME_COLOR[oc2],
-          opacity: myCat === hand ? '1' : '0.34',
-          outline: myCat === hand ? '1.5px solid var(--pk-ink)' : 'none',
-          outlineOffset: '-1px'
-        }
-      });
-      cell.onclick = () => { state.matrixHand = myCat; renderMatrix(); };
-      grid.appendChild(cell);
-    });
-    mm.appendChild(grid);
-  });
-  // bottom axis labels
-  mm.appendChild(h('div')); // spacer
-  const axisGrid = h('div', 'st-mmgrid', null, { style: { marginTop: '2px' } });
-  HAND_CATS.forEach(c => {
-    axisGrid.innerHTML += `<span style="font-family:var(--pk-mono);font-size:6.5px;color:var(--pk-ink3);text-align:center">${c.short.slice(0, 2)}</span>`;
-  });
-  mm.appendChild(axisGrid);
+  // ── Visibility: expert always shows the heat grid; starter shows key
+  //    matchup cards + an expander that reveals the same grid. ──
+  const showGrid = isExpert || state.matrixExpanded;
+  $('matrix-grid-sec').classList.toggle('hidden', !showGrid);
+  $('matrix-gridwrap').classList.toggle('hidden', !showGrid);
+  $('matrix-keys').classList.toggle('hidden', isExpert);
+  $('matrix-expand').classList.toggle('hidden', isExpert);
+
+  if (showGrid) renderHeatGrid(hand, opp);
+  if (!isExpert) { renderKeyMatchups(data, opp); renderMatrixExpander(); }
+  else { $('matrix-keys').innerHTML = ''; $('matrix-expand').innerHTML = ''; }
 
   // threats
   const threats = $('matrix-threats');
@@ -1335,25 +1497,116 @@ function renderMatrix() {
       <span class="pct" style="color:${r.outcome === 'win' ? 'var(--pk-ink3)' : 'var(--pk-ink)'}">${r.pct < 1 ? r.pct.toFixed(1) : Math.round(r.pct)}%</span></div>`;
   });
 
-  // "Build hands" cross-link to Scenarios
+  // "Build hands in this category →" pathway link to Scenarios
   const buildLink = $('matrix-build-link');
   if (buildLink) {
-    const hbAxis = MATRIX_TO_HB[hand];
-    if (hbAxis) {
-      buildLink.innerHTML = `<div class="pk-btn" id="matrix-to-scenarios" style="background:var(--pk-surface2);font-size:12px;min-height:36px">← Build ${cat.name.toLowerCase()} hands in Scenarios</div>`;
-      $('matrix-to-scenarios').onclick = () => {
-        Object.assign(state.hbAxis, hbAxis);
-        state.studySub = 'scenarios';
-        persist();
-        renderStudy();
-        const hbEl = $('hand-builder');
-        if (hbEl) hbEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      };
-    } else {
-      buildLink.innerHTML = '';
-    }
+    buildLink.innerHTML = '';
+    buildLink.appendChild(plink('Build hands in this category', () => {
+      goPath({ tab: 'study', studySub: 'scenarios', applyAxis: catQueryToAxis(hand), scrollTo: 'hand-builder' }, 'Loaded into Hand builder');
+    }));
   }
 }
+
+// 9×9 alpha-blended heat grid with column codes, focused-row outline,
+// and tap-to-open cell detail.
+function renderHeatGrid(hand, opp) {
+  const grid = $('matrix-grid');
+  if (!grid) return;
+  const g = gridData(opp, holeCount());
+  grid.innerHTML = '';
+
+  // header row: corner spacer + column codes
+  const head = h('div', 'st-grow head');
+  head.appendChild(h('div', 'st-gcorner'));
+  HAND_CATS.forEach(c => head.appendChild(h('div', 'st-gcolhead', c.code)));
+  grid.appendChild(head);
+
+  // one row per "you hold" category
+  HAND_CATS.forEach((rc, i) => {
+    const rowEl = h('div', 'st-grow' + (i === hand ? ' on' : ''));
+    const lab = h('div', 'st-growlab' + (i === hand ? ' on' : ''), rc.code);
+    lab.onclick = () => { state.matrixHand = i; renderMatrix(); };
+    rowEl.appendChild(lab);
+    g.cells[i].forEach(cell => {
+      const prob = cell.prob;
+      const txt = prob < 0.5 ? '·' : String(Math.round(prob));
+      const ce = h('div', 'st-gcell', txt, { style: { background: cell.bg } });
+      ce.onclick = () => openCellDetail(i, cell.j, opp);
+      rowEl.appendChild(ce);
+    });
+    grid.appendChild(rowEl);
+  });
+}
+
+// Starter-mode plain-language matchup cards: top 3 threats + 1 win.
+function renderKeyMatchups(data, opp) {
+  const host = $('matrix-keys');
+  if (!host) return;
+  const threats = data.rows.filter(r => r.outcome !== 'win').sort((a, b) => b.pct - a.pct).slice(0, 3);
+  const win = data.rows.filter(r => r.outcome === 'win').sort((a, b) => b.pct - a.pct)[0];
+  const picks = win ? [...threats, win] : threats;
+
+  let html = '<div class="st-seclabel"><span class="pk-eyebrow">Key matchups</span><span class="mono" style="font-size:10px;color:var(--pk-ink3)">plain language</span></div>';
+  picks.forEach(r => {
+    const word = r.outcome === 'lose' ? 'LOSE' : r.outcome === 'tie' ? 'TIE' : 'WIN';
+    const col = r.outcome === 'lose' ? 'var(--pk-fold)' : r.outcome === 'tie' ? 'var(--pk-raise)' : 'var(--pk-bet)';
+    const pctTxt = r.pct < 1 ? r.pct.toFixed(1) : Math.round(r.pct);
+    html += `<div class="st-key" style="border-color:${col}33">
+      <div class="kn">vs a <b>${r.name}</b></div>
+      <div class="kd">opponent holds it ${pctTxt}% · &ge;1 of ${opp}</div>
+      <div class="ko" style="color:${col}">${word}</div></div>`;
+  });
+  host.innerHTML = html;
+}
+
+function renderMatrixExpander() {
+  const host = $('matrix-expand');
+  if (!host) return;
+  host.innerHTML = '';
+  const btn = h('div', 'st-expand', (state.matrixExpanded ? 'Hide' : 'Show') + ' full heat grid');
+  btn.onclick = () => { state.matrixExpanded = !state.matrixExpanded; renderMatrix(); };
+  host.appendChild(btn);
+}
+
+// ── Cell detail bottom sheet ──
+function openCellDetail(i, j, opp) {
+  const youCat = HAND_CATS[i], oppCat = HAND_CATS[j];
+  const oc = outcome(i, j);
+  const word = oc === 'win' ? 'YOU WIN' : oc === 'lose' ? 'YOU LOSE' : 'TIE';
+  const col = oc === 'win' ? 'var(--pk-bet)' : oc === 'lose' ? 'var(--pk-fold)' : 'var(--pk-raise)';
+  const g = gridData(opp, holeCount());
+  const prob = g.cells[i][j].prob;
+  const pctTxt = prob < 1 ? prob.toFixed(1) : Math.round(prob);
+  const explain = oc === 'win'
+    ? `Your ${youCat.name.toLowerCase()} beats a ${oppCat.name.toLowerCase()}. About ${pctTxt}% of the time at least one of ${opp} opponents holds this — value-bet with confidence.`
+    : oc === 'lose'
+    ? `A ${oppCat.name.toLowerCase()} beats your ${youCat.name.toLowerCase()}. Roughly ${pctTxt}% of pots see ≥1 of ${opp} opponents get there — proceed with caution.`
+    : `A ${oppCat.name.toLowerCase()} chops with your ${youCat.name.toLowerCase()} (~${pctTxt}% of the time across ${opp} opponents).`;
+
+  const body = $('cell-detail-body');
+  body.innerHTML = `
+    <div class="st-cd-row"><span class="st-cd-tag">You hold</span><b>${youCat.name}</b></div>
+    <div class="st-cd-row"><span class="st-cd-tag">Opponent</span><b>${oppCat.name}</b></div>
+    <div class="st-cd-outcome" style="color:${col}">${word}</div>
+    <div class="st-cd-explain">${explain}</div>
+    <div class="st-cd-paths"></div>`;
+
+  const paths = body.querySelector('.st-cd-paths');
+  const buildBtn = h('div', 'st-path', `Build ${oppCat.name} hands →`);
+  buildBtn.onclick = () => { closeCellDetail(); goPath({ tab: 'study', studySub: 'scenarios', applyAxis: catQueryToAxis(j), scrollTo: 'hand-builder' }, 'Loaded into Hand builder'); };
+  const tryBtn = h('div', 'st-path alt', `Try a ${oppCat.name} hand in Play →`);
+  tryBtn.onclick = () => {
+    const ex = hbGenerateHands(catQueryToAxis(j), holeCount(), state.hbSeed);
+    closeCellDetail();
+    if (ex && ex.length) goPath({ tab: 'play', loadHand: { cards: ex[0] } }, 'Loaded into Advisor');
+  };
+  paths.appendChild(buildBtn);
+  paths.appendChild(tryBtn);
+
+  show($('cell-detail'));
+}
+
+function closeCellDetail() { hide($('cell-detail')); }
 
 // ============================================================
 // JOURNAL MODE — Render
@@ -1509,11 +1762,21 @@ function renderJournal() {
           <div class="jr-expacts">
             <div class="pk-btn" data-replay="${hand.id}" style="flex:1;background:var(--pk-surface2);min-height:42px">↻ Replay in Advisor</div>
           </div>
+          <div class="u-plinks jr-catlink" style="margin-top:8px"></div>
         </div>`;
+
+        // "See [made hand] category stats →" pathway (when a made hand is known)
+        const mh = hand.board && hand.board.length >= 3 ? evaluateOmaha(hand.hole, hand.board) : null;
+        if (mh) {
+          const linkHost = row.querySelector('.jr-catlink');
+          if (linkHost) linkHost.appendChild(plink(`See ${mh.name} category stats`, () => {
+            goPath({ tab: 'study', studySub: 'matrix', matrixHand: Math.max(0, Math.min(8, mh.handRank)) }, 'Showing in Matrix');
+          }));
+        }
       }
 
       row.onclick = (e) => {
-        if (e.target.closest('.jr-note') || e.target.closest('.jr-expacts')) return;
+        if (e.target.closest('.jr-note') || e.target.closest('.jr-expacts') || e.target.closest('.jr-catlink')) return;
         state.journalExpanded = state.journalExpanded === hand.id ? null : hand.id;
         renderJournal();
       };
@@ -1532,8 +1795,9 @@ function renderJournal() {
     });
   });
 
-  // total
-  scroll.innerHTML += `<div style="text-align:center;font-family:var(--pk-mono);font-size:11px;color:var(--pk-ink3);margin-top:16px">${visible.length} hands · net <b style="color:${totalNet >= 0 ? 'var(--pk-bet)' : 'var(--pk-fold)'}">${money(totalNet)}</b></div>`;
+  // total — append as an element (not innerHTML +=) so handlers set above survive
+  const totalEl = h('div', '', `${visible.length} hands · net <b style="color:${totalNet >= 0 ? 'var(--pk-bet)' : 'var(--pk-fold)'}">${money(totalNet)}</b>`, { style: { textAlign: 'center', fontFamily: 'var(--pk-mono)', fontSize: '11px', color: 'var(--pk-ink3)', marginTop: '16px' } });
+  scroll.appendChild(totalEl);
 
   // note change listeners
   scroll.querySelectorAll('.jr-note').forEach(el => {
@@ -1919,6 +2183,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('matrix-prev').onclick = () => { state.matrixHand = Math.max(0, state.matrixHand - 1); renderMatrix(); };
   $('matrix-next').onclick = () => { state.matrixHand = Math.min(8, state.matrixHand + 1); renderMatrix(); };
 
+  // Cell detail sheet — dismiss on backdrop tap
+  $('cell-detail').onclick = closeCellDetail;
+
   // Hand builder init (renders on study mode entry)
   // Variant selectors init on first play/study render
 
@@ -2047,8 +2314,8 @@ function renderVariantSelector(containerId) {
 // Scenario ↔ Matrix cross-link mappings
 // ============================================================
 // Matrix categories: 0=High Card, 1=Pair, 2=Two Pair, 3=Trips, 4=Straight, 5=Flush, 6=Full House, 7=Quads, 8=Straight Flush
+// (Matrix → Scenarios now goes through catQueryToAxis(); Scenarios → Matrix uses the map below.)
 const HB_TO_MATRIX = { pair: 1, dpair: 2, rundown: 4, broadway: 0, any: null };
-const MATRIX_TO_HB = { 0: { structure: 'broadway', rank: 'A', rankMod: '=', suited: 'any', side: 'any' }, 1: { structure: 'pair', rank: 'A', rankMod: '+', suited: 'any', side: 'any' }, 2: { structure: 'dpair', rank: 'K', rankMod: '=', suited: 'any', side: 'any' }, 3: { structure: 'pair', rank: 'A', rankMod: '+', suited: 'any', side: 'any' }, 4: { structure: 'rundown', rank: 'T', rankMod: '+', suited: 'any', side: 'any' }, 5: { structure: 'rundown', rank: 'T', rankMod: '+', suited: 'ds', side: 'any' }, 6: { structure: 'dpair', rank: 'A', rankMod: '+', suited: 'any', side: 'any' }, 7: { structure: 'pair', rank: 'A', rankMod: '+', suited: 'any', side: 'any' }, 8: { structure: 'rundown', rank: 'T', rankMod: '+', suited: 'ss', side: 'any' } };
 function hbStructureToMatrixIndex(structure) { const idx = HB_TO_MATRIX[structure]; return idx != null ? idx : null; }
 
 // ============================================================
@@ -2126,7 +2393,7 @@ function renderHandBuilder() {
         <span class="mono" style="font-size:12px;color:var(--pk-ink3)">Playability ${adv.playability}/100</span>
       </div>
       <div style="font-size:12px;color:var(--pk-ink2);margin-top:4px;line-height:1.35">${reasonText(examples[0], adv)}</div>
-      ${matrixIdx !== null ? `<div class="pk-btn hb-see-matrix" data-matrix-idx="${matrixIdx}" style="margin-top:8px;background:var(--pk-surface3);font-size:12px;min-height:36px">See ${HAND_CATS[matrixIdx].name} in Matrix →</div>` : ''}
+      ${matrixIdx !== null ? `<div class="u-plinks" style="margin-top:8px"><div class="st-plink hb-see-matrix" data-matrix-idx="${matrixIdx}">See where this ranks in the Matrix<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5"/></svg></div></div>` : ''}
     </div>`;
   }
 
@@ -2181,14 +2448,11 @@ function renderHandBuilder() {
     };
   }
 
-  // Wire "See in Matrix" cross-link
+  // Wire "See where this ranks in the Matrix" pathway link
   const matBtn = wrap.querySelector('.hb-see-matrix');
   if (matBtn) {
     matBtn.onclick = () => {
-      state.matrixHand = +matBtn.dataset.matrixIdx;
-      state.studySub = 'matrix';
-      persist();
-      renderStudy();
+      goPath({ tab: 'study', studySub: 'matrix', matrixHand: +matBtn.dataset.matrixIdx }, 'Showing in Matrix');
     };
   }
 }

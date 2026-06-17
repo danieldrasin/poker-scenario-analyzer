@@ -57,6 +57,11 @@
   </div>
 
   <!-- ============================================================
+       PATHWAY BREADCRUMB
+       ============================================================ -->
+  <div id="crumb" class="u-crumb hidden"></div>
+
+  <!-- ============================================================
        PLAY TAB
        ============================================================ -->
   <div id="pane-play" class="sh-pane">
@@ -134,6 +139,7 @@
       <!-- result sheet (shown when 4 cards entered) -->
       <div id="starter-result" class="pk-sheet pk-fade hidden">
         <div class="pk-reason" id="starter-reason" style="text-align:center;margin-bottom:12px;padding:0 6px"></div>
+        <div id="starter-plinks" class="u-plinks" style="margin-bottom:12px"></div>
         <div class="pk-save-handle" id="starter-save">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 11V3M3.5 6.5L7 3l3.5 3.5"/></svg>
           Swipe up to save to Journal
@@ -164,6 +170,7 @@
       <!-- reason (shown when ready) -->
       <div id="expert-reason-wrap" class="hidden" style="padding:0 16px 10px">
         <div class="pk-reason pk-fade" id="expert-reason" style="background:var(--pk-surface);border:1px solid var(--pk-line);border-radius:12px;padding:11px 14px"></div>
+        <div id="expert-plinks" class="u-plinks" style="margin-top:8px"></div>
       </div>
       <!-- type field -->
       <div style="padding:0 16px 10px">
@@ -248,9 +255,13 @@
           </div>
         </div>
       </div>
-      <!-- minimap -->
-      <div class="st-seclabel"><span class="pk-eyebrow">Hand-vs-hand map</span><span class="mono" style="font-size:10px;color:var(--pk-ink3)">swipe or tap a row</span></div>
-      <div class="st-minimap" id="matrix-minimap"></div>
+      <!-- key matchups (starter mode) -->
+      <div id="matrix-keys"></div>
+      <!-- heat grid (expert mode, or expanded in starter) -->
+      <div id="matrix-grid-sec" class="st-seclabel hidden"><span class="pk-eyebrow">Hand-vs-hand heat map</span><span class="mono" style="font-size:10px;color:var(--pk-ink3)">tap a cell</span></div>
+      <div class="st-gridwrap hidden" id="matrix-gridwrap"><div class="st-grid" id="matrix-grid"></div></div>
+      <!-- show/hide full grid toggle (starter mode) -->
+      <div id="matrix-expand"></div>
       <!-- threats -->
       <div class="st-seclabel"><span class="pk-eyebrow">Threat landscape &middot; sorted</span><span class="mono" style="font-size:10px;color:var(--pk-ink3)">chance &ge;1 opp holds</span></div>
       <div class="st-threats" id="matrix-threats"></div>
@@ -389,6 +400,16 @@
   <div id="help-tooltip" class="hp-tip hidden">
     <div class="hp-tip-text" id="help-tip-text"></div>
     <div class="hp-tip-arrow" id="help-tip-arrow"></div>
+  </div>
+
+  <!-- ============================================================
+       CELL DETAIL SHEET (matrix)
+       ============================================================ -->
+  <div id="cell-detail" class="st-cdoverlay hidden">
+    <div class="st-cd" id="cell-detail-card" onclick="event.stopPropagation()">
+      <div class="pk-grab"></div>
+      <div id="cell-detail-body"></div>
+    </div>
   </div>
 
   <!-- ============================================================

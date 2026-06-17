@@ -1063,6 +1063,263 @@ body {
 
 .st-threat.win { opacity: .5; }
 
+/* ============================================================
+   MATRIX — 9×9 Heat Grid
+   ============================================================ */
+.st-gridwrap {
+  margin-top: 8px;
+}
+
+.st-grid {
+  display: grid;
+  grid-template-columns: 22px repeat(9, 1fr);
+  gap: 3px;
+  align-items: center;
+}
+
+.st-grow { display: contents; }
+
+.st-grow.on .st-gcell {
+  outline: 1.5px solid var(--pk-ink);
+  outline-offset: -1px;
+}
+
+.st-gcorner { width: 22px; height: 22px; }
+
+.st-gcolhead,
+.st-growlab {
+  font-family: var(--pk-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--pk-ink3);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.st-growlab {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  height: 100%;
+}
+
+.st-growlab.on,
+.st-grow.on .st-growlab { color: var(--pk-teal); }
+
+.st-gcell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  font-family: var(--pk-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--pk-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .1s;
+}
+
+.st-gcell:active { transform: scale(.92); }
+
+/* ============================================================
+   MATRIX — Key Matchup Cards (starter mode)
+   ============================================================ */
+.st-key {
+  background: var(--pk-surface);
+  border: 1px solid var(--pk-line);
+  border-radius: 12px;
+  padding: 11px 13px;
+  margin-bottom: 8px;
+}
+
+.st-key .kn { font-size: 14px; color: var(--pk-ink2); }
+.st-key .kn b { color: var(--pk-ink); font-weight: 700; }
+.st-key .kd { font-family: var(--pk-mono); font-size: 11px; color: var(--pk-ink3); margin-top: 3px; }
+.st-key .ko { font-family: var(--pk-mono); font-size: 13px; font-weight: 800; letter-spacing: .04em; margin-top: 6px; }
+
+/* show/hide full heat grid toggle */
+.st-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--pk-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pk-teal);
+  background: var(--pk-surface2);
+  border: 1px solid var(--pk-line);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================
+   PATHWAYS — inline teal links
+   ============================================================ */
+.u-plinks {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.st-plink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--pk-teal);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.st-plink svg { flex: none; }
+.st-plink:active { opacity: .6; }
+
+/* ============================================================
+   CELL DETAIL — bottom sheet
+   ============================================================ */
+.st-cdoverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  background: rgba(5, 9, 18, .58);
+  display: flex;
+  align-items: flex-end;
+  animation: cdfade .2s ease;
+}
+
+@keyframes cdfade { from { opacity: 0; } to { opacity: 1; } }
+
+.st-cd {
+  width: 100%;
+  background: var(--pk-surface);
+  border-top: 1px solid var(--pk-line2);
+  border-radius: 22px 22px 0 0;
+  padding: 8px 20px calc(24px + var(--sab));
+  box-shadow: 0 -16px 44px -12px rgba(0,0,0,.7);
+  animation: cdrise .28s cubic-bezier(.2,.8,.25,1);
+}
+
+@keyframes cdrise { from { transform: translateY(40px); } to { transform: none; } }
+
+.st-cd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--pk-line);
+  font-size: 15px;
+  color: var(--pk-ink);
+}
+
+.st-cd-tag {
+  font-family: var(--pk-mono);
+  font-size: 11px;
+  color: var(--pk-ink3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.st-cd-outcome {
+  font-family: var(--pk-mono);
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-align: center;
+  margin: 18px 0 10px;
+}
+
+.st-cd-explain {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--pk-ink2);
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.st-cd-paths {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.st-path {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 650;
+  color: #04261f;
+  background: var(--pk-teal);
+  border-radius: 12px;
+  padding: 13px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.st-path.alt {
+  color: var(--pk-teal);
+  background: var(--pk-teal-dim);
+  border: 1px solid var(--pk-teal-line);
+}
+
+.st-path:active { opacity: .85; }
+
+/* ============================================================
+   PATHWAY BREADCRUMB
+   ============================================================ */
+.u-crumb {
+  position: absolute;
+  top: calc(var(--sat) + 6px);
+  left: 12px;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--pk-base);
+  border: 1px solid var(--pk-teal-line);
+  border-radius: 100px;
+  padding: 6px 12px;
+  box-shadow: 0 8px 26px -10px rgba(0,0,0,.6);
+  animation: crumbin .3s ease;
+  white-space: nowrap;
+  max-width: calc(100% - 24px);
+}
+
+@keyframes crumbin {
+  from { transform: translateY(-8px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.u-crumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--pk-teal);
+  cursor: pointer;
+}
+
+.u-crumb-badge {
+  font-family: var(--pk-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--pk-ink3);
+  background: rgba(148,163,184,.12);
+  border-radius: 100px;
+  padding: 2px 7px;
+}
+
 /* steppers (< >) */
 .st-stepper {
   width: 34px;
